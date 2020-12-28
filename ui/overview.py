@@ -6,6 +6,15 @@ from ui.base import CursesWindow
 
 
 class OverviewWindow(CursesWindow):
-    def __init__(self, stdscr, w_x, w_y, w_wperc, w_hperc):
-        super().__init__(stdscr, w_x, w_y, w_wperc, w_hperc)
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height):
+        super().__init__(stdscr, w_x, w_y, w_width, w_height)
+    
+    def loop(self, stdscr) -> str:
+        while True:
+            input_str = stdscr.getkey()
+            # if CursesWindow.is_exit_sequence(input_str):
+            return input_str
+    
+    def focus(self, enable: bool):
+        self.focused = enable
 

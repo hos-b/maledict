@@ -19,9 +19,29 @@ class CursesWindow:
         # self.cwindow.addstr(0, 0, f"rect from {self.min_x}, {self.min_y} to {self.max_x}, {self.max_y}: {rect_w}, {rect_h}")
         stdscr.refresh()
         self.cwindow.refresh()
+        self.focused = False
 
     def refresh(self):
         """
         refreshes the curses window
         """
         self.cwindow.refresh()
+
+    def focus(self, enable: bool):
+        """
+        basic changes in appearance when the window is selected
+        """
+        raise NotImplementedError
+
+    def loop(self, stdscr) -> str:
+        """
+        main loop that captures input, performs tasks, etc.
+        returns the key that relinquished control
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def is_exit_sequence(input_str: str):
+        if input_str == 'q' or input_str == 'KEY_F(1)' or input_str == 'KEY_F(2)' or input_str == 'KEY_F(3)':
+            return True
+        return False
