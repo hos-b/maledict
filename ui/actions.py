@@ -20,34 +20,29 @@ class ActionWindow(CursesWindow):
             'EXIT'.ljust(int(self.w_width) - 4)
         ]
         # curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-        for i in range (len(self.options)):
-            self.cwindow.addstr(i + 1, 2, self.options[i], curses.A_DIM)
-        self.cwindow.refresh()
+        self.redraw()
 
     def focus(self, enable: bool):
         """
         enables or disables window focus
         """
         self.focused = enable
-        if enable:
-            self.redraw()
-        else:
-            self.cwindow.clear()
-            for i in range (len(self.options)):
-                self.cwindow.addstr(i + 1, 2, self.options[i], curses.A_DIM)
-            self.cwindow.box()
-            self.cwindow.refresh()
+        self.redraw()
     
     def redraw(self):
         """
         redraws the actions menu
         """
         self.cwindow.clear()
-        for i in range (len(self.options)):
-            if i == self.index:
-                self.cwindow.addstr(i + 1, 2, self.options[i], curses.A_STANDOUT)
-            else:
-                self.cwindow.addstr(i + 1, 2, self.options[i])
+        if self.focused:
+            for i in range (len(self.options)):
+                if i == self.index:
+                    self.cwindow.addstr(i + 1, 2, self.options[i], curses.A_STANDOUT)
+                else:
+                    self.cwindow.addstr(i + 1, 2, self.options[i])
+        else:
+            for i in range (len(self.options)):
+                self.cwindow.addstr(i + 1, 2, self.options[i], curses.A_DIM)
         self.cwindow.box()
         self.cwindow.refresh()
     

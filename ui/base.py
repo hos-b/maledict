@@ -16,7 +16,6 @@ class CursesWindow:
         self.max_y = self.min_y + w_height
         self.cwindow = curses.newwin(w_height, w_width, int(w_y), int(w_x))
         self.cwindow.box()
-        # self.cwindow.addstr(0, 0, f"rect from {self.min_x}, {self.min_y} to {self.max_x}, {self.max_y}: {rect_w}, {rect_h}")
         stdscr.refresh()
         self.cwindow.refresh()
         self.focused = False
@@ -26,6 +25,12 @@ class CursesWindow:
         refreshes the curses window
         """
         self.cwindow.refresh()
+
+    def redraw(self):
+        """
+        redraws the window, according to its focus status
+        """
+        raise NotImplementedError
 
     def focus(self, enable: bool):
         """

@@ -12,9 +12,13 @@ class OverviewWindow(CursesWindow):
     def loop(self, stdscr) -> str:
         while True:
             input_str = stdscr.getkey()
-            # if CursesWindow.is_exit_sequence(input_str):
-            return input_str
+            if CursesWindow.is_exit_sequence(input_str):
+                self.focused = False
+                return input_str
     
     def focus(self, enable: bool):
         self.focused = enable
+    
+    def redraw(self):
+        pass
 
