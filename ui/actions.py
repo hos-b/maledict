@@ -11,6 +11,7 @@ class ActionWindow(CursesWindow):
         self.index = 0
         self.w_width = w_width
         self.options = [
+            # 2 padding on each side
             'ADD'.ljust(int(self.w_width) - 4),
             'EDIT'.ljust(int(self.w_width) - 4),
             'VIEW'.ljust(int(self.w_width) - 4),

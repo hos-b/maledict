@@ -1,7 +1,14 @@
 import curses
 from ui.static import min_window_x, min_window_y
 from ui.base import CursesWindow
+import yaml
 #pylint: disable=E1101
+
+def variadic_equals_or(first: str, *argv):  
+    for arg in argv:  
+        if first == arg:
+            return True
+    return False
 
 class TerminalWindow(CursesWindow):
     def __init__(self, stdscr, w_x, w_y, w_width, w_height):
@@ -10,12 +17,20 @@ class TerminalWindow(CursesWindow):
         self.history = []
         self.scroll = 0
 
+        # settings
+        self.account_name = ''
+
         # prediction stuff
         self.segment = 0
         self.prediction = ''
         self.pred_start = 0
 
         self.redraw()
+
+        # loading command yaml file
+        with open('config/commands.yaml') as file:    
+            self.command_dict = yaml.load(file, Loader=yaml.FullLoader)
+
 
     def focus(self, enable: bool):
         self.focused = enable
@@ -42,6 +57,50 @@ class TerminalWindow(CursesWindow):
             visible_history -= 1
         self.cwindow.box()
         self.cwindow.refresh()
+    
+    def do_task(self, command: str) -> str:
+        """
+        performs tasks defined in the yaml file.
+        """
+        cmd_parts = command.split(' ')
+        parsed = ''
+        current_lvl = self.command_dict
+        task_id = -1
+        # looking for all commands?
+        if len(cmd_parts) == 1 and \
+            variadic_equals_or(cmd_parts[0], 'help', '?'):
+            help_str = 'available commands: '
+            for key in self.command_dict:
+                help_str += key + ' '
+            return help_str
+
+        # parsing the command 
+        while len(cmd_parts) != 0:
+            parsed += cmd_parts[0] + ' ' 
+            if cmd_parts[0] not in current_lvl:
+                return f"could not find command {parsed}"
+            # go one level deeper
+            current_lvl = current_lvl[cmd_parts[0]]
+            cmd_parts.pop(0)
+            # if at leaf node
+            if 'task-id' in current_lvl:
+                task_id = current_lvl['task-id']
+                break
+            elif len(cmd_parts) == 0 or \
+                variadic_equals_or(cmd_parts[0], 'help', '?'):
+                help_str = 'available commands: '
+                for key in current_lvl:
+                    help_str += key + ' '
+                return help_str
+
+        # help or wrong number of args
+        if len(cmd_parts) == 1 and \
+            variadic_equals_or(cmd_parts[0], 'help', '-h', '--help', '?'):
+            return current_lvl['desc'] + f", args: {current_lvl['args']}"
+        elif len(cmd_parts) != len(current_lvl['args']):
+            return f"invalid number of args: {current_lvl['args']}"
+        # actually doing the task
+        return current_lvl['desc'] + f", args: {current_lvl['args']}"
 
     def loop(self, stdscr) -> str:
         while True:
@@ -58,6 +117,9 @@ class TerminalWindow(CursesWindow):
             elif (input_str == '\n' or input_str == 'KEY_ENTER'):
                 if self.command != '':
                     self.history.append(">>> " + self.command)
+                    ret_str = self.do_task(self.command)
+                    if ret_str != '':
+                        self.history.append(ret_str)
                 self.command = ''
                 self.segment = 0
                 self.redraw()
