@@ -34,15 +34,13 @@ class ActionWindow(CursesWindow):
         redraws the actions menu
         """
         self.cwindow.clear()
-        if self.focused:
-            for i in range (len(self.options)):
-                if i == self.index:
-                    self.cwindow.addstr(i + 1, 2, self.options[i], curses.A_STANDOUT)
-                else:
-                    self.cwindow.addstr(i + 1, 2, self.options[i])
-        else:
-            for i in range (len(self.options)):
-                self.cwindow.addstr(i + 1, 2, self.options[i], curses.A_DIM)
+        curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
+        for i in range (len(self.options)):
+            if i == self.index:
+                self.cwindow.addstr(i + 1, 2, self.options[i], curses_attr \
+                                    | curses.A_STANDOUT if self.focused else curses.A_DIM)
+            else:
+                self.cwindow.addstr(i + 1, 2, self.options[i], curses_attr)
         self.cwindow.box()
         self.cwindow.refresh()
     
@@ -57,7 +55,7 @@ class ActionWindow(CursesWindow):
             elif input_str == 'KEY_DOWN':
                 self.index = min(len(self.options) - 1, self.index + 1)
                 self.redraw()
-            elif input_str == '\n':
+            elif input_str == '\n' or input_str == 'KEY_ENTER':
                 # TODO other functions
                 if self.options[self.index].startswith('EXIT'):
                     return 'q'

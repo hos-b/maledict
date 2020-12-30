@@ -31,34 +31,30 @@ class TerminalWindow(CursesWindow):
         visible_history += self.scroll
         # disable cursor if scrolling
         curses.curs_set(int(self.scroll == 0 and self.focused))
-        if self.focused:
-            for i in range (self.w_height - 2):
-                if visible_history == 0:
-                    self.cwindow.addstr(i + 1, 2, ">>> ")
-                    self.cwindow.addstr(i + 1, 6, self.command)
-                    break
-                self.cwindow.addstr(i + 1, 2, self.history[-visible_history])
-                visible_history -= 1
-        else:
-            for i in range (self.w_height - 2):
-                if visible_history == 0:
-                    self.cwindow.addstr(i + 1, 2, ">>> ", curses.A_DIM)
-                    self.cwindow.addstr(i + 1, 6, self.command, curses.A_DIM)
-                    break
-                self.cwindow.addstr(i + 1, 2, self.history[-visible_history], curses.A_DIM)
-                visible_history -= 1
+
+        curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
+        for i in range (self.w_height - 2):
+            if visible_history == 0:
+                self.cwindow.addstr(i + 1, 2, ">>> ", curses_attr)
+                self.cwindow.addstr(i + 1, 6, self.command, curses_attr)
+                break
+            self.cwindow.addstr(i + 1, 2, self.history[-visible_history], curses_attr)
+            visible_history -= 1
         self.cwindow.box()
         self.cwindow.refresh()
 
     def loop(self, stdscr) -> str:
         while True:
             input_str = stdscr.getkey()
+            # if should switch window
             if CursesWindow.is_exit_sequence(input_str):
                 return input_str
+            # backspace ------------------------------------------------
             elif input_str == 'KEY_BACKSPACE':
                 if len(self.command) != 0:
                     self.command = self.command[:-1]
                     self.redraw()
+            # submit ---------------------------------------------------
             elif (input_str == '\n' or input_str == 'KEY_ENTER'):
                 if self.command != '':
                     self.history.append(">>> " + self.command)
@@ -66,6 +62,7 @@ class TerminalWindow(CursesWindow):
                 self.segment = 0
                 self.redraw()
                 # TODO: perform task
+            # scrolling ------------------------------------------------
             elif input_str == 'KEY_UP':
                 max_scroll = len(self.history) + 3 - self.w_height
                 # if we can show more than history + 3 reserved lines:
@@ -75,9 +72,10 @@ class TerminalWindow(CursesWindow):
             elif input_str == 'KEY_DOWN':
                 self.scroll = max(self.scroll - 1, 0)
                 self.redraw()
+            # do predictions -------------------------------------------
             elif input_str == '\t':
-                # do predictions
                 pass
+            # normal input ---------------------------------------------
             elif len(input_str) == 1:
                 self.scroll = 0
                 if input_str == ' ':
