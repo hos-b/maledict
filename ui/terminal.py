@@ -1,17 +1,17 @@
-import curses
-from ui.static import min_window_x, min_window_y
-from ui.base import CursesWindow
 import yaml
+import curses
+
+import defined_tasks
+from ui.base import CursesWindow
+from data.sqlite_proxy import SQLiteProxy
+from misc.utils import variadic_equals_or
 #pylint: disable=E1101
 
-def variadic_equals_or(first: str, *argv):  
-    for arg in argv:  
-        if first == arg:
-            return True
-    return False
+
 
 class TerminalWindow(CursesWindow):
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height):
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
+                 overview_window: CursesWindow, database: SQLiteProxy):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         self.command = ''
         self.history = []
@@ -24,13 +24,15 @@ class TerminalWindow(CursesWindow):
         self.segment = 0
         self.prediction = ''
         self.pred_start = 0
-
-        self.redraw()
+        self.overview_window = overview_window
 
         # loading command yaml file
         with open('config/commands.yaml') as file:    
             self.command_dict = yaml.load(file, Loader=yaml.FullLoader)
 
+        self.database = database        
+
+        self.redraw()
 
     def focus(self, enable: bool):
         self.focused = enable
@@ -69,11 +71,7 @@ class TerminalWindow(CursesWindow):
         # looking for all commands?
         if len(cmd_parts) == 1 and \
             variadic_equals_or(cmd_parts[0], 'help', '?'):
-            help_str = 'available commands: '
-            for key in self.command_dict:
-                help_str += key + ' '
-            return help_str
-
+            return 'available commands: ' + ', '.join(self.command_dict.keys())
         # parsing the command 
         while len(cmd_parts) != 0:
             parsed += cmd_parts[0] + ' ' 
@@ -86,21 +84,26 @@ class TerminalWindow(CursesWindow):
             if 'task-id' in current_lvl:
                 task_id = current_lvl['task-id']
                 break
+            # offer help at current level
             elif len(cmd_parts) == 0 or \
                 variadic_equals_or(cmd_parts[0], 'help', '?'):
-                help_str = 'available commands: '
-                for key in current_lvl:
-                    help_str += key + ' '
-                return help_str
+                return 'available commands: ' + ', '.join(current_lvl.keys())
 
-        # help or wrong number of args
+        # looking for help at last level?
         if len(cmd_parts) == 1 and \
             variadic_equals_or(cmd_parts[0], 'help', '-h', '--help', '?'):
             return current_lvl['desc'] + f", args: {current_lvl['args']}"
+        # wrong number of args
         elif len(cmd_parts) != len(current_lvl['args']):
             return f"invalid number of args: {current_lvl['args']}"
         # actually doing the task
-        return current_lvl['desc'] + f", args: {current_lvl['args']}"
+        if task_id == 1:
+            return defined_tasks.add.account(self.database, cmd_parts[0], cmd_parts[1])
+        elif task_id == 3:
+            return defined_tasks.list.accounts(self.database)
+        else:
+            return "don't know how to do this task yet"
+
 
     def loop(self, stdscr) -> str:
         while True:

@@ -6,7 +6,7 @@ from ui.base import CursesWindow
 
 
 class ActionWindow(CursesWindow):
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height):
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height, overview_window: CursesWindow):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         self.index = 0
         self.w_width = w_width
@@ -21,6 +21,7 @@ class ActionWindow(CursesWindow):
             'EXIT'.ljust(int(self.w_width) - 4)
         ]
         # curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        self.overview_window = overview_window
         self.redraw()
 
     def focus(self, enable: bool):
