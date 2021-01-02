@@ -37,9 +37,15 @@ delete:
     desc: "delete the account"
     task-id: 501
 
+### terminal specific tasks:
 # exit
 exit:
   args: {}
   desc: "exit the program"
-  task-id: 666
+  task-id: 100001
 
+# clear
+clear:
+  args: {}
+  desc: "clear the terminal"
+  task-id: 100002
