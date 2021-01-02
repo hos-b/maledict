@@ -14,14 +14,13 @@ class TerminalWindow(CursesWindow):
     def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
                  overview_window: CursesWindow, database: SQLiteProxy):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
-        self.command = ''
-        self.terminal_history = []
-        self.command_history = []
-        self.scroll = 0
 
-        # settings
+        # good stuff
+        self.scroll = 0
         self.overview_window = overview_window
         self.current_account = ''
+        self.database = database
+        self.cursor_x = 0
         
         # prediction stuff
         self.expense_mode = False
@@ -29,7 +28,10 @@ class TerminalWindow(CursesWindow):
         self.pred_candidates = []
         self.last_tab_press = time.time()
         
-        # 
+        # history stuff
+        self.command = ''
+        self.terminal_history = []
+        self.command_history = []
         self.cmd_history_index = 0
         self.cmd_history_buffer = ''
 
@@ -37,21 +39,7 @@ class TerminalWindow(CursesWindow):
         with open('config/commands.yaml') as file:    
             self.command_dict = yaml.load(file, Loader=yaml.FullLoader)
 
-        self.database = database        
-
         self.redraw()
-
-    def focus(self, enable: bool):
-        """
-        externally called to enable or disable focus on this window.
-        it changes the focus flag used in all draw functions.
-        """
-        self.focused = enable
-        curses.curs_set(int(enable))
-        if enable:
-            self.cwindow.move(1, 6 + len(self.command))
-        self.redraw()
-
     def redraw(self):
         """
         redraws the window based on input, focus flag and predictions.
@@ -68,29 +56,31 @@ class TerminalWindow(CursesWindow):
             if visible_history == 0:
                 self.cwindow.addstr(i + 1, 2, ">>> ", curses_attr)
                 self.cwindow.addstr(i + 1, 6, self.command, curses_attr)
+                self.cwindow.move(i + 1, self.cursor_x + 6)
                 break
             self.cwindow.addstr(i + 1, 2, self.terminal_history[-visible_history], curses_attr)
             visible_history -= 1
         self.cwindow.box()
         self.cwindow.refresh()
     
-    def parse_and_execute(self) -> str:
+    def parse_and_execute(self, stdscr) -> list:
         """
         parses and executes the task currently written in the terminal.
+        it returns a string per terminal output line (list of str)
         """
-        cmd_parts = self.command.split(' ')
+        cmd_parts = self.command.strip().split(' ')
         parsed = ''
         current_lvl = self.command_dict
         task_id = -1
         # looking for all commands?
         if len(cmd_parts) == 1 and \
             variadic_equals_or(cmd_parts[0], 'help', '?'):
-            return 'available commands: ' + ', '.join(self.command_dict.keys())
+            return ['available commands: ' + ', '.join(self.command_dict.keys())]
         # parsing the command 
         while len(cmd_parts) != 0:
             parsed += cmd_parts[0] + ' ' 
             if cmd_parts[0] not in current_lvl:
-                return f"could not find command {parsed}"
+                return [f"unknown command: {parsed}"]
             # go one level deeper
             current_lvl = current_lvl[cmd_parts[0]]
             cmd_parts.pop(0)
@@ -101,27 +91,27 @@ class TerminalWindow(CursesWindow):
             # offer help at current level
             elif len(cmd_parts) == 0 or \
                 variadic_equals_or(cmd_parts[0], 'help', '?'):
-                return 'available commands: ' + ', '.join(current_lvl.keys())
+                return ['available commands: ' + ', '.join(current_lvl.keys())]
 
         # looking for help at last level?
         if len(cmd_parts) == 1 and \
             variadic_equals_or(cmd_parts[0], 'help', '-h', '--help', '?'):
-            return current_lvl['desc'] + f", args: {current_lvl['args']}"
+            return [current_lvl['desc'] + f", args: {current_lvl['args']}"]
         # wrong number of args
         elif len(cmd_parts) != len(current_lvl['args']):
-            return f"invalid number of args: {current_lvl['args']}"
+            return [f"invalid number of args: {current_lvl['args']}"]
         # actually doing the task
         if task_id == 101:
-            return defined_tasks.add.account(self.database, cmd_parts[0], cmd_parts[1])
+            return [defined_tasks.add.account(self.database, cmd_parts[0], cmd_parts[1])]
         elif task_id == 201:
-            return defined_tasks.list.accounts(self.database)
+            return [defined_tasks.list.accounts(self.database)]
         elif task_id == 301:
-            msg, found = defined_tasks.set.account(self.database, cmd_parts[0])
-            if found:
-                self.current_account = cmd_parts[0]
-            return msg
+            return defined_tasks.set.account(self, cmd_parts[0])
+        elif task_id == 401:
+            return defined_tasks.parse.mkcsv(self, stdscr, self.current_account, \
+                                             cmd_parts[0], cmd_parts[1])
         elif task_id == 501:
-            return defined_tasks.delete.account(self.database, cmd_parts[0])
+            return [defined_tasks.delete.account(self.database, cmd_parts[0])]
         elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()
@@ -129,8 +119,9 @@ class TerminalWindow(CursesWindow):
         elif task_id == 100002:
             self.terminal_history = []
             self.scroll = 0
+            return None
         else:
-            return "don't know how to do this task yet"
+            return ["don't know how to do this task yet"]
 
     def loop(self, stdscr) -> str:
         """
@@ -144,16 +135,24 @@ class TerminalWindow(CursesWindow):
             # backspace -------------------------------------------------------------------
             elif input_char == curses.KEY_BACKSPACE:
                 if len(self.command) != 0:
-                    self.command = self.command[:-1]
+                    self.cursor_x = max(0, self.cursor_x - 1)
+                    if self.cursor_x == len(self.command) - 1:
+                        self.command = self.command[:self.cursor_x]
+                    else:
+                        self.command = self.command[:self.cursor_x] + \
+                                       self.command[self.cursor_x + 1:]
                     self.redraw()
             # execute ---------------------------------------------------------------------
             elif input_char == curses.KEY_ENTER or input_char == ord('\n'):
                 if self.command != '':
                     self.command_history.append(self.command)
                     self.terminal_history.append(">>> " + self.command)
-                    self.terminal_history.append(self.parse_and_execute())
+                    ret_list = self.parse_and_execute(stdscr)
+                    if ret_list is not None:
+                        self.terminal_history += ret_list
                 self.command = ''
                 self.cmd_history_index = 0
+                self.cursor_x = 0
                 self.scroll = 0
                 self.redraw()
             # scrolling -------------------------------------------------------------------
@@ -166,6 +165,21 @@ class TerminalWindow(CursesWindow):
             elif input_char == curses.KEY_NPAGE:
                 self.scroll = max(self.scroll - 1, 0)
                 self.redraw()
+            # cursor shift ----------------------------------------------------------------
+            elif input_char == curses.KEY_LEFT:
+                self.cursor_x = max(0, self.cursor_x - 1)
+                self.redraw()
+            elif input_char == curses.KEY_RIGHT:
+                self.cursor_x = min(len(self.command), self.cursor_x + 1)
+                self.redraw()
+            elif input_char == curses.KEY_HOME:
+                cursor_y, _ = curses.getsyx()
+                curses.setsyx(cursor_y, self.cursor_x_min)
+                self.cursor_x = 0
+                self.redraw()
+            elif input_char == curses.KEY_END:
+                self.cursor_x = len(self.command)
+                self.redraw()
             # history surfing -------------------------------------------------------------
             elif input_char == curses.KEY_UP:
                 if len(self.command_history) != 0:
@@ -176,6 +190,7 @@ class TerminalWindow(CursesWindow):
                     self.cmd_history_index = min(self.cmd_history_index + 1,
                                                  len(self.command_history))
                     self.command = self.command_history[-self.cmd_history_index]
+                    self.cursor_x = len(self.command)
                     self.redraw()
             elif input_char == curses.KEY_DOWN:
                 if self.cmd_history_index != 0:
@@ -183,8 +198,10 @@ class TerminalWindow(CursesWindow):
                     self.cmd_history_index -= 1
                     if self.cmd_history_index == 0:
                         self.command = self.cmd_history_buffer
+                        self.cursor_x = len(self.command)
                     else:
                         self.command = self.command_history[-self.cmd_history_index]
+                        self.cursor_x = len(self.command)
                     self.redraw()
             # do predictions --------------------------------------------------------------
             elif input_char == ord('\t'):
@@ -198,7 +215,9 @@ class TerminalWindow(CursesWindow):
                     # complete the command at the current level
                     if len(pred_candidates) == 1:
                         self.cmd_history_index = 0
-                        self.command = self.command[:pred_index] + self.pred_candidates[0]
+                        self.command = self.command[:pred_index] + \
+                                       self.pred_candidates[0] + ' '
+                        self.cursor_x = len(self.command)
                         self.redraw()
                     # check double tab
                     elif (time.time() - self.last_tab_press) < 0.3:
@@ -207,19 +226,20 @@ class TerminalWindow(CursesWindow):
                         self.redraw()
                     self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
-            # elif input_char == curses.KEY_:
-            # normal input ----------------------------------------------------------------
             elif input_char <= 256:
                 if input_char == ord(' '):
                     # leading spaces don't count
                     if len(self.command) == 0:
                         continue
-                self.command += chr(input_char)
+                if self.cursor_x == len(self.command):
+                    self.command = self.command[:self.cursor_x] + chr(input_char)
+                else:
+                    self.command = self.command[:self.cursor_x] + chr(input_char) + \
+                                   self.command[self.cursor_x:]
+                self.cursor_x += 1
                 self.cmd_history_index = 0
                 self.scroll = 0
-            
-            # redraw is required for all cases
-            self.redraw()
+                self.redraw()
 
     def update_predictions(self) -> (list, int):
         """
@@ -231,9 +251,6 @@ class TerminalWindow(CursesWindow):
         for i in reversed(range(len(self.command))):
             if self.command[i] == ' ':
                 pred_index = i + 1
-        # if only one word has been written, add empty string to catch 'else'
-        if len(cmd_parts) == 1:
-            cmd_parts.append('')
         self.pred_candidates = []
         if self.expense_mode:
             pass
@@ -255,3 +272,9 @@ class TerminalWindow(CursesWindow):
                     break
             self.pred_candidates.sort(key=len)
         return self.pred_candidates, pred_index
+
+    def process_translation(self, translation: str):
+        """
+        takes the given translation and changes the parser accordingly.
+        when all translations are done, it exits the translation mode.
+        """

@@ -9,6 +9,6 @@ class Record:
         self.t_datetime = t_dateteim
         self.amount = amount
         self.category = cat
-        self.sub_category = subcat
+        self.subcategory = subcat
         self.business = business
         self.note = note

@@ -25,7 +25,7 @@ set:
 
 # parse commands
 parse:
-  csv:
+  mkcsv:
     args: {'file_path':'str', 'translate_categories':'bool'}
     desc: "parse a .csv file & add it to current database"
     task-id: 401

@@ -25,13 +25,6 @@ class ActionWindow(CursesWindow):
         self.database = database
         self.redraw()
 
-    def focus(self, enable: bool):
-        """
-        enables or disables window focus
-        """
-        self.focused = enable
-        self.redraw()
-    
     def redraw(self):
         """
         redraws the actions menu

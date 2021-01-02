@@ -5,8 +5,6 @@ from ui.base import CursesWindow
 from data.sqlite_proxy import SQLiteProxy
 #pylint: disable=E1101
 
-
-
 class OverviewWindow(CursesWindow):
     def __init__(self, stdscr, w_x, w_y, w_width, w_height, database: SQLiteProxy):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
@@ -14,13 +12,9 @@ class OverviewWindow(CursesWindow):
     
     def loop(self, stdscr) -> str:
         while True:
-            input_str = stdscr.getkey()
+            input_str = stdscr.getch()
             if CursesWindow.is_exit_sequence(input_str):
-                self.focused = False
                 return input_str
-    
-    def focus(self, enable: bool):
-        self.focused = enable
     
     def redraw(self):
         pass

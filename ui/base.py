@@ -35,7 +35,8 @@ class CursesWindow:
         """
         basic changes in appearance when the window is selected
         """
-        raise NotImplementedError
+        self.focused = enable
+        self.redraw()
 
     def loop(self, stdscr) -> str:
         """

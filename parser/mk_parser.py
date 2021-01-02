@@ -12,28 +12,28 @@ class MKParser(ParserBase):
     def __init__(self):
         super().__init__()
 
-    def parse_item(self, t_date: str, t_time: str, amount: str, \
-                   cat: str, subcat: str, business: str, note: str) -> Record:
+    def convert_to_record(self, t_date: str, t_time: str, amount: str, \
+                          cat: str, subcat: str, business: str, note: str) -> Record:
         """
         parses >>rectified<< strings into a Record
         """
         # parsing date
         date_lst = t_date.split('/')
         if len(date_lst) != 3:
-            return None, f"wrong date format: {t_date}, expected MM/DD/YYYY"
+            return None, f"wrong date format: got {t_date}, expected MM/DD/YYYY"
         # parsing time
         time_lst = t_time.split(':')
         if len(time_lst) != 2:
-            return None, f"wrong time format: {t_time}, expected HH:MM"
+            return None, f"wrong time format: got {t_time}, expected HH:MM"
         record_datetime = datetime(int(date_lst[2]), int(date_lst[0]), int(date_lst[1]),\
                                    int(time_lst[0]), int(time_lst[1]))
         # parsing amount
         if amount.count('.') > 1:
-            return None, f"wrong amount format: {amount}, expected EUR.CENT"
+            return None, f"wrong amount format: got {amount}, expected EUR.CENT"
         record_amount = float(amount)
         return Record(record_datetime, record_amount, cat, subcat, business, note), "success"
 
-    def parse_row(self, row: list):
+    def parse_row(self, row: list) -> bool:
         """
         rectifies and parses a row read directly from the CSV file. the parsed element is then stored
         each row has
@@ -50,12 +50,18 @@ class MKParser(ParserBase):
         else:
             amount = '-' + expense_amount
         category = row[6].strip()
-        sub_category = row[7].strip()
+        subcategory = row[7].strip()
         business = row[8].strip()
         note = row[10].strip()
-        record, msg = self.parse_item(t_date, t_time, amount, category, sub_category, business, note)
+        record, msg = self.convert_to_record(t_date, t_time, amount, category, subcategory, business, note)
         if record:
             self.records.append(record)
-        else:
-            print(f"faulty row: {row}, {msg}")
-        
+            # adding categories, subcategories, businesses
+            if record.category not in self.categories and record.category != '':
+                self.categories[record.category] = 'N/A'
+            if record.subcategory not in self.subcategories and record.subcategory != '':
+                self.subcategories[record.subcategory] = 'N/A'
+            if record.business not in self.businesses:
+                self.businesses[record.business] = len(self.businesses)
+            return True, msg
+        return False, msg

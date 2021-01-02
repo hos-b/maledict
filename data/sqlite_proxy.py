@@ -21,7 +21,7 @@ class SQLiteProxy:
                                 datetime text NOT NULL,
                                 amount REAL NOT NULL,
                                 category text,
-                                sub_category text,
+                                subcategory text,
                                 business text,
                                 note text
                             );"""
@@ -44,15 +44,14 @@ class SQLiteProxy:
         sql_insert = f"""INSERT INTO {table} (datetime,
                                               amount,
                                               category,
-                                              sub_category,
+                                              subcategory,
                                               business,
                                               note)
                                               VALUES(?, ?, ?, ?, ?, ?);"""
         record_tuple = (record.t_datetime.isoformat(' '), record.amount, record.category,\
-                        record.sub_category, record.business, record.note)
+                        record.subcategory, record.business, record.note)
         cursor = self.connection.cursor()
         cursor.execute(sql_insert, record_tuple)
-        self.connection.commit()
 
     def list_tables(self) -> list:
         sql_table_query = "select name from sqlite_master where type = 'table';"
