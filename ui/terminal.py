@@ -5,6 +5,7 @@ import defined_tasks
 from ui.base import CursesWindow
 from data.sqlite_proxy import SQLiteProxy
 from misc.utils import variadic_equals_or
+import time
 #pylint: disable=E1101
 
 
@@ -14,17 +15,23 @@ class TerminalWindow(CursesWindow):
                  overview_window: CursesWindow, database: SQLiteProxy):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         self.command = ''
-        self.history = []
+        self.terminal_history = []
+        self.command_history = []
         self.scroll = 0
 
         # settings
-        self.account_name = ''
-
-        # prediction stuff
-        self.segment = 0
-        self.prediction = ''
-        self.pred_start = 0
         self.overview_window = overview_window
+        self.current_account = ''
+        
+        # prediction stuff
+        self.expense_mode = False
+        self.prediction = ''
+        self.pred_candidates = []
+        self.last_tab_press = None
+        
+        # 
+        self.cmd_history_index = 0
+        self.cmd_history_buffer = ''
 
         # loading command yaml file
         with open('config/commands.yaml') as file:    
@@ -35,6 +42,10 @@ class TerminalWindow(CursesWindow):
         self.redraw()
 
     def focus(self, enable: bool):
+        """
+        externally called to enable or disable focus on this window.
+        it changes the focus flag used in all draw functions.
+        """
         self.focused = enable
         curses.curs_set(int(enable))
         if enable:
@@ -42,9 +53,12 @@ class TerminalWindow(CursesWindow):
         self.redraw()
 
     def redraw(self):
+        """
+        redraws the window based on input, focus flag and predictions.
+        """
         self.cwindow.clear()
         # not using first or last line, 1 reserved for current command
-        visible_history = min(len(self.history), self.w_height - 3)
+        visible_history = min(len(self.terminal_history), self.w_height - 3)
         visible_history += self.scroll
         # disable cursor if scrolling
         curses.curs_set(int(self.scroll == 0 and self.focused))
@@ -55,16 +69,16 @@ class TerminalWindow(CursesWindow):
                 self.cwindow.addstr(i + 1, 2, ">>> ", curses_attr)
                 self.cwindow.addstr(i + 1, 6, self.command, curses_attr)
                 break
-            self.cwindow.addstr(i + 1, 2, self.history[-visible_history], curses_attr)
+            self.cwindow.addstr(i + 1, 2, self.terminal_history[-visible_history], curses_attr)
             visible_history -= 1
         self.cwindow.box()
         self.cwindow.refresh()
     
-    def do_task(self, command: str) -> str:
+    def parse_and_execute(self) -> str:
         """
-        performs tasks defined in the yaml file.
+        parses and executes the task currently written in the terminal.
         """
-        cmd_parts = command.split(' ')
+        cmd_parts = self.command.split(' ')
         parsed = ''
         current_lvl = self.command_dict
         task_id = -1
@@ -97,57 +111,130 @@ class TerminalWindow(CursesWindow):
         elif len(cmd_parts) != len(current_lvl['args']):
             return f"invalid number of args: {current_lvl['args']}"
         # actually doing the task
-        if task_id == 1:
+        if task_id == 101:
             return defined_tasks.add.account(self.database, cmd_parts[0], cmd_parts[1])
-        elif task_id == 3:
+        elif task_id == 201:
             return defined_tasks.list.accounts(self.database)
+        elif task_id == 301:
+            msg, found = defined_tasks.set.account(self.database, cmd_parts[0])
+            if found:
+                self.current_account = cmd_parts[0]
+            return msg
+        elif task_id == 501:
+            return defined_tasks.delete.account(self.database, cmd_parts[0])
+        elif task_id == 666:
+            self.database.connection.commit()
+            self.database.db_close()
+            exit()
         else:
             return "don't know how to do this task yet"
 
-
     def loop(self, stdscr) -> str:
+        """
+        main loop for capturing input and updating the window.
+        """
         while True:
             input_str = stdscr.getkey()
             # if should switch window
             if CursesWindow.is_exit_sequence(input_str):
                 return input_str
-            # backspace ------------------------------------------------
+            # backspace -------------------------------------------------------------------
             elif input_str == 'KEY_BACKSPACE':
                 if len(self.command) != 0:
                     self.command = self.command[:-1]
                     self.redraw()
-            # submit ---------------------------------------------------
+            # execute ---------------------------------------------------------------------
             elif (input_str == '\n' or input_str == 'KEY_ENTER'):
                 if self.command != '':
-                    self.history.append(">>> " + self.command)
-                    ret_str = self.do_task(self.command)
-                    if ret_str != '':
-                        self.history.append(ret_str)
+                    self.command_history.append(self.command)
+                    self.terminal_history.append(">>> " + self.command)
+                    self.terminal_history.append(self.parse_and_execute())
                 self.command = ''
-                self.segment = 0
+                self.cmd_history_index = 0
                 self.redraw()
                 # TODO: perform task
-            # scrolling ------------------------------------------------
-            elif input_str == 'KEY_UP':
-                max_scroll = len(self.history) + 3 - self.w_height
+            # scrolling -------------------------------------------------------------------
+            elif input_str == 'KEY_PPAGE':
+                max_scroll = len(self.terminal_history) + 3 - self.w_height
                 # if we can show more than history + 3 reserved lines:
                 if max_scroll > 0:
                     self.scroll = min(self.scroll + 1, max_scroll)
                 self.redraw()
-            elif input_str == 'KEY_DOWN':
+            elif input_str == 'KEY_NPAGE':
                 self.scroll = max(self.scroll - 1, 0)
                 self.redraw()
-            # do predictions -------------------------------------------
+            # history surfing -------------------------------------------------------------
+            elif input_str == 'KEY_UP':
+                if len(self.command_history) != 0:
+                    # if we weren't surfing, save the current command in buffer
+                    if self.cmd_history_index == 0:
+                        self.cmd_history_buffer = self.command
+                    self.cmd_history_index = min(self.cmd_history_index + 1, len(self.command_history))
+                    self.command = self.command_history[-self.cmd_history_index]
+                    self.redraw()
+            elif input_str == 'KEY_DOWN':
+                if self.cmd_history_index != 0:
+                    self.cmd_history_index -= 1
+                    if self.cmd_history_index == 0:
+                        self.command = self.cmd_history_buffer
+                    else:
+                        self.command = self.command_history[-self.cmd_history_index]
+                    self.redraw()
+            # do predictions --------------------------------------------------------------
             elif input_str == '\t':
-                pass
-            # normal input ---------------------------------------------
+                pred_candidates, pred_index = self.update_predictions()
+                if self.expense_mode:
+                    pass
+                else:
+                    # check double tab
+                    # if self.last_tab and time.time() - self.last_tab < 0.2 \
+                    #     and len(pred_candidates) > 1:
+                    #     self.history.append(self.command)
+                    #     self.history.append('\t'.join(self.pred_candidates))
+                    # self.last_tab = time.time()
+                    # complete the command at the current level
+                    if len(pred_candidates) == 1:
+                        self.cmd_history_index = 0
+                        self.command = self.command[:pred_index] + self.pred_candidates[0]
+            # normal input ----------------------------------------------------------------
             elif len(input_str) == 1:
                 self.scroll = 0
                 if input_str == ' ':
                     # leading spaces don't count
                     if len(self.command) == 0:
                         continue
-                    self.segment += 1
-                    self.pred_start = len(input_str)
                 self.command += input_str
-                self.redraw()
+                self.cmd_history_index = 0
+            
+            # redraw is required for all cases
+            self.redraw()
+
+    def update_predictions(self) -> (list, int):
+        cmd_parts = self.command.split(' ')
+        pred_index = 0
+        for i in reversed(range(len(self.command))):
+            if self.command[i] == ' ':
+                pred_index = i + 1
+        # if only one word has been written, add empty string to catch 'else'
+        if len(cmd_parts) == 1: # and cmd_parts[0] != ''
+            cmd_parts.append('')
+        self.pred_candidates = []
+        if self.expense_mode:
+            pass
+        else:
+            current_lvl = self.command_dict
+            # parsing the command 
+            while len(cmd_parts) != 0:
+                # go one level deeper, if the segment is complete and correct
+                if cmd_parts[0] in current_lvl:
+                    current_lvl = current_lvl[cmd_parts[0]]
+                    cmd_parts.pop(0)
+                else:
+                    for candidate in current_lvl.keys():
+                        if candidate.startswith(cmd_parts[0]):
+                            self.pred_candidates.append(candidate)
+                    break
+            self.pred_candidates.sort(key=len)
+        return self.pred_candidates, pred_index
+
+                
