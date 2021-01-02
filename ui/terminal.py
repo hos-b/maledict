@@ -38,8 +38,14 @@ class TerminalWindow(CursesWindow):
         # loading command yaml file
         with open('config/commands.yaml') as file:    
             self.command_dict = yaml.load(file, Loader=yaml.FullLoader)
-
+        try:
+            f = open("database/.command_history", "r")
+            for line in f:
+                self.command_history.append(line.strip())
+        except FileNotFoundError:
+            self.terminal_history.append("could not open command history file")
         self.redraw()
+
     def redraw(self):
         """
         redraws the window based on input, focus flag and predictions.
@@ -115,6 +121,7 @@ class TerminalWindow(CursesWindow):
         elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()
+            self.write_command_history()
             exit()
         elif task_id == 100002:
             self.terminal_history = []
@@ -273,8 +280,12 @@ class TerminalWindow(CursesWindow):
             self.pred_candidates.sort(key=len)
         return self.pred_candidates, pred_index
 
-    def process_translation(self, translation: str):
+    def write_command_history(self, count = 20):
         """
-        takes the given translation and changes the parser accordingly.
-        when all translations are done, it exits the translation mode.
+        write last x commands to ./database/.command_history
         """
+        end = len(self.command_history)
+        begin = max(0, end - count)
+        with open('database/.command_history', 'w') as f:
+            for i in range(begin, end):
+                f.write(f"{self.command_history[i]}\n")

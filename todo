@@ -1,7 +1,8 @@
-* add .bash_history
-* add main screen stuff
+* add warmup commands
+* add default main screen
 * add commands for manipulating main screen
 * expense mode
 * implement action menu items
 * predictions for expense mode
 * export to CSV
+* add scroll bars

@@ -12,10 +12,17 @@ import csv
 
 debugstr = ""
 database = None
+windows = []
+
+def finish_up():
+    database.connection.commit()
+    database.db_close()
+    windows[2].write_command_history()
 
 def main(stdscr):
     global debugstr
     global database
+    global windows
 
     # getting screen data
     stdscr.addstr(0, 1, "Maledict [version: 0.0.0]")
@@ -27,7 +34,6 @@ def main(stdscr):
     database = SQLiteProxy('database/maledict.db')
 
     # get overview window
-    windows = []
     windows.append(OverviewWindow(stdscr, 5, 3, 0.6 * screen_width, 0.75 * screen_height, database))
     windows.append(ActionWindow(stdscr, windows[0].max_x + 5, 3, 0.3 * screen_width , 0.75 *screen_height, windows[0], database))
     windows.append(TerminalWindow(stdscr, 5, windows[0].max_y + 1, windows[1].max_x - 5, 0.2 * screen_height, windows[0], database))
@@ -36,11 +42,9 @@ def main(stdscr):
     curses.curs_set(False)
     # TODO: comment out
     # stdscr = curses.initscr()
-
     # 0 = overview, 1 = actions, 2 = cmd
     active_window = 2
-
-    # return
+    
     while True:
         windows[active_window].focus(True)
         break_char = windows[active_window].loop(stdscr)
@@ -62,7 +66,9 @@ def main(stdscr):
 try:
     curses.wrapper(main)
 except KeyboardInterrupt:
-    database.connection.commit()
-    database.db_close()
-    exit()
-print(debugstr)
+    finish_up()
+except ValueError:
+    print("unexpected exit. did you ctrl-c in the middle of something?")
+    finish_up()
+
+# print(debugstr)
