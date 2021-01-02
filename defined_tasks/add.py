@@ -34,7 +34,7 @@ def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
         return f"could not create account {name}... go figure out why"
     
     # adding the initial balance
-    intial_record = Record(datetime(1, 1, 1, 0, 0, 0, 0), balance_f, '', '', '', 'Initial Balance')
+    intial_record = Record(datetime(1, 1, 1, 0, 0, 0, 0), balance_f, '', '', '', 'initial balance')
     expense(database, name, intial_record)
     return f"successfully added {name} with {balance_f} initial balance"
 

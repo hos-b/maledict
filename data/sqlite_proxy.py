@@ -28,6 +28,14 @@ class SQLiteProxy:
 
         cursor = self.connection.cursor()
         cursor.execute(sql_table_crt)
+    
+    def drop_table(self, name: str):
+        if self.connection is None:
+            return
+        sql_table_dlt = f"DROP TABLE {name};"
+        cursor = self.connection.cursor()
+        cursor.execute(sql_table_dlt)
+        self.connection.commit()
 
     def add_record(self, table: str, record: Record):
         if self.connection is None:
