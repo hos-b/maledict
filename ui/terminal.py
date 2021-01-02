@@ -27,7 +27,7 @@ class TerminalWindow(CursesWindow):
         self.expense_mode = False
         self.prediction = ''
         self.pred_candidates = []
-        self.last_tab_press = None
+        self.last_tab_press = time.time()
         
         # 
         self.cmd_history_index = 0
@@ -183,19 +183,23 @@ class TerminalWindow(CursesWindow):
             # do predictions --------------------------------------------------------------
             elif input_str == '\t':
                 pred_candidates, pred_index = self.update_predictions()
+                # nothing to predict
+                if len(pred_candidates) == 0:
+                    continue
                 if self.expense_mode:
                     pass
                 else:
-                    # check double tab
-                    # if self.last_tab and time.time() - self.last_tab < 0.2 \
-                    #     and len(pred_candidates) > 1:
-                    #     self.history.append(self.command)
-                    #     self.history.append('\t'.join(self.pred_candidates))
-                    # self.last_tab = time.time()
                     # complete the command at the current level
                     if len(pred_candidates) == 1:
                         self.cmd_history_index = 0
                         self.command = self.command[:pred_index] + self.pred_candidates[0]
+                        self.redraw()
+                    # check double tab
+                    elif (time.time() - self.last_tab_press) < 0.3:
+                        self.terminal_history.append(">>> " + self.command)
+                        self.terminal_history.append('    '.join(self.pred_candidates))
+                        self.redraw()
+                    self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
             elif len(input_str) == 1:
                 self.scroll = 0
@@ -210,6 +214,10 @@ class TerminalWindow(CursesWindow):
             self.redraw()
 
     def update_predictions(self) -> (list, int):
+        """
+        provides a list of predictions based on the current command
+        and the index at which the prediction should be inserted
+        """
         cmd_parts = self.command.split(' ')
         pred_index = 0
         for i in reversed(range(len(self.command))):
@@ -227,6 +235,9 @@ class TerminalWindow(CursesWindow):
             while len(cmd_parts) != 0:
                 # go one level deeper, if the segment is complete and correct
                 if cmd_parts[0] in current_lvl:
+                    # too deep
+                    if 'task-id' in current_lvl[cmd_parts[0]]:
+                        break
                     current_lvl = current_lvl[cmd_parts[0]]
                     cmd_parts.pop(0)
                 else:
