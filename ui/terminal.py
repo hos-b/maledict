@@ -122,10 +122,14 @@ class TerminalWindow(CursesWindow):
             return msg
         elif task_id == 501:
             return defined_tasks.delete.account(self.database, cmd_parts[0])
-        elif task_id == 666:
+        elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()
             exit()
+        elif task_id == 100002:
+            self.terminal_history = []
+            self.scroll = 0
+
         else:
             return "don't know how to do this task yet"
 
@@ -151,8 +155,8 @@ class TerminalWindow(CursesWindow):
                     self.terminal_history.append(self.parse_and_execute())
                 self.command = ''
                 self.cmd_history_index = 0
+                self.scroll = 0
                 self.redraw()
-                # TODO: perform task
             # scrolling -------------------------------------------------------------------
             elif input_str == 'KEY_PPAGE':
                 max_scroll = len(self.terminal_history) + 3 - self.w_height
@@ -166,6 +170,7 @@ class TerminalWindow(CursesWindow):
             # history surfing -------------------------------------------------------------
             elif input_str == 'KEY_UP':
                 if len(self.command_history) != 0:
+                    self.scroll = 0
                     # if we weren't surfing, save the current command in buffer
                     if self.cmd_history_index == 0:
                         self.cmd_history_buffer = self.command
@@ -174,6 +179,7 @@ class TerminalWindow(CursesWindow):
                     self.redraw()
             elif input_str == 'KEY_DOWN':
                 if self.cmd_history_index != 0:
+                    self.scroll = 0
                     self.cmd_history_index -= 1
                     if self.cmd_history_index == 0:
                         self.command = self.cmd_history_buffer
@@ -202,13 +208,13 @@ class TerminalWindow(CursesWindow):
                     self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
             elif len(input_str) == 1:
-                self.scroll = 0
                 if input_str == ' ':
                     # leading spaces don't count
                     if len(self.command) == 0:
                         continue
                 self.command += input_str
                 self.cmd_history_index = 0
+                self.scroll = 0
             
             # redraw is required for all cases
             self.redraw()

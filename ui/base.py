@@ -47,6 +47,6 @@ class CursesWindow:
 
     @staticmethod
     def is_exit_sequence(input_str: str):
-        if input_str == 'q' or input_str == 'KEY_F(1)' or input_str == 'KEY_F(2)' or input_str == 'KEY_F(3)':
+        if input_str == 'KEY_F(1)' or input_str == 'KEY_F(2)' or input_str == 'KEY_F(3)':
             return True
         return False

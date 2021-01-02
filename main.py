@@ -47,10 +47,8 @@ def main(stdscr):
         # break_str = stdscr.getkey()
         # debugstr += (break_str + ' ')
 
-        # exiting or changing window focus
-        if break_str == 'q' or break_str == '\t':
-            break
-        elif break_str == 'KEY_F(1)':
+        # changing window focus
+        if break_str == 'KEY_F(1)':
             # focus window 0 (overview)
             active_window = 0
         elif break_str == 'KEY_F(2)':
