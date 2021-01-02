@@ -11,10 +11,11 @@ import csv
 
 
 debugstr = ""
-
+database = None
 
 def main(stdscr):
     global debugstr
+    global database
 
     # getting screen data
     stdscr.addstr(0, 1, "Maledict [version: 0.0.0]")
@@ -28,7 +29,7 @@ def main(stdscr):
     # get overview window
     windows = []
     windows.append(OverviewWindow(stdscr, 5, 3, 0.6 * screen_width, 0.75 * screen_height, database))
-    windows.append(ActionWindow(stdscr, windows[0].max_x + 5, 3, 0.3 * screen_width , 0.75 *screen_height, windows[0]))
+    windows.append(ActionWindow(stdscr, windows[0].max_x + 5, 3, 0.3 * screen_width , 0.75 *screen_height, windows[0], database))
     windows.append(TerminalWindow(stdscr, 5, windows[0].max_y + 1, windows[1].max_x - 5, 0.2 * screen_height, windows[0], database))
     
     # initially disable cursor
@@ -42,21 +43,26 @@ def main(stdscr):
     # return
     while True:
         windows[active_window].focus(True)
-        break_str = windows[active_window].loop(stdscr)
+        break_char = windows[active_window].loop(stdscr)
         windows[active_window].focus(False)
-        # break_str = stdscr.getkey()
-        # debugstr += (break_str + ' ')
+        # break_char = stdscr.getkey()
+        # debugstr += (break_char + ' ')
 
         # changing window focus
-        if break_str == 'KEY_F(1)':
+        if break_char == curses.KEY_F1:
             # focus window 0 (overview)
             active_window = 0
-        elif break_str == 'KEY_F(2)':
+        elif break_char == curses.KEY_F2:
             # focus window 1 (actions)
             active_window = 1
-        elif break_str == 'KEY_F(3)':
+        elif break_char == curses.KEY_F3:
             # focus window 2 (cmd)
             active_window = 2
 
-curses.wrapper(main)
+try:
+    curses.wrapper(main)
+except KeyboardInterrupt:
+    database.connection.commit()
+    database.db_close()
+    exit()
 print(debugstr)

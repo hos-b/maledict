@@ -129,7 +129,6 @@ class TerminalWindow(CursesWindow):
         elif task_id == 100002:
             self.terminal_history = []
             self.scroll = 0
-
         else:
             return "don't know how to do this task yet"
 
@@ -138,17 +137,17 @@ class TerminalWindow(CursesWindow):
         main loop for capturing input and updating the window.
         """
         while True:
-            input_str = stdscr.getkey()
+            input_char = stdscr.getch()
             # if should switch window
-            if CursesWindow.is_exit_sequence(input_str):
-                return input_str
+            if CursesWindow.is_exit_sequence(input_char):
+                return input_char
             # backspace -------------------------------------------------------------------
-            elif input_str == 'KEY_BACKSPACE':
+            elif input_char == curses.KEY_BACKSPACE:
                 if len(self.command) != 0:
                     self.command = self.command[:-1]
                     self.redraw()
             # execute ---------------------------------------------------------------------
-            elif (input_str == '\n' or input_str == 'KEY_ENTER'):
+            elif input_char == curses.KEY_ENTER or input_char == ord('\n'):
                 if self.command != '':
                     self.command_history.append(self.command)
                     self.terminal_history.append(">>> " + self.command)
@@ -158,26 +157,27 @@ class TerminalWindow(CursesWindow):
                 self.scroll = 0
                 self.redraw()
             # scrolling -------------------------------------------------------------------
-            elif input_str == 'KEY_PPAGE':
+            elif input_char == curses.KEY_PPAGE:
                 max_scroll = len(self.terminal_history) + 3 - self.w_height
                 # if we can show more than history + 3 reserved lines:
                 if max_scroll > 0:
                     self.scroll = min(self.scroll + 1, max_scroll)
                 self.redraw()
-            elif input_str == 'KEY_NPAGE':
+            elif input_char == curses.KEY_NPAGE:
                 self.scroll = max(self.scroll - 1, 0)
                 self.redraw()
             # history surfing -------------------------------------------------------------
-            elif input_str == 'KEY_UP':
+            elif input_char == curses.KEY_UP:
                 if len(self.command_history) != 0:
                     self.scroll = 0
                     # if we weren't surfing, save the current command in buffer
                     if self.cmd_history_index == 0:
                         self.cmd_history_buffer = self.command
-                    self.cmd_history_index = min(self.cmd_history_index + 1, len(self.command_history))
+                    self.cmd_history_index = min(self.cmd_history_index + 1,
+                                                 len(self.command_history))
                     self.command = self.command_history[-self.cmd_history_index]
                     self.redraw()
-            elif input_str == 'KEY_DOWN':
+            elif input_char == curses.KEY_DOWN:
                 if self.cmd_history_index != 0:
                     self.scroll = 0
                     self.cmd_history_index -= 1
@@ -187,7 +187,7 @@ class TerminalWindow(CursesWindow):
                         self.command = self.command_history[-self.cmd_history_index]
                     self.redraw()
             # do predictions --------------------------------------------------------------
-            elif input_str == '\t':
+            elif input_char == ord('\t'):
                 pred_candidates, pred_index = self.update_predictions()
                 # nothing to predict
                 if len(pred_candidates) == 0:
@@ -203,16 +203,18 @@ class TerminalWindow(CursesWindow):
                     # check double tab
                     elif (time.time() - self.last_tab_press) < 0.3:
                         self.terminal_history.append(">>> " + self.command)
-                        self.terminal_history.append('    '.join(self.pred_candidates))
+                        self.terminal_history.append(' | '.join(self.pred_candidates))
                         self.redraw()
                     self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
-            elif len(input_str) == 1:
-                if input_str == ' ':
+            # elif input_char == curses.KEY_:
+            # normal input ----------------------------------------------------------------
+            elif input_char <= 256:
+                if input_char == ord(' '):
                     # leading spaces don't count
                     if len(self.command) == 0:
                         continue
-                self.command += input_str
+                self.command += chr(input_char)
                 self.cmd_history_index = 0
                 self.scroll = 0
             
@@ -230,7 +232,7 @@ class TerminalWindow(CursesWindow):
             if self.command[i] == ' ':
                 pred_index = i + 1
         # if only one word has been written, add empty string to catch 'else'
-        if len(cmd_parts) == 1: # and cmd_parts[0] != ''
+        if len(cmd_parts) == 1:
             cmd_parts.append('')
         self.pred_candidates = []
         if self.expense_mode:
@@ -253,5 +255,3 @@ class TerminalWindow(CursesWindow):
                     break
             self.pred_candidates.sort(key=len)
         return self.pred_candidates, pred_index
-
-                

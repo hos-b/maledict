@@ -1,12 +1,12 @@
 import curses
 from ui.static import min_window_x, min_window_y
 from ui.base import CursesWindow
+from data.sqlite_proxy import SQLiteProxy
 #pylint: disable=E1101
 
-
-
 class ActionWindow(CursesWindow):
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height, overview_window: CursesWindow):
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
+                 overview_window: CursesWindow, database: SQLiteProxy):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         self.index = 0
         self.w_width = w_width
@@ -22,6 +22,7 @@ class ActionWindow(CursesWindow):
         ]
         # curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
         self.overview_window = overview_window
+        self.database = database
         self.redraw()
 
     def focus(self, enable: bool):
@@ -48,16 +49,17 @@ class ActionWindow(CursesWindow):
     
     def loop(self, stdscr) -> str:
         while True:
-            input_str = stdscr.getkey()
-            if CursesWindow.is_exit_sequence(input_str):
-                return input_str
-            if input_str == 'KEY_UP':
+            input_char = stdscr.getch()
+            if CursesWindow.is_exit_sequence(input_char):
+                return input_char
+            if input_char == curses.KEY_UP:
                 self.index = max(0, self.index - 1)
                 self.redraw()
-            elif input_str == 'KEY_DOWN':
+            elif input_char == curses.KEY_DOWN:
                 self.index = min(len(self.options) - 1, self.index + 1)
                 self.redraw()
-            elif input_str == '\n' or input_str == 'KEY_ENTER':
-                # TODO other functions
+            elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 if self.options[self.index].startswith('EXIT'):
-                    return 'q'
+                    self.database.connection.commit()
+                    self.database.db_close()
+                    exit()

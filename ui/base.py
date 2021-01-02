@@ -1,5 +1,4 @@
 import curses
-from ui.static import min_window_x, min_window_y
 
 #pylint: disable=E1101
 
@@ -46,7 +45,7 @@ class CursesWindow:
         raise NotImplementedError
 
     @staticmethod
-    def is_exit_sequence(input_str: str):
-        if input_str == 'KEY_F(1)' or input_str == 'KEY_F(2)' or input_str == 'KEY_F(3)':
+    def is_exit_sequence(input_char):
+        if input_char == curses.KEY_F1 or input_char == curses.KEY_F2 or input_char == curses.KEY_F3:
             return True
         return False
