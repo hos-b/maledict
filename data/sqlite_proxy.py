@@ -4,14 +4,11 @@ from data.record import Record
 class SQLiteProxy:
     def __init__(self, db_file):
         """
-        open/create db file & establish connection
+        creates the db file (if it doesn't already exist) and
+        establishes a connection.
         """
         self.connection = None
-        try:
-            self.connection = sqlite3.connect(db_file)
-            print(sqlite3.version)
-        except sqlite3.Error as e:
-            print(e)
+        self.db_open(db_file)
 
     def create_table(self, name: str):
         if self.connection is None:
@@ -68,3 +65,11 @@ class SQLiteProxy:
 
     def db_close(self):
         self.connection.close()
+        self.connection = None
+    
+    def db_open(self, db_file: str):
+        try:
+            self.connection = sqlite3.connect(db_file)
+            print(sqlite3.version)
+        except sqlite3.Error as e:
+            print(e)

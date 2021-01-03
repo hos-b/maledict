@@ -44,6 +44,8 @@ class TerminalWindow(CursesWindow):
                 self.command_history.append(line.strip())
         except FileNotFoundError:
             self.terminal_history.append("could not open command history file")
+
+        self.warmup(True)
         self.redraw()
 
     def redraw(self):
@@ -72,7 +74,9 @@ class TerminalWindow(CursesWindow):
     def parse_and_execute(self, stdscr) -> list:
         """
         parses and executes the task currently written in the terminal.
-        it returns a string per terminal output line (list of str)
+        it returns a string per terminal output line (list of str). all
+        exception handling regarding the correctly entered commands are
+        to be done inside their individual files, not here.
         """
         cmd_parts = self.command.strip().split(' ')
         parsed = ''
@@ -114,8 +118,7 @@ class TerminalWindow(CursesWindow):
         elif task_id == 301:
             return defined_tasks.set.account(self, cmd_parts[0])
         elif task_id == 401:
-            return defined_tasks.parse.mkcsv(self, stdscr, self.current_account, \
-                                             cmd_parts[0], cmd_parts[1])
+            return defined_tasks.parse.mkcsv(self, stdscr, self.current_account, cmd_parts[0], cmd_parts[1])
         elif task_id == 501:
             return [defined_tasks.delete.account(self.database, cmd_parts[0])]
         elif task_id == 100001:
@@ -289,3 +292,23 @@ class TerminalWindow(CursesWindow):
         with open('database/.command_history', 'w') as f:
             for i in range(begin, end):
                 f.write(f"{self.command_history[i]}\n")
+    
+    def warmup(self, print_results: bool):
+        """
+        loads a text file in ./database/.warmup and executes all
+        the commands inside.
+        """
+        try:
+            f = open("database/.warmup", "r")
+            for line in f:
+                line = line.strip()
+                if line != '':
+                    self.command = line
+                    results = self.parse_and_execute(None)
+                    if print_results:
+                        self.terminal_history += results
+                    self.command = ''
+        except FileNotFoundError:
+            self.terminal_history.append("could not open warmup file")
+        
+        self.redraw()

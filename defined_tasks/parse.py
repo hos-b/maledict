@@ -11,8 +11,13 @@ def mkcsv(terminal, stdscr, account: str, file_path: str, translate_categories: 
     terminal until it's done. for this period, history surfing, tab
     completion and window switching is disabled.
     """
+    # exception handling
     if terminal.current_account == '':
         return ["current account not set"]
+    if stdscr is None:
+        return ["cannot run parse mkcsv in warmup mode"]
+
+    # tanslate categories ?
     translate_mode = False
     translate_categories = translate_categories.lower()
     if translate_categories in ['1', 'y', 'true', 'yes', 'ye', 't', 'yy', 'fuck']:
@@ -22,6 +27,7 @@ def mkcsv(terminal, stdscr, account: str, file_path: str, translate_categories: 
     else:
         return [f"expected boolean, got {translate_categories}"]
 
+    # start parsing
     parser = MKParser()
     msg_list = []
     try:
