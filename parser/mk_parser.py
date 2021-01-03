@@ -31,7 +31,8 @@ class MKParser(ParserBase):
         if amount.count('.') > 1:
             return None, f"wrong amount format: got {amount}, expected EUR.CENT"
         record_amount = float(amount)
-        return Record(record_datetime, record_amount, cat, subcat, business, note), "success"
+        return Record(record_datetime, record_amount, cat.strip(), \
+                      subcat.strip(), business.strip(), note.strip()), "success"
 
     def parse_row(self, row: list) -> bool:
         """

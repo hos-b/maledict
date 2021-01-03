@@ -1,6 +1,6 @@
 import curses
 
-from ui.overview import OverviewWindow
+from ui.main import MainWindow
 from ui.actions import ActionWindow
 from ui.terminal import TerminalWindow
 
@@ -34,8 +34,8 @@ def main(stdscr):
     database = SQLiteProxy('database/maledict.db')
 
     # get overview window
-    windows.append(OverviewWindow(stdscr, 5, 3, 0.6 * screen_width, 0.75 * screen_height, database))
-    windows.append(ActionWindow(stdscr, windows[0].max_x + 5, 3, 0.3 * screen_width , 0.75 *screen_height, windows[0], database))
+    windows.append(MainWindow(stdscr, 5, 3, 0.65 * screen_width, 0.75 * screen_height))
+    windows.append(ActionWindow(stdscr, windows[0].max_x + 5, 3, 0.3 * screen_width , 0.75 *screen_height, windows[0]))
     windows.append(TerminalWindow(stdscr, 5, windows[0].max_y + 1, windows[1].max_x - 5, 0.2 * screen_height, windows[0], database))
     
     # initially disable cursor

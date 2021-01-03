@@ -4,7 +4,7 @@ from parser.mk_parser import MKParser
 from ui.base import CursesWindow
 from data.record import Record
 
-def mkcsv(terminal, stdscr, account: str, file_path: str, translate_categories: str) -> list:
+def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     """
     parses the given file and tranlsate the categories if requested.
     not that for the translation, the function takes control of the
@@ -12,7 +12,7 @@ def mkcsv(terminal, stdscr, account: str, file_path: str, translate_categories: 
     completion and window switching is disabled.
     """
     # exception handling
-    if terminal.current_account == '':
+    if terminal.main_window.account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot run parse mkcsv in warmup mode"]
@@ -145,13 +145,6 @@ def mkcsv(terminal, stdscr, account: str, file_path: str, translate_categories: 
             terminal.scroll = 0
             terminal.redraw()
 
-    for record in parser.records:
-        if translate_mode:
-            if record.category in parser.categories:
-                record.category = parser.categories[record.category]
-            if record.subcategory in parser.subcategories:
-                record.subcategory = parser.subcategories[record.subcategory]
-        terminal.database.add_record(account, record)
-        terminal.database.connection.commit()
-
+    terminal.main_window.account.commit_parser(parser, translate_mode)
+    terminal.main_window.refresh_table()
     return msg_list

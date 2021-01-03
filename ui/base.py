@@ -19,12 +19,6 @@ class CursesWindow:
         self.cwindow.refresh()
         self.focused = False
 
-    def refresh(self):
-        """
-        refreshes the curses window
-        """
-        self.cwindow.refresh()
-
     def redraw(self):
         """
         redraws the window, according to its focus status

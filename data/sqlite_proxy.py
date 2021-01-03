@@ -13,7 +13,7 @@ class SQLiteProxy:
     def create_table(self, name: str):
         if self.connection is None:
             return
-        sql_table_crt = f"""CREATE TABLE {name} (
+        sql_table_crt = f"""create table {name} (
                                 transaction_id integer PRIMARY KEY,
                                 datetime text NOT NULL,
                                 amount REAL NOT NULL,
@@ -29,7 +29,7 @@ class SQLiteProxy:
     def drop_table(self, name: str):
         if self.connection is None:
             return
-        sql_table_dlt = f"DROP TABLE {name};"
+        sql_table_dlt = f"drop table {name};"
         cursor = self.connection.cursor()
         cursor.execute(sql_table_dlt)
         self.connection.commit()
@@ -38,13 +38,13 @@ class SQLiteProxy:
         if self.connection is None:
             return
         # ISO8601: YYYY-MM-DD HH:MM:SS.SSS
-        sql_insert = f"""INSERT INTO {table} (datetime,
+        sql_insert = f"""insert into {table} (datetime,
                                               amount,
                                               category,
                                               subcategory,
                                               business,
                                               note)
-                                              VALUES(?, ?, ?, ?, ?, ?);"""
+                                              values(?, ?, ?, ?, ?, ?);"""
         record_tuple = (record.t_datetime.isoformat(' '), record.amount, record.category,\
                         record.subcategory, record.business, record.note)
         cursor = self.connection.cursor()
@@ -59,9 +59,11 @@ class SQLiteProxy:
     def edit_record(self):
         pass
 
-    def query(self, qstr: str):
-        pass
-
+    def query(self, query: str) -> list:
+        cursor = self.connection.cursor()
+        cursor.execute(query)
+        return cursor.fetchall()
+        
 
     def db_close(self):
         self.connection.close()

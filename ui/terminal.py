@@ -12,13 +12,12 @@ import time
 
 class TerminalWindow(CursesWindow):
     def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
-                 overview_window: CursesWindow, database: SQLiteProxy):
+                 main_window: CursesWindow, database: SQLiteProxy):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
 
         # good stuff
         self.scroll = 0
-        self.overview_window = overview_window
-        self.current_account = ''
+        self.main_window = main_window
         self.database = database
         self.cursor_x = 0
         
@@ -44,9 +43,7 @@ class TerminalWindow(CursesWindow):
                 self.command_history.append(line.strip())
         except FileNotFoundError:
             self.terminal_history.append("could not open command history file")
-
-        self.warmup(True)
-        self.redraw()
+        self.warmup()
 
     def redraw(self):
         """
@@ -118,9 +115,9 @@ class TerminalWindow(CursesWindow):
         elif task_id == 301:
             return defined_tasks.set.account(self, cmd_parts[0])
         elif task_id == 401:
-            return defined_tasks.parse.mkcsv(self, stdscr, self.current_account, cmd_parts[0], cmd_parts[1])
+            return defined_tasks.parse.mkcsv(self, stdscr, cmd_parts[0], cmd_parts[1])
         elif task_id == 501:
-            return [defined_tasks.delete.account(self.database, cmd_parts[0])]
+            return [defined_tasks.delete.account(self, cmd_parts[0])]
         elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()
@@ -129,7 +126,7 @@ class TerminalWindow(CursesWindow):
         elif task_id == 100002:
             self.terminal_history = []
             self.scroll = 0
-            return None
+            return []
         else:
             return ["don't know how to do this task yet"]
 
@@ -157,9 +154,8 @@ class TerminalWindow(CursesWindow):
                 if self.command != '':
                     self.command_history.append(self.command)
                     self.terminal_history.append(">>> " + self.command)
-                    ret_list = self.parse_and_execute(stdscr)
-                    if ret_list is not None:
-                        self.terminal_history += ret_list
+                    results = self.parse_and_execute(stdscr)
+                    self.terminal_history += results
                 self.command = ''
                 self.cmd_history_index = 0
                 self.cursor_x = 0
@@ -293,7 +289,7 @@ class TerminalWindow(CursesWindow):
             for i in range(begin, end):
                 f.write(f"{self.command_history[i]}\n")
     
-    def warmup(self, print_results: bool):
+    def warmup(self):
         """
         loads a text file in ./database/.warmup and executes all
         the commands inside.
@@ -305,10 +301,8 @@ class TerminalWindow(CursesWindow):
                 if line != '':
                     self.command = line
                     results = self.parse_and_execute(None)
-                    if print_results:
-                        self.terminal_history += results
+                    self.terminal_history += results
                     self.command = ''
         except FileNotFoundError:
             self.terminal_history.append("could not open warmup file")
-        
         self.redraw()

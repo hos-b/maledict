@@ -1,0 +1,101 @@
+import curses
+
+from ui.base import CursesWindow
+from ui.elements.list import CursesList
+
+from data.sqlite_proxy import SQLiteProxy
+from data.account import Account
+from data.record import Record
+from datetime import date, datetime
+
+#pylint: disable=E1101
+
+class MainWindow(CursesWindow):
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height):
+        """
+        initializes the main window. the main window holds the
+        current account, which acts as a proxy between the ui
+        and the database.
+        """
+        super().__init__(stdscr, w_x, w_y, w_width, w_height)
+        self.account = None
+        # padding on the sides
+        list_width = int(w_width - 2)
+        list_height = int((2 / 3) * self.w_height)
+        self.clist = CursesList(5, 5, list_width, list_height, [], ' | '.join(Record.columns()))
+        self.redraw()
+    
+    def focus(self, enable: bool):
+        """
+        overwriting base due to the extra element
+        """
+        self.focused = enable
+        self.clist.focused = enable
+        self.redraw()
+
+    def redraw(self):
+        """
+        redraws the actions menu
+        """
+        self.cwindow.clear()
+        curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
+        account_str = self.account.name if self.account else 'not set'
+        balance = self.account.balance if self.account else 0.0
+        date_str = datetime.now().strftime("%d.%m.%Y")
+        self.cwindow.addstr(1, 2, f"account: {account_str}", curses_attr)
+        self.cwindow.addstr(2, 2, f"date: {date_str}", curses_attr)
+        self.cwindow.addstr(3, 2, f"balance: {balance:.2f}", curses_attr)
+        self.clist.redraw(self.cwindow, curses_attr)
+        self.cwindow.box()
+        self.cwindow.refresh()
+
+    def change_current_account(self, account: Account):
+        """
+        changes the account on the main window & refreshes the transaction
+        table. if the account is set to none, the table is cleared.
+        """
+        self.account = account
+        if self.account is None:
+            self.clist.items = []
+            self.clist.index = 0
+        else:
+            self.refresh_table()    
+        self.redraw()
+    
+    def refresh_table(self):
+        """
+        refreshes the transaction table to show the latest changes from
+        the database.
+        """
+        str_records = []
+        for record in self.account.records:
+            str_records.append('   '.join(record.to_str()))
+        self.clist.items = str_records
+        self.clist.index = 0
+        self.redraw()
+
+    def loop(self, stdscr) -> str:
+        """
+        main window ui loop
+        """
+        while True:
+            input_char = stdscr.getch()
+            if CursesWindow.is_exit_sequence(input_char):
+                return input_char
+            if input_char == curses.KEY_UP:
+                self.clist.key_up()
+                self.redraw()
+            elif input_char == curses.KEY_DOWN:
+                self.clist.key_down()
+                self.redraw()
+            elif input_char == curses.KEY_PPAGE:
+                self.clist.key_pgup()
+                self.redraw()
+            elif input_char == curses.KEY_NPAGE:
+                self.clist.key_pgdn()
+                self.redraw()
+            elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
+                # opt_idx, opt_str = self.clist.key_enter()
+                # TODO: add functionalities
+                pass
+
