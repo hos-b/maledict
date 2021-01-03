@@ -1,4 +1,7 @@
 **/__pycache__/
 *.pyc
 settings.json
-**/database
+**/database/csv
+database/.command_history
+database/maledict.db
+database/.warmup
