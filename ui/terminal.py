@@ -22,7 +22,6 @@ class TerminalWindow(CursesWindow):
         self.cursor_x = 0
         
         # prediction stuff
-        self.expense_mode = False
         self.prediction = ''
         self.pred_candidates = []
         self.last_tab_press = time.time()
@@ -31,7 +30,7 @@ class TerminalWindow(CursesWindow):
         self.command = ''
         self.terminal_history = []
         self.command_history = []
-        self.cmd_history_index = 0
+        self.history_surf_index = 0
         self.cmd_history_buffer = ''
 
         # loading command yaml file
@@ -109,15 +108,17 @@ class TerminalWindow(CursesWindow):
             return [f"invalid number of args: {current_lvl['args']}"]
         # actually doing the task
         if task_id == 101:
-            return [defined_tasks.add.account(self.database, cmd_parts[0], cmd_parts[1])]
+            return defined_tasks.add.account(self.database, cmd_parts[0], cmd_parts[1])
+        elif task_id == 102:
+            return defined_tasks.add.expense(self, stdscr, cmd_parts[0])
         elif task_id == 201:
-            return [defined_tasks.list.accounts(self.database)]
+            return defined_tasks.list.accounts(self.database)
         elif task_id == 301:
             return defined_tasks.set.account(self, cmd_parts[0])
         elif task_id == 401:
             return defined_tasks.parse.mkcsv(self, stdscr, cmd_parts[0], cmd_parts[1])
         elif task_id == 501:
-            return [defined_tasks.delete.account(self, cmd_parts[0])]
+            return defined_tasks.delete.account(self, cmd_parts[0])
         elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()
@@ -139,7 +140,7 @@ class TerminalWindow(CursesWindow):
             # if should switch window
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char
-            # backspace -------------------------------------------------------------------
+            # backspace, del --------------------------------------------------------------
             elif input_char == curses.KEY_BACKSPACE:
                 if len(self.command) != 0:
                     self.cursor_x = max(0, self.cursor_x - 1)
@@ -149,6 +150,11 @@ class TerminalWindow(CursesWindow):
                         self.command = self.command[:self.cursor_x] + \
                                        self.command[self.cursor_x + 1:]
                     self.redraw()
+            elif input_char == curses.KEY_DC:
+                if len(self.command) != 0 and self.cursor_x < len(self.command):
+                    self.command = self.command[:self.cursor_x] + \
+                                    self.command[self.cursor_x + 1:]
+                    self.redraw()
             # execute ---------------------------------------------------------------------
             elif input_char == curses.KEY_ENTER or input_char == ord('\n'):
                 if self.command != '':
@@ -157,7 +163,7 @@ class TerminalWindow(CursesWindow):
                     results = self.parse_and_execute(stdscr)
                     self.terminal_history += results
                 self.command = ''
-                self.cmd_history_index = 0
+                self.history_surf_index = 0
                 self.cursor_x = 0
                 self.scroll = 0
                 self.redraw()
@@ -191,22 +197,22 @@ class TerminalWindow(CursesWindow):
                 if len(self.command_history) != 0:
                     self.scroll = 0
                     # if we weren't surfing, save the current command in buffer
-                    if self.cmd_history_index == 0:
+                    if self.history_surf_index == 0:
                         self.cmd_history_buffer = self.command
-                    self.cmd_history_index = min(self.cmd_history_index + 1,
+                    self.history_surf_index = min(self.history_surf_index + 1,
                                                  len(self.command_history))
-                    self.command = self.command_history[-self.cmd_history_index]
+                    self.command = self.command_history[-self.history_surf_index]
                     self.cursor_x = len(self.command)
                     self.redraw()
             elif input_char == curses.KEY_DOWN:
-                if self.cmd_history_index != 0:
+                if self.history_surf_index != 0:
                     self.scroll = 0
-                    self.cmd_history_index -= 1
-                    if self.cmd_history_index == 0:
+                    self.history_surf_index -= 1
+                    if self.history_surf_index == 0:
                         self.command = self.cmd_history_buffer
                         self.cursor_x = len(self.command)
                     else:
-                        self.command = self.command_history[-self.cmd_history_index]
+                        self.command = self.command_history[-self.history_surf_index]
                         self.cursor_x = len(self.command)
                     self.redraw()
             # do predictions --------------------------------------------------------------
@@ -215,22 +221,19 @@ class TerminalWindow(CursesWindow):
                 # nothing to predict
                 if len(pred_candidates) == 0:
                     continue
-                if self.expense_mode:
-                    pass
-                else:
-                    # complete the command at the current level
-                    if len(pred_candidates) == 1:
-                        self.cmd_history_index = 0
-                        self.command = self.command[:pred_index] + \
-                                       self.pred_candidates[0] + ' '
-                        self.cursor_x = len(self.command)
-                        self.redraw()
-                    # check double tab
-                    elif (time.time() - self.last_tab_press) < 0.3:
-                        self.terminal_history.append(">>> " + self.command)
-                        self.terminal_history.append(' | '.join(self.pred_candidates))
-                        self.redraw()
-                    self.last_tab_press = time.time()
+                # complete the command at the current level
+                if len(pred_candidates) == 1:
+                    self.history_surf_index = 0
+                    self.command = self.command[:pred_index] + \
+                                    self.pred_candidates[0] + ' '
+                    self.cursor_x = len(self.command)
+                    self.redraw()
+                # check double tab
+                elif (time.time() - self.last_tab_press) < 0.3:
+                    self.terminal_history.append(">>> " + self.command)
+                    self.terminal_history.append(' | '.join(self.pred_candidates))
+                    self.redraw()
+                self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
             elif input_char <= 256:
                 if input_char == ord(' '):
@@ -243,11 +246,11 @@ class TerminalWindow(CursesWindow):
                     self.command = self.command[:self.cursor_x] + chr(input_char) + \
                                    self.command[self.cursor_x:]
                 self.cursor_x += 1
-                self.cmd_history_index = 0
+                self.history_surf_index = 0
                 self.scroll = 0
                 self.redraw()
 
-    def update_predictions(self) -> (list, int):
+    def update_predictions(self, state = None) -> (list, int):
         """
         provides a list of predictions based on the current command
         and the index at which the prediction should be inserted
@@ -257,26 +260,24 @@ class TerminalWindow(CursesWindow):
         for i in reversed(range(len(self.command))):
             if self.command[i] == ' ':
                 pred_index = i + 1
+                break
         self.pred_candidates = []
-        if self.expense_mode:
-            pass
-        else:
-            current_lvl = self.command_dict
-            # parsing the command 
-            while len(cmd_parts) != 0:
-                # go one level deeper, if the segment is complete and correct
-                if cmd_parts[0] in current_lvl:
-                    # too deep
-                    if 'task-id' in current_lvl[cmd_parts[0]]:
-                        break
-                    current_lvl = current_lvl[cmd_parts[0]]
-                    cmd_parts.pop(0)
-                else:
-                    for candidate in current_lvl.keys():
-                        if candidate.startswith(cmd_parts[0]):
-                            self.pred_candidates.append(candidate)
+        current_lvl = self.command_dict
+        # parsing the command 
+        while len(cmd_parts) != 0:
+            # go one level deeper, if the segment is complete and correct
+            if cmd_parts[0] in current_lvl:
+                # too deep
+                if 'task-id' in current_lvl[cmd_parts[0]]:
                     break
-            self.pred_candidates.sort(key=len)
+                current_lvl = current_lvl[cmd_parts[0]]
+                cmd_parts.pop(0)
+            else:
+                for candidate in current_lvl.keys():
+                    if candidate.startswith(cmd_parts[0]):
+                        self.pred_candidates.append(candidate)
+                break
+        self.pred_candidates.sort(key=len)
         return self.pred_candidates, pred_index
 
     def write_command_history(self, count = 20):

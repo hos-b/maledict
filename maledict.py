@@ -67,8 +67,8 @@ try:
     curses.wrapper(main)
 except KeyboardInterrupt:
     finish_up()
-except ValueError:
-    print("unexpected exit. did you ctrl-c in the middle of something?")
-    finish_up()
+# except ValueError:
+#     print("unexpected exit. did you ctrl-c in the middle of something?")
+#     finish_up()
 
 # print(debugstr)

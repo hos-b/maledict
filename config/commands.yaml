@@ -5,7 +5,7 @@ add:
     desc: "add an account and its corresponding database table"
     task-id: 101
   expense:
-    args: []
+    args: ['chronological':'bool']
     desc: "enter expense mode"
     task-id: 102
 
@@ -36,6 +36,17 @@ delete:
     args: {'name':'str'}
     desc: "delete the account"
     task-id: 501
+
+# show commands
+show:
+  all:
+    args: {}
+    desc: "show all expenses"
+    task-id: 601
+  monthly:
+    args: {}
+    desc: "show monthly expenses"
+    task-id: 602
 
 ### terminal specific tasks:
 # exit

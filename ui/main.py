@@ -22,7 +22,8 @@ class MainWindow(CursesWindow):
         # padding on the sides
         list_width = int(w_width - 2)
         list_height = int((2 / 3) * self.w_height)
-        self.clist = CursesList(5, 5, list_width, list_height, [], ' | '.join(Record.columns()))
+        self.clist = CursesList(5, 5, list_width, list_height, [], \
+                                ' | '.join(Record.columns(10, 22, 22, 22, 35)))
         self.redraw()
     
     def focus(self, enable: bool):
@@ -59,7 +60,7 @@ class MainWindow(CursesWindow):
             self.clist.items = []
             self.clist.index = 0
         else:
-            self.refresh_table()    
+            self.refresh_table()
         self.redraw()
     
     def refresh_table(self):
@@ -69,10 +70,13 @@ class MainWindow(CursesWindow):
         """
         str_records = []
         for record in self.account.records:
-            str_records.append('   '.join(record.to_str()))
+            str_records.append('   '.join(record.to_str(10, 22, 22, 22, 35)))
         self.clist.items = str_records
         self.clist.index = 0
         self.redraw()
+    
+    def add_expense_str(self):
+        pass
 
     def loop(self, stdscr) -> str:
         """

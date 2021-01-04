@@ -17,6 +17,7 @@ class CursesList:
         self.scroll = 0
         self.items = items
         self.static_line = static_line
+        self.sl_length = len(self.static_line) if static_line else 0
     
     def redraw (self, cwindow, curses_attr):
         """
@@ -25,7 +26,7 @@ class CursesList:
         after the call.
         """
         if self.static_line:
-            cwindow.addstr(self.y - 2, self.x, ' ' * Record.length(), curses.A_UNDERLINE | curses_attr)
+            cwindow.addstr(self.y - 2, self.x, ' ' * self.sl_length, curses.A_UNDERLINE | curses_attr)
             cwindow.addstr(self.y - 1, self.x, self.static_line, curses.A_UNDERLINE | curses_attr | curses.A_BOLD)
         limit = min(len(self.items), self.l_height)
         for i in range (limit):

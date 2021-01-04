@@ -15,7 +15,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     if terminal.main_window.account == None:
         return ["current account not set"]
     if stdscr is None:
-        return ["cannot run parse mkcsv in warmup mode"]
+        return ["cannot parse mkcsv in warmup mode"]
 
     # tanslate categories ?
     translate_mode = False
@@ -63,7 +63,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     read_input = translate_mode
     while read_input:
         input_char = stdscr.getch()
-        # backspace -------------------------------------------------------------------
+        # backspace, del --------------------------------------------------------------
         if input_char == curses.KEY_BACKSPACE:
             if len(terminal.command) != 0:
                 terminal.cursor_x = max(0, terminal.cursor_x - 1)
@@ -72,6 +72,11 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
                 else:
                     terminal.command = terminal.command[:terminal.cursor_x] + \
                                     terminal.command[terminal.cursor_x + 1:]
+                terminal.redraw()
+        elif input_char == curses.KEY_DC:
+            if len(terminal.command) != 0 and terminal.cursor_x < len(terminal.command):
+                terminal.command = terminal.command[:terminal.cursor_x] + \
+                                terminal.command[terminal.cursor_x + 1:]
                 terminal.redraw()
         # execute ---------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == ord('\n'):

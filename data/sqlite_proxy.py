@@ -54,7 +54,7 @@ class SQLiteProxy:
         sql_table_query = "select name from sqlite_master where type = 'table';"
         cursor = self.connection.cursor()
         cursor.execute(sql_table_query)
-        return cursor.fetchall()
+        return [item[0] for item in cursor.fetchall()]
 
     def edit_record(self):
         pass
