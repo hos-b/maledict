@@ -83,7 +83,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
             if terminal.command != '':
                 terminal.terminal_history.append(">>> " + terminal.command)
                 if len(cats) > 0:
-                    if terminal.command.count(';') > 0:
+                    if ';' in terminal.command > 0:
                         terminal.terminal_history.append("nope")
                     else:
                         parser.categories[cats[0]] = terminal.command
@@ -95,7 +95,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
                         terminal.terminal_history.append(f"enter replacement "
                                                          f"for subcategory {subcats[0]}:")
                 elif len(cats) == 0 and len(subcats) > 0:
-                    if terminal.command.count(';') > 0:
+                    if ';' in terminal.command > 0:
                         terminal.terminal_history.append("nope")
                     else:
                         parser.subcategories[subcats[0]] = terminal.command

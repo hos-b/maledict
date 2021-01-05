@@ -3,6 +3,7 @@ Record class for transactions
 """
 from datetime import datetime
 from datetime import date
+from misc.utils import fit_string
 
 class Record:
     def __init__(self, t_dateteim: datetime, amount: float, \
@@ -19,30 +20,22 @@ class Record:
     def to_str(self, amount_l, cat_l, subcat_l, bus_l, note_l) -> list:
         """
         converts the record to a list of strings and adjusts the length
-        of each element based on the given value. if an element exceeds
-        this limit, ... is appeneded at the point where it overflows.
+        of each element based on the given value. ellipses are added to
+        large strings to indicate the overflow.
         """
         amount_str = str(self.amount)
         if self.amount > 0:
             amount_str = '+' + amount_str
-        cat_str = self.category[:cat_l - 3] + '...' \
-                  if len(self.category) > cat_l else self.category
-        sub_str = self.subcategory[:subcat_l - 3] + '...' \
-                  if len(self.subcategory) > subcat_l else self.subcategory
-        bus_str = self.business[:bus_l - 3] + '...' \
-                  if len(self.business) > bus_l else self.business
-        not_str = self.note[:note_l - 3] + '...' \
-                  if len(self.note) > note_l else self.note
         return ["{}.{}.{}, {}:{}".format(str(self.t_datetime.day).zfill(2),
                                          str(self.t_datetime.month).zfill(2),
                                          str(self.t_datetime.year).zfill(4),
                                          str(self.t_datetime.hour).zfill(2),
                                          str(self.t_datetime.minute).zfill(2)),
                 amount_str.ljust(amount_l),
-                cat_str.ljust(cat_l),
-                sub_str.ljust(subcat_l),
-                bus_str.ljust(bus_l),
-                not_str.ljust(note_l)]
+                fit_string(self.category, cat_l).ljust(cat_l),
+                fit_string(self.subcategory, subcat_l).ljust(subcat_l),
+                fit_string(self.business, bus_l).ljust(bus_l),
+                fit_string(self.note, note_l).ljust(note_l)]
 
     @staticmethod
     def columns(amount_l, cat_l, subcat_l, bus_l, note_l) -> list:

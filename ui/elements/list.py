@@ -1,6 +1,6 @@
 import curses
 from data.record import Record
-
+from misc.utils import fit_string
 class CursesList:
     def __init__(self, x:int, y:int, l_width: int, l_height: int, items: list, static_line = None):
         """
@@ -30,8 +30,7 @@ class CursesList:
             cwindow.addstr(self.y - 1, self.x, self.static_line, curses.A_UNDERLINE | curses_attr | curses.A_BOLD)
         limit = min(len(self.items), self.l_height)
         for i in range (limit):
-            opt_str = self.items[i + self.scroll ] if len(self.items[i + self.scroll ]) < self.l_width \
-                                      else self.items[i + self.scroll ][:self.l_width - 4] + '...'
+            opt_str = fit_string(self.items[i + self.scroll], self.l_width)
             if i == limit - 1 and self.static_line:
                 curses_attr = curses_attr | curses.A_UNDERLINE
             if i == self.index:

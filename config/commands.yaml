@@ -5,7 +5,7 @@ add:
     desc: "add an account and its corresponding database table"
     task-id: 101
   expense:
-    args: ['chronological':'bool']
+    args: {}
     desc: "enter expense mode"
     task-id: 102
 

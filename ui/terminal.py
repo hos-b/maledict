@@ -110,7 +110,7 @@ class TerminalWindow(CursesWindow):
         if task_id == 101:
             return defined_tasks.add.account(self.database, cmd_parts[0], cmd_parts[1])
         elif task_id == 102:
-            return defined_tasks.add.expense(self, stdscr, cmd_parts[0])
+            return defined_tasks.add.expense(self, stdscr)
         elif task_id == 201:
             return defined_tasks.list.accounts(self.database)
         elif task_id == 301:
@@ -185,8 +185,6 @@ class TerminalWindow(CursesWindow):
                 self.cursor_x = min(len(self.command), self.cursor_x + 1)
                 self.redraw()
             elif input_char == curses.KEY_HOME:
-                cursor_y, _ = curses.getsyx()
-                curses.setsyx(cursor_y, self.cursor_x_min)
                 self.cursor_x = 0
                 self.redraw()
             elif input_char == curses.KEY_END:
@@ -253,7 +251,8 @@ class TerminalWindow(CursesWindow):
     def update_predictions(self, state = None) -> (list, int):
         """
         provides a list of predictions based on the current command
-        and the index at which the prediction should be inserted
+        and the index at which the prediction should be inserted.
+        the state indicates the stage in expense mode.
         """
         cmd_parts = self.command.split(' ')
         pred_index = 0
