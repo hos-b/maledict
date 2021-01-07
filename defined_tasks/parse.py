@@ -2,6 +2,7 @@ import csv
 import curses
 from parser.mk_parser import MKParser
 from ui.base import CursesWindow
+from ui.static import WMAIN
 from data.record import Record
 
 def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
@@ -12,7 +13,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     completion and window switching is disabled.
     """
     # exception handling
-    if terminal.main_window.account == None:
+    if terminal.windows[WMAIN].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot parse mkcsv in warmup mode"]
@@ -150,6 +151,6 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
             terminal.scroll = 0
             terminal.redraw()
 
-    terminal.main_window.account.commit_parser(parser, translate_mode)
-    terminal.main_window.refresh_table_records('all')
+    terminal.windows[WMAIN].account.commit_parser(parser, translate_mode)
+    terminal.windows[WMAIN].refresh_table_records('all')
     return msg_list

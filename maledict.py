@@ -3,6 +3,7 @@ import curses
 from ui.main import MainWindow
 from ui.actions import ActionWindow
 from ui.terminal import TerminalWindow
+from ui.static import WTERMINAL, WACTION, WMAIN
 
 from parser.mk_parser import MKParser
 from data.sqlite_proxy import SQLiteProxy
@@ -17,7 +18,7 @@ windows = []
 def wrap_up():
     database.connection.commit()
     database.db_close()
-    windows[2].write_command_history()
+    windows[WTERMINAL].write_command_history()
 
 def main(stdscr):
     global debugstr
@@ -34,9 +35,9 @@ def main(stdscr):
     database = SQLiteProxy('database/maledict.db')
 
     # get overview window
-    windows.append(MainWindow(stdscr, 5, 3, 0.65 * screen_width, 0.75 * screen_height))
-    windows.append(ActionWindow(stdscr, windows[0].max_x + 5, 3, 0.3 * screen_width , 0.75 * screen_height, windows[0]))
-    windows.append(TerminalWindow(stdscr, 5, windows[0].max_y + 1, windows[1].max_x - 5, 0.2 * screen_height, windows[0], database))
+    windows.append(MainWindow(stdscr, 5, 3, 0.65 * screen_width, 0.75 * screen_height, windows))
+    windows.append(ActionWindow(stdscr, windows[WMAIN].max_x + 5, 3, 0.3 * screen_width , 0.75 * screen_height, windows))
+    windows.append(TerminalWindow(stdscr, 5, windows[WMAIN].max_y + 1, windows[WACTION].max_x - 5, 0.2 * screen_height, windows, database))
     
     # initially disable cursor
     curses.curs_set(False)
@@ -54,10 +55,10 @@ def main(stdscr):
 
         # changing window focus
         if break_char == curses.KEY_F1:
-            # focus window 0 (overview)
+            # focus window 0 (main)
             active_window = 0
         elif break_char == curses.KEY_F2:
-            # focus window 2 (cmd)
+            # focus window 2 (terminal)
             active_window = 2
         elif break_char == curses.KEY_F60:
             # focus window 1 (actions)

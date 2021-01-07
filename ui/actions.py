@@ -1,5 +1,5 @@
 import curses
-from ui.static import min_window_x, min_window_y
+from ui.static import WTERMINAL
 from ui.base import CursesWindow
 from ui.elements.list import CursesList
 from data.sqlite_proxy import SQLiteProxy
@@ -7,18 +7,20 @@ from data.sqlite_proxy import SQLiteProxy
 
 class ActionWindow(CursesWindow):
     def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
-                 main_window: CursesWindow):
+                 windows: list):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         self.index = 0
         self.w_width = w_width
-        self.options = ['ADD', 'EDIT', 'VIEW', 'FIND',
-                        'SQL QUERY' ,'SETTINGS']
+        self.options = ['EDIT', 'DELETE', 'CANCEL', 'PLACEHOLDER #1',
+                        'PLACEHOLDER #3','PLACEHOLDER #4','PLACEHOLDER #5',]
         # padding on the sides
         list_width = int(w_width - 4)
         list_height = int(w_height - 3)
         self.clist = CursesList(2, 1, list_width, list_height, self.options)
         # curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-        self.main_window = main_window
+        self.windows = windows
+        # index of the list element that enabled the window
+        self.expense_list_index = -1
         self.redraw()
 
     def focus(self, enable: bool):
@@ -27,6 +29,8 @@ class ActionWindow(CursesWindow):
         """
         self.focused = enable
         self.clist.focused = enable
+        if not enable:
+            self.list_index = -1
         self.redraw()
 
     def redraw(self):
@@ -51,6 +55,15 @@ class ActionWindow(CursesWindow):
                 self.clist.key_down()
                 self.redraw()
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
-                # opt_idx, opt_str = self.clist.key_enter()
-                # TODO: add functionalities
-                pass
+                opt_idx, _ = self.clist.key_enter()
+                if 0 <= opt_idx <= 2:
+                    # if cancel, return focus to main window
+                    if opt_idx == 2:
+                        self.clist.index = 0
+                        return curses.KEY_F1
+                    # edit
+                    self.windows[WTERMINAL].pending_action = opt_idx
+                    self.windows[WTERMINAL].pending_list_index = self.expense_list_index
+                    self.clist.index = 0
+                    # switch to terminal to take care of pending tasks
+                    return curses.KEY_F2

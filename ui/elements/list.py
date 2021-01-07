@@ -34,8 +34,7 @@ class CursesList:
             list_index = i + self.scroll
             opt_str = self.items[list_index] # fit_string(, self.l_width)
             if i == self.index:
-                cwindow.addstr(self.y + i, self.x, opt_str, curses_attr | curses.A_STANDOUT \
-                                                            if self.focused else curses.A_DIM)
+                cwindow.addstr(self.y + i, self.x, opt_str, curses_attr | curses.A_STANDOUT)
             else:
                 cwindow.addstr(self.y + i, self.x, opt_str, curses_attr)
         # draw lower border if we're showing columns

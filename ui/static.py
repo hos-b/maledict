@@ -1,3 +1,3 @@
-
-min_window_x = 5
-min_window_y = 5
+WMAIN = 0
+WACTION = 1
+WTERMINAL = 2

@@ -4,6 +4,7 @@ from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element, parse_expense
 from data.record import Record
 from data.sqlite_proxy import SQLiteProxy
+from ui.static import WMAIN
 
 import curses
 import re
@@ -12,7 +13,7 @@ from datetime import datetime
 
 def expense(terminal, stdscr, index: str):
      # exception handling
-    if terminal.main_window.account == None:
+    if terminal.windows[WMAIN].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot edit expenses in warmup mode"]
@@ -20,11 +21,11 @@ def expense(terminal, stdscr, index: str):
         list_index = int(index, 16)
     except ValueError:
         return [f"expected hex value, got {index}"]
-    if list_index > len(terminal.main_window.account.records):
+    if list_index > len(terminal.windows[WMAIN].account.records):
         return [f"given index does not exist"]
 
     # predictions
-    org_record = terminal.main_window.account.records[list_index].copy()
+    org_record = terminal.windows[WMAIN].account.records[list_index].copy()
     pre_amount_str = '+' + str(org_record.amount) \
                       if org_record.amount > 0 else str(org_record.amount)
     tr_date = org_record.t_datetime
@@ -63,7 +64,7 @@ def expense(terminal, stdscr, index: str):
                 terminal.shadow_index = element_start[1]
                 return
             terminal.shadow_string, predicted_record = predict_business(elements[0], \
-                terminal.command[element_start[1]:], terminal.main_window.account)
+                terminal.command[element_start[1]:], terminal.windows[WMAIN].account)
             terminal.shadow_index = element_start[1]
         elif state == S_CATEGORY:
             if not force_update and predicted_record is not None:
@@ -73,7 +74,7 @@ def expense(terminal, stdscr, index: str):
                 terminal.shadow_index = element_start[2]
                 return
             terminal.shadow_string, predicted_record = predict_category(elements[1], \
-                terminal.command[element_start[2]:], terminal.main_window.account)
+                terminal.command[element_start[2]:], terminal.windows[WMAIN].account)
             terminal.shadow_index = element_start[2]
         elif state == S_NOTE and bool(re.match(terminal.command[element_start[5]:], \
                                       org_record.note, re.I)):
@@ -133,11 +134,11 @@ def expense(terminal, stdscr, index: str):
             # done with editing
             if state == S_NOTE:
                 parsed_record = parse_expense(elements, tr_date, \
-                                              terminal.main_window.account)
-                terminal.main_window.account.update_transaction(list_index, \
+                                              terminal.windows[WMAIN].account)
+                terminal.windows[WMAIN].account.update_transaction(list_index, \
                                                                 parsed_record)
-                terminal.main_window.update_table_row(list_index)
-                terminal.main_window.redraw()
+                terminal.windows[WMAIN].update_table_row(list_index)
+                terminal.windows[WMAIN].redraw()
                 terminal.command = ''
                 terminal.shadow_index = 0
                 terminal.shadow_string = ''
@@ -150,7 +151,7 @@ def expense(terminal, stdscr, index: str):
             # accept & rectify the element, prepare next element
             if len(error) == 0:
                 terminal.command += ' | '
-                elements[state] = rectify_element(elements[state], state, terminal.main_window.account)
+                elements[state] = rectify_element(elements[state], state, terminal.windows[WMAIN].account)
                 # skip payee for income
                 if state == S_AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4

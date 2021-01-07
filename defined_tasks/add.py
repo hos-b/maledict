@@ -4,7 +4,7 @@ from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element, parse_expense
 from data.record import Record
 from data.sqlite_proxy import SQLiteProxy
-
+from ui.static import WMAIN
 import curses
 from sqlite3 import OperationalError as SQLiteOperationalError
 from datetime import datetime
@@ -48,7 +48,7 @@ def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
 
 def expense(terminal, stdscr):
     # exception handling
-    if terminal.main_window.account == None:
+    if terminal.windows[WMAIN].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot add expenses in warmup mode"]
@@ -84,7 +84,7 @@ def expense(terminal, stdscr):
         global predicted_record
         if state == S_BUSINESS:
             terminal.shadow_string, predicted_record = predict_business(elements[0], \
-                terminal.command[element_start[1]:], terminal.main_window.account)
+                terminal.command[element_start[1]:], terminal.windows[WMAIN].account)
             terminal.shadow_index = element_start[1]
         elif state == S_CATEGORY:
             if not force_update and predicted_record is not None:
@@ -92,7 +92,7 @@ def expense(terminal, stdscr):
                 terminal.shadow_index = element_start[2]
                 return
             terminal.shadow_string, predicted_record = predict_category(elements[1], \
-                terminal.command[element_start[2]:], terminal.main_window.account)
+                terminal.command[element_start[2]:], terminal.windows[WMAIN].account)
             terminal.shadow_index = element_start[2]
         else:
             terminal.shadow_string = ''
@@ -107,7 +107,7 @@ def expense(terminal, stdscr):
             kb_interrupt = False
         except KeyboardInterrupt:
             if kb_interrupt or terminal.command == '':
-                terminal.main_window.account.flush_transactions()
+                terminal.windows[WMAIN].account.flush_transactions()
                 terminal.shadow_string = ''
                 terminal.shadow_index = 0
                 return ["expense mode deactivated"]
@@ -150,12 +150,12 @@ def expense(terminal, stdscr):
             # adding the expense
             if state == S_NOTE:
                 parsed_record = parse_expense(elements, tr_date, \
-                                              terminal.main_window.account)
+                                              terminal.windows[WMAIN].account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
-                terminal.main_window.account.add_transaction(parsed_record)
-                terminal.main_window.account.reload_transactions(
-                    terminal.main_window.account.full_query, False)
-                terminal.main_window.refresh_table_records('all transactions')
+                terminal.windows[WMAIN].account.add_transaction(parsed_record)
+                terminal.windows[WMAIN].account.reload_transactions(
+                    terminal.windows[WMAIN].account.full_query, False)
+                terminal.windows[WMAIN].refresh_table_records('all transactions')
                 terminal.terminal_history[-1] = str(elements)
                 elements = ['', '', '', '', '', '']
                 terminal.command = ''
@@ -173,7 +173,7 @@ def expense(terminal, stdscr):
             # accept & rectify the element, prepare next element
             if len(error) == 0:
                 terminal.command += ' | '
-                elements[state] = rectify_element(elements[state], state, terminal.main_window.account)
+                elements[state] = rectify_element(elements[state], state, terminal.windows[WMAIN].account)
                 # skip payee for income
                 if state == S_AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4

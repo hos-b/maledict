@@ -1,5 +1,6 @@
 import curses
 
+from ui.static import WACTION
 from ui.base import CursesWindow
 from ui.elements.list import CursesList
 
@@ -11,7 +12,7 @@ from datetime import date, datetime
 #pylint: disable=E1101
 
 class MainWindow(CursesWindow):
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height):
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: list):
         """
         initializes the main window. the main window holds the
         current account, which acts as a proxy between the ui
@@ -20,6 +21,7 @@ class MainWindow(CursesWindow):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         self.account = None
         self.showing = 'nothing'
+        self.windows = windows
         # padding on the sides
         self.list_width = int(w_width - 2)
         self.list_height = int((3 / 4) * self.w_height)
@@ -123,7 +125,6 @@ class MainWindow(CursesWindow):
                 self.clist.key_pgdn()
                 self.redraw()
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
-                # opt_idx, opt_str = self.clist.key_enter()
-                # TODO: add functionalities
+                self.windows[WACTION].expense_list_index, _ = self.clist.key_enter()
                 return curses.KEY_F60
 

@@ -2,6 +2,7 @@ import yaml
 import curses
 
 import defined_tasks
+from ui.static import WMAIN
 from ui.base import CursesWindow
 from data.sqlite_proxy import SQLiteProxy
 from misc.string_manip import variadic_equals_or
@@ -10,20 +11,24 @@ import time
 
 class TerminalWindow(CursesWindow):
     def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
-                 main_window: CursesWindow, database: SQLiteProxy):
+                 windows: list, database: SQLiteProxy):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
 
         # good stuff
         self.scroll = 0
-        self.main_window = main_window
-        self.database = database
         self.cursor_x = 0
+        self.windows = windows
+        self.database = database
         
         # prediction stuff
         self.shadow_string = ''
         self.shadow_index = 0
         self.last_tab_press = time.time()
         
+        # pending actions
+        self.pending_action = -1
+        self.pending_list_index = 0
+
         # history stuff
         self.command = ''
         self.terminal_history = []
@@ -120,9 +125,9 @@ class TerminalWindow(CursesWindow):
         elif task_id == 501:
             return defined_tasks.delete.account(self, cmd_parts[0])
         elif task_id == 502:
-            return defined_tasks.delete.expense(self.main_window, cmd_parts[0])
+            return defined_tasks.delete.expense(self.windows[WMAIN], cmd_parts[0])
         elif 600<= task_id < 700:
-            return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_parts, self.main_window)
+            return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_parts, self.windows[WMAIN])
         elif task_id == 801:
             return defined_tasks.edit.expense(self, stdscr, cmd_parts[0])
         elif task_id == 100001:
@@ -141,6 +146,9 @@ class TerminalWindow(CursesWindow):
         """
         main loop for capturing input and updating the window.
         """
+        # take care of pending commands & return focus
+        if self.submit_pending_command(stdscr):
+            return curses.KEY_F1
         while True:
             input_char = stdscr.getch()
             # if should switch window
@@ -166,8 +174,7 @@ class TerminalWindow(CursesWindow):
                 if self.command != '':
                     self.command_history.append(self.command)
                     self.terminal_history.append(">>> " + self.command)
-                    results = self.parse_and_execute(stdscr)
-                    self.terminal_history += results
+                    self.terminal_history += self.parse_and_execute(stdscr)
                 self.command = ''
                 self.history_surf_index = 0
                 self.cursor_x = 0
@@ -312,3 +319,32 @@ class TerminalWindow(CursesWindow):
         except FileNotFoundError:
             self.terminal_history.append("could not open warmup file")
         self.redraw()
+
+    def submit_pending_command(self, stdscr) -> bool:
+        """
+        pending commands set by the action window are performed here
+        """
+        pending = self.pending_action != -1
+        if pending:
+            # edit action
+            if self.pending_action == 0:
+                self.terminal_history += \
+                    defined_tasks.edit.expense(self, stdscr, \
+                                               hex(self.pending_list_index))
+            # delete action
+            elif self.pending_action == 1:
+                self.terminal_history += \
+                    defined_tasks.delete.expense(self.windows[WMAIN], \
+                                                 hex(self.pending_list_index))
+                
+
+            # reset
+            self.command = ''
+            self.history_surf_index = 0
+            self.cursor_x = 0
+            self.scroll = 0
+            self.pending_action = -1
+            self.pending_list_index = 0
+            self.redraw()
+            return pending
+            
