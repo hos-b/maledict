@@ -74,9 +74,6 @@ class MainWindow(CursesWindow):
         self.clist.items = str_records
         self.clist.index = 0
         self.redraw()
-    
-    def add_expense_str(self):
-        pass
 
     def loop(self, stdscr) -> str:
         """

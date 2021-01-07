@@ -97,9 +97,15 @@ class Account:
         considered before marking the amount|business as irrelevant.
         min_occurance is self-explanatory.
         """
-        last_date = self.records[0].t_datetime - timedelta(days=31 * months)
+        last_date = None
+        try:
+            last_date = self.records[0].t_datetime - timedelta(days=31 * months)
+        except OverflowError:
+            last_date = self.records[-1].t_datetime
 
+        # amount -> list of records and their occurance count
         amount_dict = {}
+        # business name -> list of records and their occurance count
         biznes_dict = {}
 
         current_index = 0

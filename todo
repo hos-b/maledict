@@ -1,9 +1,9 @@
-* expense mode
-* state indicator in exepnse mode
+# definitely doing
 * implement action menu items
-* implement show commands
-* predictions for expense mode
-* export to CSV
+* implement show commands with SQL
 * SQL commands
+* export to CSV
+
+# nice to have but meh
 * add inverse video text mode for terminal
 * add scroll bars

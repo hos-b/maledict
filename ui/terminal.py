@@ -4,11 +4,9 @@ import curses
 import defined_tasks
 from ui.base import CursesWindow
 from data.sqlite_proxy import SQLiteProxy
-from misc.utils import variadic_equals_or
+from misc.string_manip import variadic_equals_or
 import time
 #pylint: disable=E1101
-
-
 
 class TerminalWindow(CursesWindow):
     def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
@@ -22,8 +20,8 @@ class TerminalWindow(CursesWindow):
         self.cursor_x = 0
         
         # prediction stuff
-        self.prediction = ''
-        self.pred_candidates = []
+        self.shadow_string = ''
+        self.shadow_index = 0
         self.last_tab_press = time.time()
         
         # history stuff
@@ -59,6 +57,8 @@ class TerminalWindow(CursesWindow):
         for i in range (self.w_height - 2):
             if visible_history == 0:
                 self.cwindow.addstr(i + 1, 2, ">>> ", curses_attr)
+                if self.shadow_string != '':
+                    self.cwindow.addstr(i + 1, 6 + self.shadow_index, self.shadow_string, curses.A_DIM)
                 self.cwindow.addstr(i + 1, 6, self.command, curses_attr)
                 self.cwindow.move(i + 1, self.cursor_x + 6)
                 break
@@ -215,7 +215,7 @@ class TerminalWindow(CursesWindow):
                     self.redraw()
             # do predictions --------------------------------------------------------------
             elif input_char == ord('\t'):
-                pred_candidates, pred_index = self.update_predictions()
+                pred_candidates, pred_index = self.get_command_predictions()
                 # nothing to predict
                 if len(pred_candidates) == 0:
                     continue
@@ -223,17 +223,17 @@ class TerminalWindow(CursesWindow):
                 if len(pred_candidates) == 1:
                     self.history_surf_index = 0
                     self.command = self.command[:pred_index] + \
-                                    self.pred_candidates[0] + ' '
+                                    pred_candidates[0] + ' '
                     self.cursor_x = len(self.command)
                     self.redraw()
                 # check double tab
                 elif (time.time() - self.last_tab_press) < 0.3:
                     self.terminal_history.append(">>> " + self.command)
-                    self.terminal_history.append(' | '.join(self.pred_candidates))
+                    self.terminal_history.append(' | '.join(pred_candidates))
                     self.redraw()
                 self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
-            elif input_char <= 256:
+            elif 32 <= input_char <= 154:
                 if input_char == ord(' '):
                     # leading spaces don't count
                     if len(self.command) == 0:
@@ -248,7 +248,7 @@ class TerminalWindow(CursesWindow):
                 self.scroll = 0
                 self.redraw()
 
-    def update_predictions(self, state = None) -> (list, int):
+    def get_command_predictions(self, state = None) -> (list, int):
         """
         provides a list of predictions based on the current command
         and the index at which the prediction should be inserted.
@@ -260,7 +260,7 @@ class TerminalWindow(CursesWindow):
             if self.command[i] == ' ':
                 pred_index = i + 1
                 break
-        self.pred_candidates = []
+        pred_candidates = []
         current_lvl = self.command_dict
         # parsing the command 
         while len(cmd_parts) != 0:
@@ -274,10 +274,10 @@ class TerminalWindow(CursesWindow):
             else:
                 for candidate in current_lvl.keys():
                     if candidate.startswith(cmd_parts[0]):
-                        self.pred_candidates.append(candidate)
+                        pred_candidates.append(candidate)
                 break
-        self.pred_candidates.sort(key=len)
-        return self.pred_candidates, pred_index
+        pred_candidates.sort(key=len)
+        return pred_candidates, pred_index
 
     def write_command_history(self, count = 20):
         """

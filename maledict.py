@@ -14,7 +14,7 @@ debugstr = ""
 database = None
 windows = []
 
-def finish_up():
+def wrap_up():
     database.connection.commit()
     database.db_close()
     windows[2].write_command_history()
@@ -66,9 +66,9 @@ def main(stdscr):
 try:
     curses.wrapper(main)
 except KeyboardInterrupt:
-    finish_up()
+    wrap_up()
 # except ValueError:
 #     print("unexpected exit. did you ctrl-c in the middle of something?")
-#     finish_up()
+#     wrap_up()
 
 # print(debugstr)

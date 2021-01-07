@@ -135,7 +135,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
             terminal.cursor_x = len(terminal.command)
             terminal.redraw()
         # normal input ----------------------------------------------------------------
-        elif input_char <= 256:
+        elif 32 <= input_char <= 154:
             if input_char == ord(' '):
                 # leading spaces don't count
                 if len(terminal.command) == 0:
