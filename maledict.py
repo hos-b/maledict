@@ -35,7 +35,7 @@ def main(stdscr):
 
     # get overview window
     windows.append(MainWindow(stdscr, 5, 3, 0.65 * screen_width, 0.75 * screen_height))
-    windows.append(ActionWindow(stdscr, windows[0].max_x + 5, 3, 0.3 * screen_width , 0.75 *screen_height, windows[0]))
+    windows.append(ActionWindow(stdscr, windows[0].max_x + 5, 3, 0.3 * screen_width , 0.75 * screen_height, windows[0]))
     windows.append(TerminalWindow(stdscr, 5, windows[0].max_y + 1, windows[1].max_x - 5, 0.2 * screen_height, windows[0], database))
     
     # initially disable cursor
@@ -57,11 +57,11 @@ def main(stdscr):
             # focus window 0 (overview)
             active_window = 0
         elif break_char == curses.KEY_F2:
-            # focus window 1 (actions)
-            active_window = 1
-        elif break_char == curses.KEY_F3:
             # focus window 2 (cmd)
             active_window = 2
+        elif break_char == curses.KEY_F60:
+            # focus window 1 (actions)
+            active_window = 1
 
 try:
     curses.wrapper(main)

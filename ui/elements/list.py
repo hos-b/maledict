@@ -66,7 +66,6 @@ class CursesList:
             max_scroll = len(self.items) - self.l_height
             if max_scroll > 0:
                 self.scroll = min(self.scroll + self.l_height, max_scroll)
-        
 
     def key_enter(self) -> (int, str):
         return self.index, self.items[self.index]

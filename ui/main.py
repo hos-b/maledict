@@ -19,10 +19,11 @@ class MainWindow(CursesWindow):
         """
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         self.account = None
+        self.showing = 'nothing'
         # padding on the sides
-        list_width = int(w_width - 2)
-        list_height = int((2 / 3) * self.w_height)
-        self.clist = CursesList(5, 5, list_width, list_height, [], \
+        self.list_width = int(w_width - 2)
+        self.list_height = int((3 / 4) * self.w_height)
+        self.clist = CursesList(5, 5, self.list_width, self.list_height, [], \
                                 ' | '.join(Record.columns(10, 22, 22, 22, 35)))
         self.redraw()
     
@@ -43,10 +44,11 @@ class MainWindow(CursesWindow):
         account_str = self.account.name if self.account else 'not set'
         balance = self.account.balance if self.account else 0.0
         date_str = datetime.now().strftime("%d.%m.%Y")
-        self.cwindow.addstr(1, 2, f"account: {account_str}", curses_attr)
-        self.cwindow.addstr(2, 2, f"date: {date_str}", curses_attr)
-        self.cwindow.addstr(3, 2, f"balance: {balance:.2f}", curses_attr)
+        self.cwindow.addstr(1, 5, f"account: {account_str}", curses_attr)
+        self.cwindow.addstr(2, 5, f"date: {date_str}", curses_attr)
+        self.cwindow.addstr(3, 5, f"balance: {balance:.2f}", curses_attr)
         self.clist.redraw(self.cwindow, curses_attr)
+        self.cwindow.addstr(7 + self.list_height, 5, f"showing: {self.showing}", curses_attr)
         self.cwindow.box()
         self.cwindow.refresh()
 
@@ -59,11 +61,13 @@ class MainWindow(CursesWindow):
         if self.account is None:
             self.clist.items = []
             self.clist.index = 0
+            self.showing = 'nothing'
         else:
-            self.refresh_table()
+            self.refresh_table_records('all transactions')
+
         self.redraw()
     
-    def refresh_table(self):
+    def refresh_table_records(self, label: str):
         """
         refreshes the transaction table to show the latest changes from
         the database.
@@ -71,8 +75,11 @@ class MainWindow(CursesWindow):
         str_records = []
         for record in self.account.records:
             str_records.append('   '.join(record.to_str(10, 22, 22, 22, 35)))
+        # del self.clist.items
         self.clist.items = str_records
         self.clist.index = 0
+        self.clist.scroll = 0
+        self.showing = label
         self.redraw()
 
     def loop(self, stdscr) -> str:
@@ -98,5 +105,5 @@ class MainWindow(CursesWindow):
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 # opt_idx, opt_str = self.clist.key_enter()
                 # TODO: add functionalities
-                pass
+                return curses.KEY_F60
 

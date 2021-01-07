@@ -151,5 +151,5 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
             terminal.redraw()
 
     terminal.main_window.account.commit_parser(parser, translate_mode)
-    terminal.main_window.refresh_table()
+    terminal.main_window.refresh_table_records('all')
     return msg_list

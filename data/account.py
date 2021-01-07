@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from data.sqlite_proxy import SQLiteProxy
 from data.record import Record
 from parser.base import ParserBase
+import re
 
 class Account:
     """
@@ -21,23 +22,30 @@ class Account:
         # extracted patterns
         self.recurring_amounts = {}
         self.recurring_biz = {}
-        self.reload_transactions(True)
+        self.full_query =  f'SELECT * FROM {self.name} ORDER BY datetime(datetime) DESC;'
+        self.reload_transactions(self.full_query, True)
         self.find_recurring(6, 0.7, 3, 5)
 
-    def reload_transactions(self, update: bool):
+    def reload_transactions(self, query: str, update_dicts: bool):
         """
         reloads the transactions from the database to reflect the latest
         changes. if update is set to true, the dicts of the object are
         also updated.
         """
-        db_records = self.database.query(f"SELECT * FROM {self.name} "
-                                          "ORDER BY datetime(datetime) DESC;")
+        # i
+        update_balance = bool(re.match(query, self.full_query, re.I))
+        if update_balance:
+            self.balance = 0.0
+
+        db_records = self.database.query(query)
         self.records = []
         for (t_id, dt_str, amount, category, \
              subcategory, business, note) in db_records:
-            if update:
+            if update_dicts:
                 self.update_dicts(category, subcategory, business)
-            self.balance += amount
+            # if reloading all 
+            if update_balance:
+                self.balance += amount
             self.records.append(Record(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"),
                                        amount,
                                        category,
@@ -48,11 +56,24 @@ class Account:
 
     def add_transaction(self, record: Record):
         """
-        adds a transaction to the database
+        adds a transaction to the database, updates the dictionaries
         """
         self.update_dicts(record.category, record.subcategory, record.business)
         self.database.add_record(self.name, record)
         self.balance += record.amount
+
+    def delete_transaction(self, list_index: int):
+        """
+        deletes a transaction given the index
+        """
+        self.database.delete_record(self.name, self.records[list_index].transaction_id)
+
+    def update_transaction(self, list_index: int, updated_record: Record):
+        """
+        updates a transaction given the index
+        """
+        self.database.update_record(self.name, \
+             self.records[list_index].transaction_id, updated_record)
 
     def flush_transactions(self):
         """
@@ -62,8 +83,8 @@ class Account:
 
     def commit_parser(self, parser: ParserBase, translate_mode: bool):
         """
-        adds all the read records in the parser to the account &
-        the corresponding database table.
+        adds all the read records in the parser to the account and
+        the corresponding database table, then reloads the records
         """
         for record in parser.records:
             if translate_mode:
@@ -73,7 +94,7 @@ class Account:
                     record.subcategory = parser.subcategories[record.subcategory]
             self.add_transaction(record)
         self.flush_transactions()
-        self.reload_transactions(False)
+        self.reload_transactions(self.full_query, False)
 
     def update_dicts(self, category: str, subcategory: str, business: str):
         """

@@ -56,14 +56,30 @@ class SQLiteProxy:
         cursor.execute(sql_table_query)
         return [item[0] for item in cursor.fetchall()]
 
-    def edit_record(self):
-        pass
+    def update_record(self, table: str, transaction_id: id, record: Record):
+        sql_update = f"""update {table} set datetime = ?,
+                                            amount = ?,
+                                            category = ?,
+                                            subcategory = ?,
+                                            business = ?,
+                                            note = ?
+                                            where transaction_id = ?;"""
+        update_tuple = (record.t_datetime.isoformat(' '), record.amount, record.category,\
+                        record.subcategory, record.business, record.note, record.transaction_id)
+        cursor = self.connection.cursor()
+        cursor.execute(sql_update, update_tuple)
+        self.connection.commit()
+
+    def delete_record(self, table: str, transaction_id: id):
+        sql_remove = f'delete from {table} where transaction_id = ?'
+        cursor = self.connection.cursor()
+        cursor.execute(sql_remove)
+        self.connection.commit()
 
     def query(self, query: str) -> list:
         cursor = self.connection.cursor()
         cursor.execute(query)
         return cursor.fetchall()
-        
 
     def db_close(self):
         self.connection.close()

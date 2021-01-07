@@ -41,6 +41,6 @@ class CursesWindow:
 
     @staticmethod
     def is_exit_sequence(input_char):
-        if input_char == curses.KEY_F1 or input_char == curses.KEY_F2 or input_char == curses.KEY_F3:
+        if input_char == curses.KEY_F1 or input_char == curses.KEY_F2:
             return True
         return False

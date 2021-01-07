@@ -36,6 +36,10 @@ delete:
     args: {'name':'str'}
     desc: "delete the account"
     task-id: 501
+  expense:
+    args: {'transaction_id':'int'}
+    desc: "delete an expense, given its id"
+    task-id: 502
 
 # show commands
 show:
@@ -43,10 +47,45 @@ show:
     args: {}
     desc: "show all expenses"
     task-id: 601
+    sql-query: "SELECT * FROM {} ORDER BY datetime(datetime) DESC;"
   monthly:
-    args: {}
+    args: {'month.year':'str'}
     desc: "show monthly expenses"
     task-id: 602
+    sql-query: "SELECT * FROM {} WHERE date(substr(datetime, 1, 10)) >= '{}' AND date(substr(datetime, 1, 10)) <= '{}' ORDER BY datetime(datetime) DESC;"
+  yearly:
+    args: {'year':'int'}
+    desc: "show yearly expenses"
+    task-id: 603
+    sql-query: "SELECT * FROM {} WHERE date(substr(datetime, 1, 10)) >= '{}' AND date(substr(datetime, 1, 10)) <= '{}' ORDER BY datetime(datetime) DESC;"
+  between:
+    args: {'start_date':'str', 'end_date':'str'}
+    desc: "show expenses between two dates. 'now' is a valid date"
+    task-id: 604
+    sql-query: "SELECT * FROM {} WHERE date(substr(datetime, 1, 10)) >= '{}' AND date(substr(datetime, 1, 10)) <= '{}' ORDER BY datetime(datetime) DESC;"
+  last:
+    week:
+      args: {}
+      desc: "show expenses from last week"
+      task-id: 605
+      sql-query: "SELECT * FROM {} WHERE datetime BETWEEN datetime('now', '-6 days') AND datetime('now', 'localtime') ORDER BY datetime(datetime) DESC;"
+    month:
+      args: {}
+      desc: "show expenses from last month"
+      task-id: 606
+      sql-query: "SELECT * FROM {} WHERE datetime BETWEEN datetime('now', 'start of month') AND datetime('now', 'localtime') ORDER BY datetime(datetime) DESC;"
+    year:
+      args: {}
+      desc: "show expenses from last year"
+      task-id: 607
+      sql-query: "SELECT * FROM {} WHERE datetime BETWEEN datetime('now', 'start of year') AND datetime('now', 'localtime') ORDER BY datetime(datetime) DESC;"
+
+# export commands
+export:
+  csv:
+    args: {'file_path': 'str', 'translate_categories':'bool'}
+    desc: "export expenses from the current account"
+    task-id: 701
 
 ### terminal specific tasks:
 # exit

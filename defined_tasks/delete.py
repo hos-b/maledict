@@ -14,3 +14,6 @@ def account(terminal, name: str) -> str:
         terminal.main_window.change_current_account(None)
 
     return [f"successfully deleted {name}"]
+
+def expense() -> str:
+    pass

@@ -3,3 +3,5 @@ import defined_tasks.parse
 import defined_tasks.list
 import defined_tasks.delete
 import defined_tasks.set
+import defined_tasks.show
+import defined_tasks.edit

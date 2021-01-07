@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 def fit_string(input_str: str, length: int) -> str:
     """
@@ -17,6 +17,24 @@ def format_date(dt: datetime) -> str:
 def format_time(dt: datetime) -> str:
     return str(dt.hour).zfill(2) + ':' + \
            str(dt.minute).zfill(2)
+
+def parse_date(date_str: str) -> date:
+    if date_str.count('.') == 1:
+        parts = date_str.split('.')
+        try:
+            day, month, year = 1, int(parts[0]), int(parts[1])
+            return date(year=year, month=month, day=day)
+        except ValueError:
+            return None
+    elif date_str.count('.') == 2:
+        parts = date_str.split('.')
+        try:
+            day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
+            return date(year=year, month=month, day=day)
+        except ValueError:
+            return None
+    else:
+        return None
 
 # string checks ----------------------------------------------------------------------------
 def variadic_contains_or(name: str, *args):
