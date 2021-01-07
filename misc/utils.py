@@ -1,83 +1,68 @@
 from datetime import date, time, datetime
 from calendar import monthrange
-
-def variadic_contains_or(name: str, *args):
-    for arg in args:
-        if arg in name:
-            return True, arg
-    return False, ''
-
-def variadic_equals_or(first: str, *argv):  
-    for arg in argv:  
-        if first == arg:
-            return True
-    return False
-
-def fit_string(input_str: str, length: int) -> str:
-    """
-    returns input_str if len(input_str) <= length;
-    otherwise it replaces the overflowing part with
-    ellipses
-    """
-    return input_str[:length - 3] + '...' \
-           if len(input_str) > length else input_str
+from data.record import Record
+from misc.string_manip import variadic_contains_or
+from data.account import Account
+from datetime import timedelta
+import re
 
 def check_input(input_str: str, state: int) -> list:
     """
     checks whether the input at state x in expense mode is correct
     """
     if state == 0:
-        if input_str.replace('.', '').isnumeric() and \
-           input_str.count('.') < 2:
-            return []
-        else:
-            return ["incorrect format for amount. use EUR.CENT"]
+        try:
+            float(input_str)
+            return ''
+        except:
+            return 'incorrect format for amount. use EUR.CENT'
     elif state == 1 or state == 2:
         forbidden, ch = variadic_contains_or(input_str, '/', '\\','\'', '\"', '!', '?',\
-                                                        '+', '=', '%', '*', '&', '^',\
-                                                        '@', '#', '$', '~', '.', '`',\
-                                                        '[', ']', '(', ')', '[', ']')
+                                                        '+', '=', '%', '*', ';', '^',\
+                                                        '@', '#', '$', '~', '|', '`',\
+                                                        '[', ']', '(', ')', '[', ']' \
+                                                        '<', '>', '{', '}', '_')
         if forbidden:
-            return [f"string cannot contain {ch}"]
+            return f'string cannot contain {ch}'
         else:
-            return []
+            # category & subcategory in one string
+            if state == 2 and input_str.count(':') > 1:
+                return 'use cat:subcat for new categories'
+            return ''
     elif state == 3:
         year, month, day = input_str.split('.')
         try:
             date(int(year), int(month), int(day))
         except ValueError:
-            return ["invalid date"]
+            return 'invalid date'
         return []
     elif state == 4:
         hour, minute = input_str.split(':')
         try:
             time(int(hour), int(minute))
         except ValueError:
-            return ["invalid time"]
+            return 'invalid time'
         return []
     elif state == 5:
         # TODO: check note? no rules apply ...
         return []
 
-def format_date(dt) -> str:
-    return str(dt.year).zfill(4) + '.' + \
-           str(dt.month).zfill(2) + '.' + \
-           str(dt.day).zfill(2)
-
-def format_time(dt) -> str:
-    return str(dt.hour).zfill(2) + ':' + \
-           str(dt.minute).zfill(2)
-
+# add expense utils ------------------------------------------------------------------------
 def change_datetime(dt: datetime, state: int, substate: int, change: int) -> datetime:
+    # changing date
     if state == 3:
         if substate == 0: return dt.replace(year = max(0, dt.year + change))
         elif substate == 1:
             max_day = monthrange(dt.year, max(dt.month + change, 1))[1]
-            if change < 0: return dt.replace(month = max(dt.month + change, 1), day=min(dt.day, max_day))
-            elif change > 0: return dt.replace(month = min(dt.month + change, 12), day=min(dt.day, max_day))
+            if change < 0: return dt.replace(month = max(dt.month + change, 1), \
+                                             day=min(dt.day, max_day))
+            elif change > 0: return dt.replace(month = min(dt.month + change, 12), \
+                                               day=min(dt.day, max_day))
         elif substate == 2:
             if change < 0: return dt.replace(day = max(dt.day + change, 1))
-            elif change > 0: return dt.replace(day = min(dt.day + change, monthrange(dt.year, dt.month)[1]))
+            elif change > 0: return dt.replace(day = min(dt.day + change,
+                                                         monthrange(dt.year, dt.month)[1]))
+    # changing time
     elif state == 4:
         if substate == 0:
             if change < 0: return dt.replace(hour = max(dt.hour + change, 0))
@@ -85,5 +70,81 @@ def change_datetime(dt: datetime, state: int, substate: int, change: int) -> dat
         elif substate == 1:
             if change < 0: return dt.replace(minute = max(dt.minute + change, 0))
             elif change > 0: return dt.replace(minute = min(dt.minute + change, 59))
+    # increasing or decreasing minute by one to force chronological sort from sqlite
+    elif state == 5:
+        if change < 0: return dt - timedelta(minutes=-change)
+        elif change > 0: return dt + timedelta(minutes=change)
     return dt
 
+def predict_business(amount: str, biz_temp: str, account: Account):
+    if amount in account.recurring_amounts and \
+       bool(re.match(biz_temp, account.recurring_amounts[amount].business, re.I)):
+        return account.recurring_amounts[amount].business, \
+               account.recurring_amounts[amount]
+    elif biz_temp != '':
+        predictions = []
+        for key in account.businesses:
+            if bool(re.match(biz_temp, key, re.I)):
+                predictions.append(key)
+        if len(predictions) != 0:
+            predictions.sort(key=len)
+            return predictions[0], None
+        return '', None
+    else:
+        return '', None
+
+def predict_category(business: str, cat_temp: str, account: Account):
+    if business in account.recurring_biz and \
+       bool(re.match(cat_temp, account.recurring_biz[business].subcategory, re.I)):
+        return account.recurring_biz[business].subcategory, \
+               account.recurring_biz[business]
+    elif cat_temp != '':
+        predictions = []
+        for key in account.categories:
+            if bool(re.match(cat_temp, key, re.I)):
+                predictions.append(key)
+        for key in account.subcategories:
+            if bool(re.match(cat_temp, key, re.I)):
+                predictions.append(key)
+        if len(predictions) != 0:
+            predictions.sort(key=len)
+            return predictions[0], None
+        return '', None
+    else:
+        return '', None
+
+def rectify_element(element: str, state: int, account: Account) -> str:
+    if state == 0:
+        # if there's no sign, it's an expense
+        return '-' + element if element[0].isnumeric() else element
+    # rectify business:
+    elif state == 1:
+        for key in account.businesses:
+            if bool(re.match(element, key, re.I)):
+                return key
+        return element
+    # rectify category/subcategory:
+    elif state == 2:
+        for key in account.categories:
+            if bool(re.match(element, key, re.I)):
+                return key
+        for key in account.subcategories:
+            if bool(re.match(element, key, re.I)):
+                return key
+        return element
+    else:
+        return element
+
+def parse_expense(elements: list, dt: datetime, account: Account) -> Record:
+    """
+    converts the list of strings to a database record
+    """
+    cat = elements[2]
+    subcat = ''
+    if ':' in elements[2]:
+        cat, subcat = elements[2].split(':')
+    elif elements[2] in account.subcategories:
+        cat = account.subcategories[elements[2]]
+        subcat = elements[2]
+    return Record(dt.replace(microsecond=0), float(elements[0]), cat, \
+                  subcat, elements[1], elements[5])

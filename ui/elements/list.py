@@ -1,6 +1,7 @@
 import curses
 from data.record import Record
-from misc.utils import fit_string
+from misc.string_manip import fit_string
+
 class CursesList:
     def __init__(self, x:int, y:int, l_width: int, l_height: int, items: list, static_line = None):
         """

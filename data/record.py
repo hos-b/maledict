@@ -3,7 +3,7 @@ Record class for transactions
 """
 from datetime import datetime
 from datetime import date
-from misc.utils import fit_string
+from misc.string_manip import fit_string
 
 class Record:
     def __init__(self, t_dateteim: datetime, amount: float, \
