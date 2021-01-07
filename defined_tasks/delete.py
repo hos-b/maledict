@@ -15,5 +15,14 @@ def account(terminal, name: str) -> str:
 
     return [f"successfully deleted {name}"]
 
-def expense() -> str:
-    pass
+def expense(main_window, index: str) -> str:
+    try:
+        list_index = int(index, 16)
+    except ValueError:
+        return [f"expected hex value, got {index}"]
+    if list_index > len(main_window.account.records):
+        return [f"given index does not exist"]
+
+    main_window.account.delete_transaction(list_index)
+    main_window.delete_table_row(list_index)
+    return ['expense deleted successfully']

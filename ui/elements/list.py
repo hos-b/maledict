@@ -31,14 +31,16 @@ class CursesList:
             cwindow.addstr(self.y - 1, self.x, self.static_line, curses.A_UNDERLINE | curses_attr | curses.A_BOLD)
         limit = min(len(self.items), self.l_height)
         for i in range (limit):
-            opt_str = fit_string(self.items[i + self.scroll], self.l_width)
-            if i == limit - 1 and self.static_line:
-                curses_attr = curses_attr | curses.A_UNDERLINE
+            list_index = i + self.scroll
+            opt_str = self.items[list_index] # fit_string(, self.l_width)
             if i == self.index:
                 cwindow.addstr(self.y + i, self.x, opt_str, curses_attr | curses.A_STANDOUT \
                                                             if self.focused else curses.A_DIM)
             else:
                 cwindow.addstr(self.y + i, self.x, opt_str, curses_attr)
+        # draw lower border if we're showing columns
+        if self.static_line:
+            cwindow.addstr(self.y + self.l_height, self.x, ' ' * self.sl_length, curses.A_UNDERLINE | curses_attr)
 
     def key_up(self):
         if self.index == 0:

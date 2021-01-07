@@ -17,7 +17,7 @@ class Record:
         self.note = note
         self.transaction_id = transaction_id
 
-    def to_str(self, amount_l, cat_l, subcat_l, bus_l, note_l) -> list:
+    def to_str(self, index:int, index_l, amount_l, cat_l, subcat_l, bus_l, note_l) -> list:
         """
         converts the record to a list of strings and adjusts the length
         of each element based on the given value. ellipses are added to
@@ -26,7 +26,8 @@ class Record:
         amount_str = str(self.amount)
         if self.amount > 0:
             amount_str = '+' + amount_str
-        return ["{}.{}.{}, {}:{}".format(str(self.t_datetime.day).zfill(2),
+        return [hex(index)[2:].zfill(index_l),
+                "{}.{}.{}, {}:{}".format(str(self.t_datetime.day).zfill(2),
                                          str(self.t_datetime.month).zfill(2),
                                          str(self.t_datetime.year).zfill(4),
                                          str(self.t_datetime.hour).zfill(2),
@@ -38,11 +39,12 @@ class Record:
                 fit_string(self.note, note_l).ljust(note_l)]
 
     @staticmethod
-    def columns(amount_l, cat_l, subcat_l, bus_l, note_l) -> list:
+    def columns(index_l, amount_l, cat_l, subcat_l, bus_l, note_l) -> list:
         """
         returns the columns names, center-adjusted with the given ints
         """
-        return ["date and time".center(17),
+        return ["index".center(index_l),
+                "date and time".center(17),
                 "amount".center(amount_l),
                 "category".center(cat_l),
                 "subcategory".center(subcat_l),
@@ -51,4 +53,4 @@ class Record:
 
     def copy(self):
         return Record(self.t_datetime, self.amount, self.category, \
-                      self.subcategory, self.business, self.note)
+                      self.subcategory, self.business, self.note, self.transaction_id)

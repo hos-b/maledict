@@ -59,6 +59,7 @@ def expense(terminal, stdscr):
     terminal.cursor_x = 0
     terminal.redraw()
     tr_date = datetime.now()
+    tr_date = tr_date.replace(second=0, microsecond=0)
     S_AMOUNT = 0; S_BUSINESS = 1; S_CATEGORY = 2
     S_DATE = 3; S_TIME = 4; S_NOTE = 5
     sub_element_start = {S_DATE: [0, 5, 8],
@@ -107,12 +108,16 @@ def expense(terminal, stdscr):
         except KeyboardInterrupt:
             if kb_interrupt or terminal.command == '':
                 terminal.main_window.account.flush_transactions()
+                terminal.shadow_string = ''
+                terminal.shadow_index = 0
                 return ["expense mode deactivated"]
             kb_interrupt = True
             elements = ['', '', '', '', '', '']
             terminal.command = ''
             terminal.cursor_x = 0
             state = sub_state = 0
+            terminal.shadow_string = ''
+            terminal.shadow_index = 0
             terminal.terminal_history[-1] = 'press ctrl + c again to exit expense mode'
             terminal.terminal_history.append(f'{get_hint()}')
             terminal.redraw()
@@ -157,6 +162,8 @@ def expense(terminal, stdscr):
                 terminal.cursor_x = 0
                 state = sub_state = 0
                 terminal.terminal_history.append(f"{get_hint()}")
+                terminal.shadow_string = ''
+                terminal.shadow_index = 0
                 terminal.redraw()
                 continue
             # nothing written?

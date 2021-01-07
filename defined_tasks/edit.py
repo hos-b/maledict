@@ -6,17 +6,35 @@ from data.record import Record
 from data.sqlite_proxy import SQLiteProxy
 
 import curses
+import re
 from sqlite3 import OperationalError as SQLiteOperationalError
 from datetime import datetime
 
-def expense(terminal, record: Record, stdscr):
-    # exception handling
+def expense(terminal, stdscr, index: str):
+     # exception handling
+    if terminal.main_window.account == None:
+        return ["current account not set"]
+    if stdscr is None:
+        return ["cannot edit expenses in warmup mode"]
+    try:
+        list_index = int(index, 16)
+    except ValueError:
+        return [f"expected hex value, got {index}"]
+    if list_index > len(terminal.main_window.account.records):
+        return [f"given index does not exist"]
+
+    # predictions
+    org_record = terminal.main_window.account.records[list_index].copy()
+    pre_amount_str = '+' + str(org_record.amount) \
+                      if org_record.amount > 0 else str(org_record.amount)
+    tr_date = org_record.t_datetime
+    # basic intialization
     terminal.exepnse_mode = True
-    terminal.terminal_history.append("expense mode activated")
+    terminal.terminal_history.append(f"editing record 0x{hex(list_index)[2:].zfill(6)}:"
+            f"{pre_amount_str} on {tr_date.isoformat(' ')} to {org_record.business}")
     terminal.command = ''
     terminal.cursor_x = 0
     terminal.redraw()
-    tr_date = datetime.now()
     S_AMOUNT = 0; S_BUSINESS = 1; S_CATEGORY = 2
     S_DATE = 3; S_TIME = 4; S_NOTE = 5
     sub_element_start = {S_DATE: [0, 5, 8],
@@ -27,8 +45,6 @@ def expense(terminal, record: Record, stdscr):
     elements = ['', '', '', '', '', '']
     state = 0
     sub_state = 0
-    # predictions
-    predicted_record = None
     # some functions ------------------------------------------------------------------
     def input_allowed():
         if state == S_AMOUNT or state == S_BUSINESS or \
@@ -37,25 +53,38 @@ def expense(terminal, record: Record, stdscr):
         return False
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f" {element_hint[state]}:"
-    def update_predictions(force_update: bool):
-        global predicted_record
-        if state == S_BUSINESS:
+    def update_predictions(predicted_record: Record, force_update: bool):
+        if state == S_AMOUNT and bool(re.match(terminal.command, pre_amount_str)):
+            terminal.shadow_string = pre_amount_str
+            terminal.shadow_index = 0
+        elif state == S_BUSINESS:
+            if not force_update and predicted_record is not None:
+                terminal.shadow_string = predicted_record.business
+                terminal.shadow_index = element_start[1]
+                return
             terminal.shadow_string, predicted_record = predict_business(elements[0], \
                 terminal.command[element_start[1]:], terminal.main_window.account)
             terminal.shadow_index = element_start[1]
         elif state == S_CATEGORY:
             if not force_update and predicted_record is not None:
-                terminal.shadow_string = predicted_record.subcategory
+                terminal.shadow_string = predicted_record.subcategory \
+                    if predicted_record.subcategory != '' \
+                    else predicted_record.category
                 terminal.shadow_index = element_start[2]
                 return
             terminal.shadow_string, predicted_record = predict_category(elements[1], \
                 terminal.command[element_start[2]:], terminal.main_window.account)
             terminal.shadow_index = element_start[2]
+        elif state == S_NOTE and bool(re.match(terminal.command[element_start[5]:], \
+                                      org_record.note, re.I)):
+            terminal.shadow_string = org_record.note
+            terminal.shadow_index = element_start[5]
         else:
             terminal.shadow_string = ''
             terminal.shadow_index = 0
     # start accepting input -----------------------------------------------------------
     terminal.terminal_history.append(f"{get_hint()}")
+    update_predictions(org_record, False)
     terminal.redraw()
     kb_interrupt = False
     while terminal.exepnse_mode:
@@ -64,14 +93,15 @@ def expense(terminal, record: Record, stdscr):
             kb_interrupt = False
         except KeyboardInterrupt:
             if kb_interrupt or terminal.command == '':
-                terminal.main_window.account.flush_transactions()
-                return ["expense mode deactivated"]
+                terminal.shadow_string = ''
+                terminal.shadow_index = 0
+                return ["edit mode deactivated"]
             kb_interrupt = True
             elements = ['', '', '', '', '', '']
             terminal.command = ''
             terminal.cursor_x = 0
             state = sub_state = 0
-            terminal.terminal_history[-1] = 'press ctrl + c again to exit expense mode'
+            terminal.terminal_history[-1] = 'press ctrl + c again to exit edit mode'
             terminal.terminal_history.append(f'{get_hint()}')
             terminal.redraw()
             continue
@@ -81,18 +111,18 @@ def expense(terminal, record: Record, stdscr):
                 terminal.cursor_x = max(element_start[state], terminal.cursor_x - 1)
                 if terminal.cursor_x == len(terminal.command) - 1:
                     terminal.command = terminal.command[:terminal.cursor_x]
-                    update_predictions(True)
+                    update_predictions(org_record, True)
                 else:
                     terminal.command = terminal.command[:terminal.cursor_x] + \
                                     terminal.command[terminal.cursor_x + 1:]
-                    update_predictions(True)
+                    update_predictions(org_record, True)
                 terminal.redraw()
         elif input_char == curses.KEY_DC:
             if input_allowed() and len(terminal.command) != 0 and \
                terminal.cursor_x < len(terminal.command):
                 terminal.command = terminal.command[:terminal.cursor_x] + \
                                 terminal.command[terminal.cursor_x + 1:]
-                update_predictions(True)
+                update_predictions(org_record, True)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == ord('\n'):
@@ -100,23 +130,19 @@ def expense(terminal, record: Record, stdscr):
             elements[state] = terminal.command[element_start[state]: \
                                                element_end[state] + 1].strip()
             terminal.redraw()
-            # adding the expense
+            # done with editing
             if state == S_NOTE:
                 parsed_record = parse_expense(elements, tr_date, \
                                               terminal.main_window.account)
-                tr_date = change_datetime(tr_date, state, sub_state, +1)
-                terminal.main_window.account.add_transaction(parsed_record)
-                terminal.main_window.account.reload_transactions(
-                    terminal.main_window.account.full_query, False)
-                terminal.main_window.refresh_table_records('all transactions')
-                terminal.terminal_history[-1] = str(elements)
-                elements = ['', '', '', '', '', '']
+                terminal.main_window.account.update_transaction(list_index, \
+                                                                parsed_record)
+                terminal.main_window.update_table_row(list_index)
+                terminal.main_window.redraw()
                 terminal.command = ''
-                terminal.cursor_x = 0
-                state = sub_state = 0
-                terminal.terminal_history.append(f"{get_hint()}")
+                terminal.shadow_index = 0
+                terminal.shadow_string = ''
                 terminal.redraw()
-                continue
+                return ["edit successful"]
             # nothing written?
             elif elements[state] == '':
                 continue
@@ -141,8 +167,8 @@ def expense(terminal, record: Record, stdscr):
                                         sub_element_start[state][0]
                 else:
                     terminal.cursor_x = len(terminal.command)
+                update_predictions(org_record, False)
                 terminal.terminal_history[-1] = f"{get_hint()}"
-                update_predictions(False)
             # reject & reset input
             else:
                 elements[state] = ''
@@ -243,7 +269,7 @@ def expense(terminal, record: Record, stdscr):
             else:
                 terminal.command = terminal.command[:terminal.cursor_x] + \
                     chr(input_char) + terminal.command[terminal.cursor_x:]
-            update_predictions(True)
+            update_predictions(org_record, True)
             terminal.cursor_x += 1
             terminal.scroll = 0
             terminal.redraw()

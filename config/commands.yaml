@@ -37,8 +37,8 @@ delete:
     desc: "delete the account"
     task-id: 501
   expense:
-    args: {'transaction_id':'int'}
-    desc: "delete an expense, given its id"
+    args: {'list-id':'int'}
+    desc: "delete a transaction given its hex list index"
     task-id: 502
 
 # show commands
@@ -86,6 +86,13 @@ export:
     args: {'file_path': 'str', 'translate_categories':'bool'}
     desc: "export expenses from the current account"
     task-id: 701
+
+# edit commands
+edit:
+  expense:
+    args: {'list-id':'int'}
+    desc: "edit a transaction given its hex list index"
+    task-id: 801
 
 ### terminal specific tasks:
 # exit

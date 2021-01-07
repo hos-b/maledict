@@ -63,17 +63,17 @@ class SQLiteProxy:
                                             subcategory = ?,
                                             business = ?,
                                             note = ?
-                                            where transaction_id = ?;"""
+                                        where transaction_id = ?;"""
         update_tuple = (record.t_datetime.isoformat(' '), record.amount, record.category,\
-                        record.subcategory, record.business, record.note, record.transaction_id)
+                        record.subcategory, record.business, record.note, transaction_id)
         cursor = self.connection.cursor()
         cursor.execute(sql_update, update_tuple)
         self.connection.commit()
 
-    def delete_record(self, table: str, transaction_id: id):
+    def delete_record(self, table: str, transaction_id: int):
         sql_remove = f'delete from {table} where transaction_id = ?'
         cursor = self.connection.cursor()
-        cursor.execute(sql_remove)
+        cursor.execute(sql_remove, (transaction_id,))
         self.connection.commit()
 
     def query(self, query: str) -> list:

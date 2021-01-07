@@ -12,10 +12,12 @@ def check_input(input_str: str, state: int) -> list:
     """
     if state == 0:
         try:
-            float(input_str)
+            value = float(input_str)
             return ''
         except:
             return 'incorrect format for amount. use EUR.CENT'
+        if value == 0.0:
+            return '0.0 is not a valid value'
     elif state == 1 or state == 2:
         forbidden, ch = variadic_contains_or(input_str, '/', '\\','\'', '\"', '!', '?',\
                                                         '+', '=', '%', '*', ';', '^',\

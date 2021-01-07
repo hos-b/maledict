@@ -67,13 +67,17 @@ class Account:
         deletes a transaction given the index
         """
         self.database.delete_record(self.name, self.records[list_index].transaction_id)
+        self.records.pop(list_index)
 
     def update_transaction(self, list_index: int, updated_record: Record):
         """
-        updates a transaction given the index
+        updates a transaction given the index, both in the database and
+        the local records
         """
-        self.database.update_record(self.name, \
-             self.records[list_index].transaction_id, updated_record)
+        transaction_id = self.records[list_index].transaction_id
+        self.database.update_record(self.name, transaction_id, updated_record)
+        self.records[list_index] = updated_record
+        self.records[list_index].transaction_id = transaction_id
 
     def flush_transactions(self):
         """
