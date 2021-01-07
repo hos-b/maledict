@@ -276,7 +276,6 @@ def expense(terminal, stdscr):
             if input_char == ord(' '):
                 # leading spaces don't count
                 if len(terminal.command) == element_start[state]:
-                    terminal.terminal_history.append(f'{len(terminal.command)} == {element_start[state]}')
                     terminal.redraw()
                     continue
             if terminal.cursor_x == len(terminal.command):

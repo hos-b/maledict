@@ -61,7 +61,7 @@ class CursesList:
 
     def key_pgdn(self):
         if self.index < self.l_height - 1:
-            self.index = min(self.l_height - 1, len(self.items))
+            self.index = min(self.l_height - 1, len(self.items) - 1)
         else:
             max_scroll = len(self.items) - self.l_height
             if max_scroll > 0:
