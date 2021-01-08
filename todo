@@ -1,16 +1,16 @@
-# definitely doing
-* export to CSV
-* query mode
-
 # maybe doing
-change index from list index to transaction_id, but again in hex. pros/cons?
-pros:
-+ less total code
-+ could help with query mode
-cons:
-- more coding
-- potentially breaking what's working 
+* change displayed id from list index to transaction_id, but again in hex. pros/cons?
+    pros:
+        + less total code
+        + could help with query mode
+    cons:
+        - more coding
+        - potentially breaking what's working 
 
 # nice to have but meh
-* add inverse video text mode for terminal
+* add inverse video text mode for selected indices in terminal
 * add scroll bars
+
+# not doing
+* supporting all screen sizes
+* supporting resizing

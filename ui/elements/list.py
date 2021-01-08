@@ -26,10 +26,10 @@ class CursesList:
         call of the containing window, i.e. the window's cleared before & refreshed
         after the call.
         """
+        limit = min(len(self.items), self.l_height)
         if self.static_line:
             cwindow.addstr(self.y - 2, self.x, ' ' * self.sl_length, curses.A_UNDERLINE | curses_attr)
             cwindow.addstr(self.y - 1, self.x, self.static_line, curses.A_UNDERLINE | curses_attr | curses.A_BOLD)
-        limit = min(len(self.items), self.l_height)
         for i in range (limit):
             list_index = i + self.scroll
             opt_str = self.items[list_index] # fit_string(, self.l_width)
@@ -40,6 +40,9 @@ class CursesList:
         # draw lower border if we're showing columns
         if self.static_line:
             cwindow.addstr(self.y + self.l_height, self.x, ' ' * self.sl_length, curses.A_UNDERLINE | curses_attr)
+            span_str = f' {self.scroll}-{self.scroll + limit} out of {len(self.items)} '
+            cwindow.addstr(self.y + self.l_height, self.x + self.l_width - len(span_str) - 6, \
+                                            span_str, curses_attr | curses.A_ITALIC)
 
     def key_up(self):
         if self.index == 0:

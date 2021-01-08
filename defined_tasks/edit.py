@@ -30,12 +30,11 @@ def expense(terminal, stdscr, index: str):
                       if org_record.amount > 0 else str(org_record.amount)
     tr_date = org_record.t_datetime
     # basic intialization
-    terminal.exepnse_mode = True
+    edit_mode = True
     terminal.terminal_history.append(f"editing record 0x{hex(list_index)[2:].zfill(6)}:"
             f"{pre_amount_str} on {tr_date.isoformat(' ')} to {org_record.business}")
     terminal.command = ''
     terminal.cursor_x = 0
-    terminal.redraw()
     S_AMOUNT = 0; S_BUSINESS = 1; S_CATEGORY = 2
     S_DATE = 3; S_TIME = 4; S_NOTE = 5
     sub_element_start = {S_DATE: [0, 5, 8],
@@ -55,7 +54,7 @@ def expense(terminal, stdscr, index: str):
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f" {element_hint[state]}:"
     def update_predictions(predicted_record: Record, force_update: bool):
-        if state == S_AMOUNT and bool(re.match(terminal.command, pre_amount_str)):
+        if state == S_AMOUNT and pre_amount_str.startswith(terminal.command):
             terminal.shadow_string = pre_amount_str
             terminal.shadow_index = 0
         elif state == S_BUSINESS:
@@ -84,11 +83,11 @@ def expense(terminal, stdscr, index: str):
             terminal.shadow_string = ''
             terminal.shadow_index = 0
     # start accepting input -----------------------------------------------------------
-    terminal.terminal_history.append(f"{get_hint()}")
     update_predictions(org_record, False)
+    terminal.terminal_history.append(f"{get_hint()}")
     terminal.redraw()
     kb_interrupt = False
-    while terminal.exepnse_mode:
+    while edit_mode:
         try:
             input_char = stdscr.getch()
             kb_interrupt = False
@@ -130,7 +129,6 @@ def expense(terminal, stdscr, index: str):
             element_end[state] = len(terminal.command) - 1
             elements[state] = terminal.command[element_start[state]: \
                                                element_end[state] + 1].strip()
-            terminal.redraw()
             # done with editing
             if state == S_NOTE:
                 parsed_record = parse_expense(elements, tr_date, \

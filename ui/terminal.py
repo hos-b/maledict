@@ -128,8 +128,12 @@ class TerminalWindow(CursesWindow):
             return defined_tasks.delete.expense(self.windows[WMAIN], cmd_parts[0])
         elif 600<= task_id < 700:
             return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_parts, self.windows[WMAIN])
+        elif task_id == 701:
+            return defined_tasks.export.csv(self.windows[0].account, cmd_parts[0])
         elif task_id == 801:
             return defined_tasks.edit.expense(self, stdscr, cmd_parts[0])
+        elif task_id == 901:
+            return defined_tasks.query.sqlite(self, stdscr)
         elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()

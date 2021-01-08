@@ -53,11 +53,10 @@ def expense(terminal, stdscr):
     if stdscr is None:
         return ["cannot add expenses in warmup mode"]
 
-    terminal.exepnse_mode = True
+    exepnse_mode = True
     terminal.terminal_history.append("expense mode activated")
     terminal.command = ''
     terminal.cursor_x = 0
-    terminal.redraw()
     tr_date = datetime.now()
     tr_date = tr_date.replace(second=0, microsecond=0)
     S_AMOUNT = 0; S_BUSINESS = 1; S_CATEGORY = 2
@@ -101,7 +100,7 @@ def expense(terminal, stdscr):
     terminal.terminal_history.append(f"{get_hint()}")
     terminal.redraw()
     kb_interrupt = False
-    while terminal.exepnse_mode:
+    while exepnse_mode:
         try:
             input_char = stdscr.getch()
             kb_interrupt = False

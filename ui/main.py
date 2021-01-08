@@ -19,6 +19,7 @@ class MainWindow(CursesWindow):
         and the database.
         """
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
+        self.disable_actions = False
         self.account = None
         self.showing = 'nothing'
         self.windows = windows
@@ -72,7 +73,7 @@ class MainWindow(CursesWindow):
     def update_table_row(self, index: int):
         """
         updates the table at the given index. called after editing a
-        record
+        record on the account object using update_transaction()
         """
         self.clist.items[index] = '   '.join(self.account.records[index]
                                        .to_str(index, 7, 10, 20, 20, 22, 36))
@@ -90,14 +91,19 @@ class MainWindow(CursesWindow):
         self.clist.index = max(0, index - 1)
         self.redraw()
 
-    def refresh_table_records(self, label: str):
+    def refresh_table_records(self, label: str, custom_records = None):
         """
-        refreshes the transaction table to show the latest changes from
-        the database.
+        refreshes the transaction table to show the latest changes from the
+        the database. if custom records are provided, they will be displayed
+        instead.
         """
         str_records = []
-        for idx, record in enumerate(self.account.records):
-            str_records.append('   '.join(record.to_str(idx, 7, 10, 20, 20, 22, 36)))
+        if custom_records is None:
+            for idx, record in enumerate(self.account.records):
+                str_records.append('   '.join(record.to_str(idx, 7, 10, 20, 20, 22, 36)))
+        else:
+            for idx, record in enumerate(custom_records):
+                str_records.append('   '.join(record.to_str(idx, 7, 10, 20, 20, 22, 36)))
         self.clist.items = str_records
         self.clist.index = 0
         self.clist.scroll = 0
@@ -125,6 +131,7 @@ class MainWindow(CursesWindow):
                 self.clist.key_pgdn()
                 self.redraw()
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
-                self.windows[WACTION].expense_list_index, _ = self.clist.key_enter()
-                return curses.KEY_F60
+                if not self.disable_actions:
+                    self.windows[WACTION].expense_list_index, _ = self.clist.key_enter()
+                    return curses.KEY_F60
 

@@ -32,8 +32,8 @@ class Account:
         changes. if update is set to true, the dicts of the object are
         also updated.
         """
-        # i
-        update_balance = bool(re.match(query, self.full_query, re.I))
+        # if all transactions are being loaded, update balance
+        update_balance = self.full_query.lower().startswith(query.lower())
         if update_balance:
             self.balance = 0.0
 
@@ -66,6 +66,7 @@ class Account:
         """
         deletes a transaction given the index
         """
+        self.balance -= self.records[list_index].amount
         self.database.delete_record(self.name, self.records[list_index].transaction_id)
         self.records.pop(list_index)
 
@@ -75,9 +76,12 @@ class Account:
         the local records
         """
         transaction_id = self.records[list_index].transaction_id
+        old_amount = self.records[list_index].amount
         self.database.update_record(self.name, transaction_id, updated_record)
         self.records[list_index] = updated_record
         self.records[list_index].transaction_id = transaction_id
+        new_amount = self.records[list_index].amount
+        self.balance += (new_amount - old_amount)
 
     def flush_transactions(self):
         """

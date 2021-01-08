@@ -83,7 +83,7 @@ show:
 # export commands
 export:
   csv:
-    args: {'file_path': 'str', 'translate_categories':'bool'}
+    args: {'file_path': 'str'}
     desc: "export expenses from the current account"
     task-id: 701
 
@@ -94,6 +94,11 @@ edit:
     desc: "edit a transaction given its hex list index"
     task-id: 801
 
+# query commands
+query:
+  args: {}
+  desc: "enter query mode"
+  task-id: 901
 ### terminal specific tasks:
 # exit
 exit:
