@@ -232,16 +232,17 @@ class TerminalWindow(CursesWindow):
                     self.redraw()
             # do predictions --------------------------------------------------------------
             elif input_char == ord('\t'):
-                pred_candidates, pred_index = self.get_command_predictions()
+                pred_candidates, pred_insertion_idx, inc_str = self.get_command_predictions()
                 # nothing to predict
                 if len(pred_candidates) == 0:
                     continue
                 # complete the command at the current level
                 if len(pred_candidates) == 1:
-                    self.history_surf_index = 0
-                    self.command = self.command[:pred_index] + \
-                                    pred_candidates[0] + ' '
-                    self.cursor_x = len(self.command)
+                    space = ' '
+                    if len(pred_candidates[0]) - len(self.command) < 0:
+                        space = ''
+                    self.command = self.command.replace(inc_str, pred_candidates[0] + space)
+                    self.cursor_x = pred_insertion_idx + len(pred_candidates[0]) + 1
                     self.redraw()
                 # check double tab
                 elif (time.time() - self.last_tab_press) < 0.3:
@@ -271,11 +272,13 @@ class TerminalWindow(CursesWindow):
         and the index at which the prediction should be inserted.
         the state indicates the stage in expense mode.
         """
-        cmd_parts = self.command.split(' ')
-        pred_index = 0
-        for i in reversed(range(len(self.command))):
+        incomplete_str = None
+        current_cmd = self.command[:self.cursor_x]
+        cmd_parts = current_cmd.split(' ')
+        pred_insertion_idx = 0
+        for i in reversed(range(len(current_cmd))):
             if self.command[i] == ' ':
-                pred_index = i + 1
+                pred_insertion_idx = i + 1
                 break
         pred_candidates = []
         current_lvl = self.command_dict
@@ -283,18 +286,19 @@ class TerminalWindow(CursesWindow):
         while len(cmd_parts) != 0:
             # go one level deeper, if the segment is complete and correct
             if cmd_parts[0] in current_lvl:
-                # too deep
+                # too deep, no predictions
                 if 'task-id' in current_lvl[cmd_parts[0]]:
                     break
                 current_lvl = current_lvl[cmd_parts[0]]
                 cmd_parts.pop(0)
             else:
+                incomplete_str = cmd_parts[0]
                 for candidate in current_lvl.keys():
                     if candidate.startswith(cmd_parts[0]):
                         pred_candidates.append(candidate)
                 break
         pred_candidates.sort(key=len)
-        return pred_candidates, pred_index
+        return pred_candidates, pred_insertion_idx, incomplete_str
 
     def write_command_history(self, count = 20):
         """
