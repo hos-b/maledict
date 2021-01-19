@@ -153,8 +153,22 @@ class TerminalWindow(CursesWindow):
         # take care of pending commands & return focus
         if self.submit_pending_command(stdscr):
             return curses.KEY_F1
+        kb_interrupt = False
         while True:
-            input_char = stdscr.getch()
+            try:
+                input_char = stdscr.getch()
+                kb_interrupt = False
+            except KeyboardInterrupt:
+                if kb_interrupt or self.command == '':
+                    return curses.KEY_F50
+                self.command = ''
+                self.cursor_x = 0
+                self.history_surf_index = 0
+                self.scroll = 0
+                kb_interrupt = True
+                self.terminal_history.append('press ctrl-c again to exit maledict')
+                self.redraw()
+                continue
             # if should switch window
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char
@@ -232,22 +246,26 @@ class TerminalWindow(CursesWindow):
                     self.redraw()
             # do predictions --------------------------------------------------------------
             elif input_char == ord('\t'):
-                pred_candidates, pred_insertion_idx, inc_str = self.get_command_predictions()
+                p_candidates, p_insert_index, i_str = self.get_command_predictions()
                 # nothing to predict
-                if len(pred_candidates) == 0:
+                if len(p_candidates) == 0:
                     continue
                 # complete the command at the current level
-                if len(pred_candidates) == 1:
-                    space = ' '
-                    if len(pred_candidates[0]) - len(self.command) < 0:
-                        space = ''
-                    self.command = self.command.replace(inc_str, pred_candidates[0] + space)
-                    self.cursor_x = pred_insertion_idx + len(pred_candidates[0]) + 1
+                if len(p_candidates) == 1:
+                    pre_str = self.command[:p_insert_index]
+                    post_str = self.command[p_insert_index + len(i_str):]
+                    # self.terminal_history.append(f'inc: "{i_str}", pre: "{pre_str}", post: "{post_str}", pred: "{p_candidates[0]}"')
+                    post_str = ' ' if (post_str == '' and \
+                                       not p_candidates[0].endswith(' ')) \
+                                   else post_str
+                    self.command = pre_str + p_candidates[0] + post_str
+                    self.cursor_x = min(p_insert_index + len(p_candidates[0]) + 1, \
+                                        len(self.command))
                     self.redraw()
                 # check double tab
                 elif (time.time() - self.last_tab_press) < 0.3:
                     self.terminal_history.append(">>> " + self.command)
-                    self.terminal_history.append(' | '.join(pred_candidates))
+                    self.terminal_history.append(' | '.join(p_candidates))
                     self.redraw()
                 self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
@@ -272,6 +290,9 @@ class TerminalWindow(CursesWindow):
         and the index at which the prediction should be inserted.
         the state indicates the stage in expense mode.
         """
+        # two spaces are not allowed
+        if self.command.count('  ') > 0:
+            return [], 0, None
         incomplete_str = None
         current_cmd = self.command[:self.cursor_x]
         cmd_parts = current_cmd.split(' ')
@@ -290,6 +311,9 @@ class TerminalWindow(CursesWindow):
                 if 'task-id' in current_lvl[cmd_parts[0]]:
                     break
                 current_lvl = current_lvl[cmd_parts[0]]
+                # no space after segment? add it
+                if len(cmd_parts) == 1:
+                    return [cmd_parts[0] + ' '], pred_insertion_idx, cmd_parts[0]
                 cmd_parts.pop(0)
             else:
                 incomplete_str = cmd_parts[0]
