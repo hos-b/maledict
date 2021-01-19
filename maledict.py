@@ -63,11 +63,14 @@ def main(stdscr):
         elif break_char == curses.KEY_F60:
             # focus window 1 (actions)
             active_window = 1
+        elif break_char == curses.KEY_F50:
+            wrap_up()
+            break
 
-try:
-    curses.wrapper(main)
-except KeyboardInterrupt:
-    wrap_up()
+curses.wrapper(main)
+# try:
+# except KeyboardInterrupt:
+# wrap_up()
 # except ValueError:
 #     print("unexpected exit. did you ctrl-c in the middle of something?")
 #     wrap_up()

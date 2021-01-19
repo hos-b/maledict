@@ -254,7 +254,6 @@ class TerminalWindow(CursesWindow):
                 if len(p_candidates) == 1:
                     pre_str = self.command[:p_insert_index]
                     post_str = self.command[p_insert_index + len(i_str):]
-                    # self.terminal_history.append(f'inc: "{i_str}", pre: "{pre_str}", post: "{post_str}", pred: "{p_candidates[0]}"')
                     post_str = ' ' if (post_str == '' and \
                                        not p_candidates[0].endswith(' ')) \
                                    else post_str
