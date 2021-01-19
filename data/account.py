@@ -23,10 +23,10 @@ class Account:
         self.recurring_amounts = {}
         self.recurring_biz = {}
         self.full_query =  f'SELECT * FROM {self.name} ORDER BY datetime(datetime) DESC;'
-        self.reload_transactions(self.full_query, True)
+        self.query_transactions(self.full_query, True)
         self.find_recurring(6, 0.7, 3, 5)
 
-    def reload_transactions(self, query: str, update_dicts: bool):
+    def query_transactions(self, query: str, update_dicts: bool):
         """
         reloads the transactions from the database to reflect the latest
         changes. if update is set to true, the dicts of the object are
@@ -102,7 +102,7 @@ class Account:
                     record.subcategory = parser.subcategories[record.subcategory]
             self.add_transaction(record)
         self.flush_transactions()
-        self.reload_transactions(self.full_query, False)
+        self.query_transactions(self.full_query, False)
 
     def update_dicts(self, category: str, subcategory: str, business: str):
         """

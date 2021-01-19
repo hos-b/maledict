@@ -21,13 +21,17 @@ class MainWindow(CursesWindow):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         self.disable_actions = False
         self.account = None
-        self.showing = 'nothing'
+        self.table_label = 'nothing'
         self.windows = windows
         # padding on the sides
         self.list_width = int(w_width - 2)
         self.list_height = int((3 / 4) * self.w_height)
         self.clist = CursesList(2, 5, self.list_width, self.list_height, [], \
                                 ' | '.join(Record.columns(7, 10, 20, 20, 22, 36)))
+        # shown income, expense
+        self.table_income = 0.0
+        self.table_expense = 0.0
+
         self.redraw()
     
     def focus(self, enable: bool):
@@ -45,13 +49,19 @@ class MainWindow(CursesWindow):
         self.cwindow.clear()
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
         account_str = self.account.name if self.account else 'not set'
-        balance = self.account.balance if self.account else 0.0
+        balance_str = f"balance: {self.account.balance:.2f}" if self.account else '0.0'
+        income_str = f"{self.table_income:.2f}"
+        expense_str = f" {self.table_expense:.2f}"
         date_str = datetime.now().strftime("%d.%m.%Y")
         self.cwindow.addstr(1, 2, f"account: {account_str}", curses_attr)
         self.cwindow.addstr(2, 2, f"date: {date_str}", curses_attr)
-        self.cwindow.addstr(3, 2, f"balance: {balance:.2f}", curses_attr)
+        self.cwindow.addstr(3, 2, f"balance: {balance_str}", curses_attr)
+        self.cwindow.addstr(2, self.max_x - len(income_str) - 25, \
+                            f"period income:  {income_str}", curses_attr)
+        self.cwindow.addstr(3, self.max_x - len(expense_str) - 25, \
+                            f"period expense: {expense_str}", curses_attr)
         self.clist.redraw(self.cwindow, curses_attr)
-        self.cwindow.addstr(8 + self.list_height, 3, f"showing: {self.showing}", curses_attr)
+        self.cwindow.addstr(8 + self.list_height, 3, f"showing: {self.table_label}", curses_attr)
         self.cwindow.box()
         self.cwindow.refresh()
 
@@ -64,7 +74,7 @@ class MainWindow(CursesWindow):
         if self.account is None:
             self.clist.items = []
             self.clist.index = 0
-            self.showing = 'nothing'
+            self.table_label = 'nothing'
         else:
             self.refresh_table_records('all transactions')
 
@@ -98,16 +108,25 @@ class MainWindow(CursesWindow):
         instead.
         """
         str_records = []
+        self.table_expense = self.table_income = 0.0
         if custom_records is None:
             for idx, record in enumerate(self.account.records):
                 str_records.append('   '.join(record.to_str(idx, 7, 10, 20, 20, 22, 36)))
+                if record.amount > 0:
+                    self.table_income += record.amount
+                else:
+                    self.table_expense -= record.amount
         else:
             for idx, record in enumerate(custom_records):
                 str_records.append('   '.join(record.to_str(idx, 7, 10, 20, 20, 22, 36)))
+                if record.amount > 0:
+                    self.table_income += record.amount
+                else:
+                    self.table_expense -= record.amount
         self.clist.items = str_records
         self.clist.index = 0
         self.clist.scroll = 0
-        self.showing = label
+        self.table_label = label
         self.redraw()
 
     def loop(self, stdscr) -> str:

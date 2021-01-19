@@ -140,7 +140,7 @@ class TerminalWindow(CursesWindow):
             self.write_command_history()
             exit()
         elif task_id == 100002:
-            self.terminal_history = []
+            self.terminal_history.clear()
             self.scroll = 0
             return []
         else:
@@ -326,7 +326,9 @@ class TerminalWindow(CursesWindow):
 
     def submit_pending_command(self, stdscr) -> bool:
         """
-        pending commands set by the action window are performed here
+        pending commands set by the action window are performed here.
+        returns True if the focus should afterwards be given to the 
+        main window (and not remain on the terminal).
         """
         pending = self.pending_action != -1
         if pending:
@@ -350,5 +352,5 @@ class TerminalWindow(CursesWindow):
             self.pending_action = -1
             self.pending_list_index = 0
             self.redraw()
-            return pending
+        return pending
             

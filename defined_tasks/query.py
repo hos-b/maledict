@@ -193,7 +193,7 @@ def sqlite(terminal, stdscr):
 
     # restoring state, updating just to be safe
     if potential_table_update:
-        account.reload_transactions(account.full_query, True)
+        account.query_transactions(account.full_query, True)
     terminal.windows[WMAIN].refresh_table_records(showing_bak)
     terminal.windows[WMAIN].disable_actions = False
     return ["query mode deactivated"]

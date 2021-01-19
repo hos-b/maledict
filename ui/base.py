@@ -7,12 +7,14 @@ class CursesWindow:
         """ 
         initializes the curses window using the given measurements
         """
-        self.min_x = max(w_x, 0)
-        self.min_y = max(w_y, 0)
+        self.w_x = w_x
+        self.w_y = w_y
+        self.min_x = int(max(w_x, 0))
+        self.min_y = int(max(w_y, 0))
         self.w_width = int(min(w_width, curses.COLS - 1))
         self.w_height = int(min(w_height, curses.LINES - 1))
-        self.max_x = self.min_x + w_width
-        self.max_y = self.min_y + w_height
+        self.max_x = int(self.min_x + w_width)
+        self.max_y = int(self.min_y + w_height)
         self.cwindow = curses.newwin(self.w_height, self.w_width, int(w_y), int(w_x))
         self.cwindow.box()
         stdscr.refresh()

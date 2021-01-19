@@ -107,10 +107,7 @@ def expense(terminal, stdscr):
             kb_interrupt = False
         except KeyboardInterrupt:
             if kb_interrupt or terminal.command == '':
-                terminal.windows[WMAIN].account.flush_transactions()
-                terminal.shadow_string = ''
-                terminal.shadow_index = 0
-                return ["expense mode deactivated"]
+                break
             kb_interrupt = True
             elements = ['', '', '', '', '', '']
             terminal.command = ''
@@ -152,8 +149,9 @@ def expense(terminal, stdscr):
                 parsed_record = parse_expense(elements, tr_date, \
                                               terminal.windows[WMAIN].account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
+                # TODO: make this more efficient
                 terminal.windows[WMAIN].account.add_transaction(parsed_record)
-                terminal.windows[WMAIN].account.reload_transactions(
+                terminal.windows[WMAIN].account.query_transactions(
                     terminal.windows[WMAIN].account.full_query, False)
                 terminal.windows[WMAIN].refresh_table_records('all transactions')
                 terminal.terminal_history[-1] = str(elements)
@@ -296,3 +294,7 @@ def expense(terminal, stdscr):
             terminal.cursor_x += 1
             terminal.scroll = 0
             terminal.redraw()
+    terminal.windows[WMAIN].account.flush_transactions()
+    terminal.shadow_string = ''
+    terminal.shadow_index = 0
+    return ["expense mode deactivated"]

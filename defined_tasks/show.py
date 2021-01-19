@@ -67,6 +67,6 @@ def records(task_id: int, sql_query: str, args: list,  main_window: MainWindow):
         sql_query = sql_query.format(table_name)
         label = f'transactions from last year'
     
-    main_window.account.reload_transactions(sql_query, False)
+    main_window.account.query_transactions(sql_query, False)
     main_window.refresh_table_records(label)
     return []
