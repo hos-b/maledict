@@ -20,7 +20,7 @@ class ActionWindow(CursesWindow):
         # curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
         self.windows = windows
         # index of the list element that enabled the window
-        self.expense_list_index = -1
+        self.transaction_id = -1
         self.redraw()
 
     def focus(self, enable: bool):
@@ -63,7 +63,7 @@ class ActionWindow(CursesWindow):
                         return curses.KEY_F1
                     # edit
                     self.windows[WTERMINAL].pending_action = opt_idx
-                    self.windows[WTERMINAL].pending_list_index = self.expense_list_index
+                    self.windows[WTERMINAL].pending_tr_id = self.transaction_id
                     self.clist.index = 0
                     # switch to terminal to take care of pending tasks
                     return curses.KEY_F2

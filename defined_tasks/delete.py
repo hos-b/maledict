@@ -18,12 +18,19 @@ def account(terminal, name: str) -> str:
 
 def expense(main_window, index: str) -> str:
     try:
-        list_index = int(index, 16)
+        transaction_id = int(index, 16)
     except ValueError:
         return [f"expected hex value, got {index}"]
-    if list_index > len(main_window.account.records):
-        return [f"given index does not exist"]
+    list_index = -1
+    for idx, record in enumerate(main_window.account.records):
+        if record.transaction_id == transaction_id:
+            list_index = idx
+            break
+    if list_index == -1:
+        return [f"given transaction index does not exist"]
 
-    main_window.account.delete_transaction(list_index)
+    main_window.update_table_statistics( \
+        main_window.account.records[list_index].amount, 0)
+    main_window.account.delete_transaction(transaction_id)
     main_window.delete_table_row(list_index)
     return ['expense deleted successfully']

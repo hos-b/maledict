@@ -62,26 +62,31 @@ class Account:
         self.database.add_record(self.name, record)
         self.balance += record.amount
 
-    def delete_transaction(self, list_index: int):
+    def delete_transaction(self, transaction_id: int):
         """
-        deletes a transaction given the index
+        deletes a transaction given the id
         """
-        self.balance -= self.records[list_index].amount
-        self.database.delete_record(self.name, self.records[list_index].transaction_id)
-        self.records.pop(list_index)
+        for t_id, record in enumerate(self.records):
+            if record.transaction_id == transaction_id:
+                self.balance -= record.amount
+                self.database.delete_record(self.name, transaction_id)
+                self.records.pop(t_id)
+                break
 
-    def update_transaction(self, list_index: int, updated_record: Record):
+    def update_transaction(self, transaction_id: int, updated_record: Record):
         """
-        updates a transaction given the index, both in the database and
+        updates a transaction given the id, both in the database and
         the local records
         """
-        transaction_id = self.records[list_index].transaction_id
-        old_amount = self.records[list_index].amount
-        self.database.update_record(self.name, transaction_id, updated_record)
-        self.records[list_index] = updated_record
-        self.records[list_index].transaction_id = transaction_id
-        new_amount = self.records[list_index].amount
-        self.balance += (new_amount - old_amount)
+        for t_id, record in enumerate(self.records):
+            if record.transaction_id == transaction_id:
+                self.database.update_record(self.name, transaction_id, updated_record)
+                old_amount = self.records[t_id].amount
+                self.records[t_id] = updated_record
+                self.records[t_id].transaction_id = transaction_id
+                new_amount = self.records[t_id].amount
+                self.balance += (new_amount - old_amount)
+                break
 
     def flush_transactions(self):
         """
@@ -94,7 +99,7 @@ class Account:
         adds all the read records in the parser to the account and
         the corresponding database table, then reloads the records
         """
-        for record in parser.records:
+        for record in reversed(parser.records):
             if translate_mode:
                 if record.category in parser.categories:
                     record.category = parser.categories[record.category]

@@ -44,6 +44,7 @@ def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
         intial_record = Record(datetime(1, 1, 1, 0, 0, 0, 0), balance_f, '', '', '', 'initial balance')
         database.add_record(name, intial_record)
         database.connection.commit()
+    
     return [f"successfully added {name} with {balance_f} initial balance"]
 
 

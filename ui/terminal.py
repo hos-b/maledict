@@ -27,7 +27,7 @@ class TerminalWindow(CursesWindow):
         
         # pending actions
         self.pending_action = -1
-        self.pending_list_index = 0
+        self.pending_tr_id = -1
 
         # history stuff
         self.command = ''
@@ -336,12 +336,12 @@ class TerminalWindow(CursesWindow):
             if self.pending_action == 0:
                 self.terminal_history += \
                     defined_tasks.edit.expense(self, stdscr, \
-                                               hex(self.pending_list_index))
+                                               hex(self.pending_tr_id))
             # delete action
             elif self.pending_action == 1:
                 self.terminal_history += \
                     defined_tasks.delete.expense(self.windows[WMAIN], \
-                                                 hex(self.pending_list_index))
+                                                 hex(self.pending_tr_id))
                 
 
             # reset
@@ -350,7 +350,7 @@ class TerminalWindow(CursesWindow):
             self.cursor_x = 0
             self.scroll = 0
             self.pending_action = -1
-            self.pending_list_index = 0
+            self.pending_tr_id = -1
             self.redraw()
         return pending
             

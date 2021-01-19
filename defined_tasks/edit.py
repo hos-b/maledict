@@ -18,11 +18,17 @@ def expense(terminal, stdscr, index: str):
     if stdscr is None:
         return ["cannot edit expenses in warmup mode"]
     try:
-        list_index = int(index, 16)
+        transaction_id = int(index, 16)
     except ValueError:
         return [f"expected hex value, got {index}"]
-    if list_index > len(terminal.windows[WMAIN].account.records):
-        return [f"given index does not exist"]
+
+    list_index = -1
+    for idx, record in enumerate(terminal.windows[WMAIN].account.records):
+        if record.transaction_id == transaction_id:
+            list_index = idx
+            break
+    if list_index == -1:
+        return [f"given transaction index does not exist"]
 
     # predictions
     org_record = terminal.windows[WMAIN].account.records[list_index].copy()
@@ -31,7 +37,7 @@ def expense(terminal, stdscr, index: str):
     tr_date = org_record.t_datetime
     # basic intialization
     edit_mode = True
-    terminal.terminal_history.append(f"editing record 0x{hex(list_index)[2:].zfill(6)}:"
+    terminal.terminal_history.append(f"editing record 0x{hex(transaction_id)[2:].zfill(6)}:"
             f"{pre_amount_str} on {tr_date.isoformat(' ')} to {org_record.business}")
     terminal.command = ''
     terminal.cursor_x = 0
@@ -133,15 +139,17 @@ def expense(terminal, stdscr, index: str):
             if state == S_NOTE:
                 parsed_record = parse_expense(elements, tr_date, \
                                               terminal.windows[WMAIN].account)
-                terminal.windows[WMAIN].account.update_transaction(list_index, \
-                                                                parsed_record)
+                terminal.windows[WMAIN].account.update_transaction(transaction_id, \
+                                                                   parsed_record)
                 terminal.windows[WMAIN].update_table_row(list_index)
+                terminal.windows[WMAIN].update_table_statistics(org_record.amount, \
+                                                                parsed_record.amount)
                 terminal.windows[WMAIN].redraw()
                 terminal.command = ''
                 terminal.shadow_index = 0
                 terminal.shadow_string = ''
                 terminal.redraw()
-                return ["edit successful"]
+                break
             # nothing written?
             elif elements[state] == '':
                 continue
@@ -211,7 +219,7 @@ def expense(terminal, stdscr, index: str):
         # cursor shift ----------------------------------------------------------------
         elif input_char == curses.KEY_LEFT:
             if input_allowed():
-                terminal.cursor_x = max(element_start, terminal.cursor_x - 1)
+                terminal.cursor_x = max(element_start[state], terminal.cursor_x - 1)
                 terminal.redraw()
             else:
                 sub_state = max(0, sub_state - 1)
@@ -272,3 +280,5 @@ def expense(terminal, stdscr, index: str):
             terminal.cursor_x += 1
             terminal.scroll = 0
             terminal.redraw()
+
+    return ["edit successful"]

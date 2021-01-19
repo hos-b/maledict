@@ -85,21 +85,34 @@ class MainWindow(CursesWindow):
         updates the table at the given index. called after editing a
         record on the account object using update_transaction()
         """
-        self.clist.items[index] = '   '.join(self.account.records[index]
-                                       .to_str(index, 7, 10, 20, 20, 22, 36))
+        self.clist.items[index] = '   '.join(self.account.records[index] \
+                                       .to_str(7, 10, 20, 20, 22, 36))
 
     def delete_table_row(self, index: int):
         """
-        to be called after deleting a transaction from the account.
-        this is a duplicate of refresh_table_records because the 
-        elements need to be reindexed when one is deleted.
+        to be called after deleting a transaction from the account, it
+        deletes the table row given its index. delta is the resulted
+        difference in account balance.
         """
-        str_records = []
-        for idx, record in enumerate(self.account.records):
-            str_records.append('   '.join(record.to_str(idx, 7, 10, 20, 20, 22, 36)))
-        self.clist.items = str_records
-        self.clist.index = max(0, index - 1)
+        self.clist.items.pop(index)
+        self.clist.index = min(len(self.clist.items) - 1, index)
         self.redraw()
+
+    def update_table_statistics(self, old_amount: float, new_amount: float):
+        """
+        updates table income & table expense, called after add,
+        edit or update.
+        """
+        # remove the old transaction
+        if old_amount < 0:
+            self.table_expense += old_amount
+        else:
+            self.table_income -= old_amount
+        # add the new transaction
+        if new_amount < 0:
+            self.table_expense -= new_amount
+        else:
+            self.table_income += new_amount
 
     def refresh_table_records(self, label: str, custom_records = None):
         """
@@ -110,15 +123,15 @@ class MainWindow(CursesWindow):
         str_records = []
         self.table_expense = self.table_income = 0.0
         if custom_records is None:
-            for idx, record in enumerate(self.account.records):
-                str_records.append('   '.join(record.to_str(idx, 7, 10, 20, 20, 22, 36)))
+            for record in self.account.records:
+                str_records.append('   '.join(record.to_str(7, 10, 20, 20, 22, 36)))
                 if record.amount > 0:
                     self.table_income += record.amount
                 else:
                     self.table_expense -= record.amount
         else:
-            for idx, record in enumerate(custom_records):
-                str_records.append('   '.join(record.to_str(idx, 7, 10, 20, 20, 22, 36)))
+            for record in custom_records:
+                str_records.append('   '.join(record.to_str(7, 10, 20, 20, 22, 36)))
                 if record.amount > 0:
                     self.table_income += record.amount
                 else:
@@ -151,6 +164,8 @@ class MainWindow(CursesWindow):
                 self.redraw()
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 if not self.disable_actions:
-                    self.windows[WACTION].expense_list_index, _ = self.clist.key_enter()
+                    idx, _ = self.clist.key_enter()
+                    self.windows[WACTION].transaction_id = \
+                        self.account.records[idx].transaction_id
                     return curses.KEY_F60
 

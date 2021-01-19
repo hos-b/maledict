@@ -17,7 +17,7 @@ class Record:
         self.note = note
         self.transaction_id = transaction_id
 
-    def to_str(self, index:int, index_l, amount_l, cat_l, subcat_l, bus_l, note_l) -> list:
+    def to_str(self, index_l, amount_l, cat_l, subcat_l, bus_l, note_l) -> list:
         """
         converts the record to a list of strings and adjusts the length
         of each element based on the given value. ellipses are added to
@@ -26,7 +26,7 @@ class Record:
         amount_str = str(self.amount)
         if self.amount > 0:
             amount_str = '+' + amount_str
-        return [hex(index)[2:].zfill(index_l),
+        return [hex(self.transaction_id)[2:].zfill(index_l),
                 "{}.{}.{}, {}:{}".format(str(self.t_datetime.day).zfill(2),
                                          str(self.t_datetime.month).zfill(2),
                                          str(self.t_datetime.year).zfill(4),
