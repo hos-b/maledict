@@ -147,7 +147,11 @@ class MainWindow(CursesWindow):
         main window ui loop
         """
         while True:
-            input_char = stdscr.getch()
+            try:
+                input_char = stdscr.getch()
+            except KeyboardInterrupt:
+                return curses.KEY_F50
+
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char
             if input_char == curses.KEY_UP:

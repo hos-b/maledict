@@ -55,7 +55,7 @@ def change_datetime(dt: datetime, state: int, substate: int, change: int) -> dat
     if state == 3:
         if substate == 0: return dt.replace(year = max(0, dt.year + change))
         elif substate == 1:
-            max_day = monthrange(dt.year, max(dt.month + change, 1))[1]
+            max_day = monthrange(dt.year, min(max(dt.month + change, 1), 12))[1]
             if change < 0: return dt.replace(month = max(dt.month + change, 1), \
                                              day=min(dt.day, max_day))
             elif change > 0: return dt.replace(month = min(dt.month + change, 12), \
@@ -122,16 +122,16 @@ def rectify_element(element: str, state: int, account: Account) -> str:
     # rectify business:
     elif state == 1:
         for key in account.businesses:
-            if bool(re.match(element, key, re.I)):
+            if key.lower() == element.lower():
                 return key
         return element
     # rectify category/subcategory:
     elif state == 2:
         for key in account.categories:
-            if bool(re.match(element, key, re.I)):
+            if key.lower() == element.lower():
                 return key
         for key in account.subcategories:
-            if bool(re.match(element, key, re.I)):
+            if key.lower() == element.lower():
                 return key
         return element
     else:

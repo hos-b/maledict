@@ -184,9 +184,10 @@ def expense(terminal, stdscr):
                     terminal.command += format_date(tr_date) \
                                         if state == S_DATE else \
                                         format_time(tr_date)
-                    sub_state = 0
+                    # prefer day|minute over other fields
+                    sub_state = 2 if state == S_DATE else 1
                     terminal.cursor_x = element_start[state] + \
-                                        sub_element_start[state][0]
+                                        sub_element_start[state][sub_state]
                 else:
                     terminal.cursor_x = len(terminal.command)
                 terminal.terminal_history[-1] = f"{get_hint()}"
@@ -234,7 +235,7 @@ def expense(terminal, stdscr):
         # cursor shift ----------------------------------------------------------------
         elif input_char == curses.KEY_LEFT:
             if input_allowed():
-                terminal.cursor_x = max(element_start, terminal.cursor_x - 1)
+                terminal.cursor_x = max(element_start[state], terminal.cursor_x - 1)
                 terminal.redraw()
             else:
                 sub_state = max(0, sub_state - 1)

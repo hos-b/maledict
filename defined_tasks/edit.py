@@ -66,25 +66,27 @@ def expense(terminal, stdscr, index: str):
         elif state == S_BUSINESS:
             if not force_update and predicted_record is not None:
                 terminal.shadow_string = predicted_record.business
-                terminal.shadow_index = element_start[1]
+                terminal.shadow_index = element_start[S_BUSINESS]
                 return
             terminal.shadow_string, predicted_record = predict_business(elements[0], \
-                terminal.command[element_start[1]:], terminal.windows[WMAIN].account)
-            terminal.shadow_index = element_start[1]
+                    terminal.command[element_start[S_BUSINESS]:], \
+                    terminal.windows[WMAIN].account)
+            terminal.shadow_index = element_start[S_BUSINESS]
         elif state == S_CATEGORY:
             if not force_update and predicted_record is not None:
                 terminal.shadow_string = predicted_record.subcategory \
                     if predicted_record.subcategory != '' \
                     else predicted_record.category
-                terminal.shadow_index = element_start[2]
+                terminal.shadow_index = element_start[S_CATEGORY]
                 return
             terminal.shadow_string, predicted_record = predict_category(elements[1], \
-                terminal.command[element_start[2]:], terminal.windows[WMAIN].account)
-            terminal.shadow_index = element_start[2]
+                    terminal.command[element_start[S_CATEGORY]:], \
+                    terminal.windows[WMAIN].account)
+            terminal.shadow_index = element_start[S_CATEGORY]
         elif state == S_NOTE and bool(re.match(terminal.command[element_start[5]:], \
                                       org_record.note, re.I)):
             terminal.shadow_string = org_record.note
-            terminal.shadow_index = element_start[5]
+            terminal.shadow_index = element_start[S_NOTE]
         else:
             terminal.shadow_string = ''
             terminal.shadow_index = 0
@@ -171,7 +173,7 @@ def expense(terminal, stdscr, index: str):
                                         format_time(tr_date)
                     sub_state = 0
                     terminal.cursor_x = element_start[state] + \
-                                        sub_element_start[state][0]
+                                        sub_element_start[state][sub_state]
                 else:
                     terminal.cursor_x = len(terminal.command)
                 update_predictions(org_record, False)

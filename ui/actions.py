@@ -45,7 +45,12 @@ class ActionWindow(CursesWindow):
     
     def loop(self, stdscr) -> str:
         while True:
-            input_char = stdscr.getch()
+            try:
+                input_char = stdscr.getch()
+            except KeyboardInterrupt:
+                self.clist.index = 0
+                return curses.KEY_F1
+
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char
             if input_char == curses.KEY_UP:
