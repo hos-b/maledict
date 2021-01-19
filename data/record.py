@@ -43,7 +43,7 @@ class Record:
         """
         returns the columns names, center-adjusted with the given ints
         """
-        return ["index".center(index_l),
+        return ["tr. id".center(index_l),
                 "date and time".center(17),
                 "amount".center(amount_l),
                 "category".center(cat_l),

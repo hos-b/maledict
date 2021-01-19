@@ -28,7 +28,7 @@ def expense(terminal, stdscr, index: str):
             list_index = idx
             break
     if list_index == -1:
-        return [f"given transaction index does not exist"]
+        return [f"given transaction id does not exist"]
 
     # predictions
     org_record = terminal.windows[WMAIN].account.records[list_index].copy()

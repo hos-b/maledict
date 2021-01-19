@@ -38,7 +38,7 @@ delete:
     task-id: 501
   expense:
     args: {'list-id':'int'}
-    desc: "delete a transaction given its hex list index"
+    desc: "delete a transaction given its hex transaction id"
     task-id: 502
 
 # show commands
@@ -91,7 +91,7 @@ export:
 edit:
   expense:
     args: {'list-id':'int'}
-    desc: "edit a transaction given its hex list index"
+    desc: "edit a transaction given its hex transaction id"
     task-id: 801
 
 # query commands
@@ -99,6 +99,7 @@ query:
   args: {}
   desc: "enter query mode"
   task-id: 901
+
 ### terminal specific tasks:
 # exit
 exit:

@@ -27,7 +27,7 @@ def expense(main_window, index: str) -> str:
             list_index = idx
             break
     if list_index == -1:
-        return [f"given transaction index does not exist"]
+        return [f"given transaction id does not exist"]
 
     main_window.update_table_statistics( \
         main_window.account.records[list_index].amount, 0)
