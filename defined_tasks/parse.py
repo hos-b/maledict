@@ -1,6 +1,7 @@
 import csv
 import curses
 from parser.mk_parser import MKParser
+from parser.maledict_parser import MaledictParser
 from ui.base import CursesWindow
 from ui.static import WMAIN
 from data.record import Record
@@ -179,7 +180,7 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
         return [f"expected boolean, got {translate_categories}"]
 
     # start parsing
-    parser = MKParser()
+    parser = MaledictParser()
     msg_list = []
     try:
         with open(file_path, newline='\n') as csvfile:

@@ -122,6 +122,8 @@ class TerminalWindow(CursesWindow):
             return defined_tasks.set.account(self, cmd_parts[0])
         elif task_id == 401:
             return defined_tasks.parse.mkcsv(self, stdscr, cmd_parts[0], cmd_parts[1])
+        elif task_id == 402:
+            return defined_tasks.parse.maledict(self, stdscr, cmd_parts[0], cmd_parts[1])
         elif task_id == 501:
             return defined_tasks.delete.account(self, cmd_parts[0])
         elif task_id == 502:

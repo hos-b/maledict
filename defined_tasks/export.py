@@ -11,7 +11,7 @@ def csv(account: Account, path: str):
         return [f"could not write to {file}"]
     csv_writer = pcsv.writer(file, delimiter=',')
     
-    query = f'SELECT * FROM {account.name};'
+    query = f'SELECT * FROM {account.name} ORDER BY datetime(datetime) DESC;'
     db_records = account.database.query(query)
     for record in db_records:
         csv_writer.writerow(record)

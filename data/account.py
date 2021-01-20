@@ -24,7 +24,10 @@ class Account:
         self.recurring_biz = {}
         self.full_query =  f'SELECT * FROM {self.name} ORDER BY datetime(datetime) DESC;'
         self.query_transactions(self.full_query, True)
-        self.find_recurring(6, 0.7, 3, 5)
+
+        # if not empty, find recurring transactions
+        if len(self.records) > 0:
+            self.find_recurring(6, 0.7, 3, 5)
 
     def query_transactions(self, query: str, update_dicts: bool):
         """
