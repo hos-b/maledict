@@ -156,7 +156,7 @@ class TerminalWindow(CursesWindow):
         kb_interrupt = False
         while True:
             try:
-                input_char = stdscr.getch()
+                input_char = stdscr.get_wch()
                 kb_interrupt = False
             except KeyboardInterrupt:
                 if kb_interrupt or self.command == '':
@@ -188,7 +188,7 @@ class TerminalWindow(CursesWindow):
                                     self.command[self.cursor_x + 1:]
                     self.redraw()
             # execute ---------------------------------------------------------------------
-            elif input_char == curses.KEY_ENTER or input_char == ord('\n'):
+            elif input_char == curses.KEY_ENTER or input_char == '\n':
                 if self.command != '':
                     self.command_history.append(self.command)
                     self.terminal_history.append(">>> " + self.command)
@@ -245,7 +245,7 @@ class TerminalWindow(CursesWindow):
                         self.cursor_x = len(self.command)
                     self.redraw()
             # do predictions --------------------------------------------------------------
-            elif input_char == ord('\t'):
+            elif input_char == '\t':
                 p_candidates, p_insert_index, i_str = self.get_command_predictions()
                 # nothing to predict
                 if len(p_candidates) == 0:
@@ -268,15 +268,15 @@ class TerminalWindow(CursesWindow):
                     self.redraw()
                 self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
-            elif 32 <= input_char <= 154:
-                if input_char == ord(' '):
+            else:
+                if input_char == ' ':
                     # leading spaces don't count
                     if len(self.command) == 0:
                         continue
                 if self.cursor_x == len(self.command):
-                    self.command = self.command[:self.cursor_x] + chr(input_char)
+                    self.command = self.command[:self.cursor_x] + input_char
                 else:
-                    self.command = self.command[:self.cursor_x] + chr(input_char) + \
+                    self.command = self.command[:self.cursor_x] + input_char + \
                                    self.command[self.cursor_x:]
                 self.cursor_x += 1
                 self.history_surf_index = 0
@@ -369,7 +369,6 @@ class TerminalWindow(CursesWindow):
                 self.terminal_history += \
                     defined_tasks.delete.expense(self.windows[WMAIN], \
                                                  hex(self.pending_tr_id))
-                
 
             # reset
             self.command = ''

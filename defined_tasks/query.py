@@ -37,7 +37,7 @@ def sqlite(terminal, stdscr):
     kb_interrupt = False
     while query_mode:
         try:
-            input_char = stdscr.getch()
+            input_char = stdscr.get_wch()
             kb_interrupt = False
         except KeyboardInterrupt:
             if kb_interrupt or terminal.command == '':
@@ -63,7 +63,7 @@ def sqlite(terminal, stdscr):
                                 terminal.command[terminal.cursor_x + 1:]
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
-        elif input_char == curses.KEY_ENTER or input_char == ord('\n'):
+        elif input_char == curses.KEY_ENTER or input_char == '\n':
             query = terminal.command.strip()
             if query == '':
                 continue
@@ -174,8 +174,8 @@ def sqlite(terminal, stdscr):
             terminal.cursor_x = len(terminal.command)
             terminal.redraw()
         # normal input ----------------------------------------------------------------
-        elif 32 <= input_char <= 154:
-            if input_char == ord(' '):
+        else:
+            if input_char == ' ':
                 # leading spaces don't count
                 if len(terminal.command) == 0:
                     terminal.redraw()

@@ -97,7 +97,7 @@ def expense(terminal, stdscr, index: str):
     kb_interrupt = False
     while edit_mode:
         try:
-            input_char = stdscr.getch()
+            input_char = stdscr.get_wch()
             kb_interrupt = False
         except KeyboardInterrupt:
             if kb_interrupt or terminal.command == '':
@@ -133,7 +133,7 @@ def expense(terminal, stdscr, index: str):
                 update_predictions(org_record, True)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
-        elif input_char == curses.KEY_ENTER or input_char == ord('\n'):
+        elif input_char == curses.KEY_ENTER or input_char == '\n':
             element_end[state] = len(terminal.command) - 1
             elements[state] = terminal.command[element_start[state]: \
                                                element_end[state] + 1].strip()
@@ -254,7 +254,7 @@ def expense(terminal, stdscr, index: str):
                 terminal.cursor_x = element_start[state] + \
                                     sub_element_start[state][sub_state]
         # do predictions --------------------------------------------------------------
-        elif input_char == ord('\t'):
+        elif input_char == '\t':
             if terminal.shadow_string != '':
                 terminal.command = terminal.command[:element_start[state]] + \
                                    terminal.shadow_string
@@ -264,10 +264,10 @@ def expense(terminal, stdscr, index: str):
                 terminal.shadow_index = 0
                 terminal.redraw()
         # normal input ----------------------------------------------------------------
-        elif 32 <= input_char <= 154:
+        else:
             if not input_allowed():
                 continue
-            if input_char == ord(' '):
+            if input_char == ' ':
                 # leading spaces don't count
                 if len(terminal.command) == element_start[state]:
                     terminal.redraw()

@@ -104,7 +104,7 @@ def expense(terminal, stdscr):
     kb_interrupt = False
     while exepnse_mode:
         try:
-            input_char = stdscr.getch()
+            input_char = stdscr.get_wch()
             kb_interrupt = False
         except KeyboardInterrupt:
             if kb_interrupt or terminal.command == '':
@@ -140,7 +140,7 @@ def expense(terminal, stdscr):
                 update_predictions(True)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
-        elif input_char == curses.KEY_ENTER or input_char == ord('\n'):
+        elif input_char == curses.KEY_ENTER or input_char == '\n':
             element_end[state] = len(terminal.command) - 1
             elements[state] = terminal.command[element_start[state]: \
                                                element_end[state] + 1].strip()
@@ -268,7 +268,7 @@ def expense(terminal, stdscr):
                 terminal.cursor_x = element_start[state] + \
                                     sub_element_start[state][sub_state]
         # do predictions --------------------------------------------------------------
-        elif input_char == ord('\t'):
+        elif input_char == '\t':
             if terminal.shadow_string != '':
                 terminal.command = terminal.command[:element_start[state]] + \
                                    terminal.shadow_string
@@ -278,10 +278,10 @@ def expense(terminal, stdscr):
                 terminal.shadow_index = 0
                 terminal.redraw()
         # normal input ----------------------------------------------------------------
-        elif 32 <= input_char <= 154:
+        else:
             if not input_allowed():
                 continue
-            if input_char == ord(' '):
+            if input_char == ' ':
                 # leading spaces don't count
                 if len(terminal.command) == element_start[state]:
                     terminal.redraw()
@@ -296,6 +296,7 @@ def expense(terminal, stdscr):
             terminal.cursor_x += 1
             terminal.scroll = 0
             terminal.redraw()
+
     terminal.windows[WMAIN].account.flush_transactions()
     terminal.shadow_string = ''
     terminal.shadow_index = 0
