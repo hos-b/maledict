@@ -69,11 +69,3 @@ def main(stdscr):
             break
 
 curses.wrapper(main)
-# try:
-# except KeyboardInterrupt:
-# wrap_up()
-# except ValueError:
-#     print("unexpected exit. did you ctrl-c in the middle of something?")
-#     wrap_up()
-
-# print(debugstr)

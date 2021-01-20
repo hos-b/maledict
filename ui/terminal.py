@@ -171,6 +171,8 @@ class TerminalWindow(CursesWindow):
                 self.terminal_history.append('press ctrl-c again to exit maledict')
                 self.redraw()
                 continue
+            except:
+                continue
             # if should switch window
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char

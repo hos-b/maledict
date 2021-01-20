@@ -46,7 +46,7 @@ class ActionWindow(CursesWindow):
     def loop(self, stdscr) -> str:
         while True:
             try:
-                input_char = stdscr.get_wch()
+                input_char = stdscr.getch()
             except KeyboardInterrupt:
                 self.clist.index = 0
                 return curses.KEY_F1
@@ -59,7 +59,7 @@ class ActionWindow(CursesWindow):
             elif input_char == curses.KEY_DOWN:
                 self.clist.key_down()
                 self.redraw()
-            elif input_char == '\n' or input_char == curses.KEY_ENTER:
+            elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 opt_idx, _ = self.clist.key_enter()
                 if 0 <= opt_idx <= 2:
                     # if cancel, return focus to main window

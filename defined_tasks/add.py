@@ -55,7 +55,7 @@ def expense(terminal, stdscr):
     if stdscr is None:
         return ["cannot add expenses in warmup mode"]
 
-    exepnse_mode = True
+    expense_mode = True
     terminal.terminal_history.append("expense mode activated")
     terminal.command = ''
     terminal.cursor_x = 0
@@ -102,7 +102,7 @@ def expense(terminal, stdscr):
     terminal.terminal_history.append(f"{get_hint()}")
     terminal.redraw()
     kb_interrupt = False
-    while exepnse_mode:
+    while expense_mode:
         try:
             input_char = stdscr.get_wch()
             kb_interrupt = False
@@ -119,6 +119,8 @@ def expense(terminal, stdscr):
             terminal.terminal_history[-1] = 'press ctrl + c again to exit expense mode'
             terminal.terminal_history.append(f'{get_hint()}')
             terminal.redraw()
+            continue
+        except:
             continue
         # backspace, del --------------------------------------------------------------
         if input_char == curses.KEY_BACKSPACE:
@@ -287,11 +289,10 @@ def expense(terminal, stdscr):
                     terminal.redraw()
                     continue
             if terminal.cursor_x == len(terminal.command):
-                terminal.command = terminal.command[:terminal.cursor_x] + \
-                    chr(input_char)
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char
             else:
-                terminal.command = terminal.command[:terminal.cursor_x] + \
-                    chr(input_char) + terminal.command[terminal.cursor_x:]
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char \
+                                 + terminal.command[terminal.cursor_x:]
             update_predictions(True)
             terminal.cursor_x += 1
             terminal.scroll = 0

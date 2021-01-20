@@ -148,7 +148,7 @@ class MainWindow(CursesWindow):
         """
         while True:
             try:
-                input_char = stdscr.get_wch()
+                input_char = stdscr.getch()
             except KeyboardInterrupt:
                 return curses.KEY_F50
 
@@ -166,7 +166,7 @@ class MainWindow(CursesWindow):
             elif input_char == curses.KEY_NPAGE:
                 self.clist.key_pgdn()
                 self.redraw()
-            elif input_char == '\n' or input_char == curses.KEY_ENTER:
+            elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 if not self.disable_actions:
                     idx, _ = self.clist.key_enter()
                     self.windows[WACTION].transaction_id = \

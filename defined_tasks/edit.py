@@ -113,6 +113,8 @@ def expense(terminal, stdscr, index: str):
             terminal.terminal_history.append(f'{get_hint()}')
             terminal.redraw()
             continue
+        except:
+            continue
         # backspace, del --------------------------------------------------------------
         if input_char == curses.KEY_BACKSPACE:
             if input_allowed():
@@ -171,7 +173,7 @@ def expense(terminal, stdscr, index: str):
                     terminal.command += format_date(tr_date) \
                                         if state == S_DATE else \
                                         format_time(tr_date)
-                    sub_state = 0
+                    sub_state = 2 if state == S_DATE else 1
                     terminal.cursor_x = element_start[state] + \
                                         sub_element_start[state][sub_state]
                 else:
@@ -273,11 +275,11 @@ def expense(terminal, stdscr, index: str):
                     terminal.redraw()
                     continue
             if terminal.cursor_x == len(terminal.command):
-                terminal.command = terminal.command[:terminal.cursor_x] + \
-                    chr(input_char)
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char
+
             else:
-                terminal.command = terminal.command[:terminal.cursor_x] + \
-                    chr(input_char) + terminal.command[terminal.cursor_x:]
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char \
+                                 + terminal.command[terminal.cursor_x:]
             update_predictions(org_record, True)
             terminal.cursor_x += 1
             terminal.scroll = 0

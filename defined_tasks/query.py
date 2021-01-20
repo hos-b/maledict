@@ -48,6 +48,8 @@ def sqlite(terminal, stdscr):
             terminal.terminal_history.append('press ctrl + c again to exit query mode')
             terminal.redraw()
             continue
+        except:
+            continue
         # backspace, del --------------------------------------------------------------
         if input_char == curses.KEY_BACKSPACE:
             terminal.cursor_x = max(0, terminal.cursor_x - 1)
@@ -181,11 +183,10 @@ def sqlite(terminal, stdscr):
                     terminal.redraw()
                     continue
             if terminal.cursor_x == len(terminal.command):
-                terminal.command = terminal.command[:terminal.cursor_x] + \
-                    chr(input_char)
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char
             else:
-                terminal.command = terminal.command[:terminal.cursor_x] + \
-                    chr(input_char) + terminal.command[terminal.cursor_x:]
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char \
+                                 + terminal.command[terminal.cursor_x:]
             terminal.cursor_x += 1
             terminal.scroll = 0
             query_surf_index = 0

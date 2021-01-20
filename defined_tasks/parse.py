@@ -143,10 +143,10 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
                 if len(terminal.command) == 0:
                     continue
             if terminal.cursor_x == len(terminal.command):
-                terminal.command = terminal.command[:terminal.cursor_x] + chr(input_char)
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char
             else:
-                terminal.command = terminal.command[:terminal.cursor_x] + chr(input_char) + \
-                                terminal.command[terminal.cursor_x:]
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char \
+                                 + terminal.command[terminal.cursor_x:]
             terminal.cursor_x += 1
             terminal.cmd_history_index = 0
             terminal.scroll = 0
@@ -291,10 +291,10 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
                 if len(terminal.command) == 0:
                     continue
             if terminal.cursor_x == len(terminal.command):
-                terminal.command = terminal.command[:terminal.cursor_x] + chr(input_char)
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char
             else:
-                terminal.command = terminal.command[:terminal.cursor_x] + chr(input_char) + \
-                                terminal.command[terminal.cursor_x:]
+                terminal.command = terminal.command[:terminal.cursor_x] + input_char \
+                                 + terminal.command[terminal.cursor_x:]
             terminal.cursor_x += 1
             terminal.cmd_history_index = 0
             terminal.scroll = 0
