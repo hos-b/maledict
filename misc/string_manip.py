@@ -43,8 +43,8 @@ def variadic_contains_or(name: str, *args):
             return True, arg
     return False, ''
 
-def variadic_equals_or(first: str, *argv):  
-    for arg in argv:  
+def variadic_equals_or(first: str, *argv):
+    for arg in argv:
         if first == arg:
             return True
     return False

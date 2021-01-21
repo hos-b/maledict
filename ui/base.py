@@ -4,7 +4,7 @@ import curses
 
 class CursesWindow:
     def __init__(self, stdscr, w_x, w_y, w_width, w_height):
-        """ 
+        """
         initializes the curses window using the given measurements
         """
         self.w_x = w_x

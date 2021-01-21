@@ -25,7 +25,7 @@ class SQLiteProxy:
 
         cursor = self.connection.cursor()
         cursor.execute(sql_table_crt)
-    
+
     def drop_table(self, name: str):
         if self.connection is None:
             return
@@ -84,7 +84,7 @@ class SQLiteProxy:
     def db_close(self):
         self.connection.close()
         self.connection = None
-    
+
     def db_open(self, db_file: str):
         try:
             self.connection = sqlite3.connect(db_file)

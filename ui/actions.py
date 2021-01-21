@@ -42,7 +42,7 @@ class ActionWindow(CursesWindow):
         self.clist.redraw(self.cwindow, curses_attr)
         self.cwindow.box()
         self.cwindow.refresh()
-    
+
     def loop(self, stdscr) -> str:
         while True:
             try:

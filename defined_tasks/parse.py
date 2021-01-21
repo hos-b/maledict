@@ -61,7 +61,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
         terminal.cursor_x = 0
         terminal.command = ''
         terminal.redraw()
-    
+
     read_input = translate_mode
     while read_input:
         input_char = stdscr.get_wch()
@@ -209,7 +209,7 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
         terminal.cursor_x = 0
         terminal.command = ''
         terminal.redraw()
-    
+
     read_input = translate_mode
     while read_input:
         input_char = stdscr.get_wch()

@@ -50,7 +50,7 @@ class Account:
              subcategory, business, note) in db_records:
             if update_dicts:
                 self.update_dicts(category, subcategory, business)
-            # if reloading all 
+            # if reloading all
             if update_balance:
                 self.balance += amount
             self.records.append(Record(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"),
@@ -183,7 +183,7 @@ class Account:
             # if all out of records
             if current_index == len(self.records):
                 break
-        
+
         for amount_key, lst in amount_dict.items():
             key_sum = sum([pair[1] for pair in lst])
             for record, count in lst:

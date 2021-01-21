@@ -29,7 +29,7 @@ def main(stdscr):
     # getting screen data
     stdscr.addstr(0, 1, "Maledict [version: 1.0.0]")
     stdscr.keypad(True)
-    
+
     screen_width = curses.COLS - 1
     screen_height = curses.LINES - 1
 
@@ -52,18 +52,16 @@ def main(stdscr):
                                   conf['terminal']['y_offset'], windows[WACTION].max_x + \
                                   conf['terminal']['width_offset'], conf['terminal']['height_percentage'] * \
                                   screen_height, windows, database, conf))
-    
+
     # initially disable cursor
     curses.curs_set(False)
     # 0 = overview, 1 = actions, 2 = cmd
     active_window = 2
-    
+
     while True:
         windows[active_window].focus(True)
         break_char = windows[active_window].loop(stdscr)
         windows[active_window].focus(False)
-        # break_char = stdscr.getkey()
-        # debugstr += (break_char + ' ')
 
         # changing window focus
         if break_char == curses.KEY_F1:

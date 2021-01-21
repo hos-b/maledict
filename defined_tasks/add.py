@@ -36,7 +36,7 @@ def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
         return [f"account {name} already exists"]
     except:
         return [f"could not create account {name}... go figure out why"]
-    
+
     # adding the initial balance
     # the account object doesn't get created until we use set account, therefor
     # we cannot use the much more convenient call: account.add_transaction(...)
@@ -44,7 +44,7 @@ def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
         intial_record = Record(datetime(1, 1, 1, 0, 0, 0, 0), balance_f, '', '', '', 'initial balance')
         database.add_record(name, intial_record)
         database.connection.commit()
-    
+
     return [f"successfully added {name} with {balance_f} initial balance"]
 
 

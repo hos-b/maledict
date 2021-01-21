@@ -113,7 +113,8 @@ class TerminalWindow(CursesWindow):
             return [current_lvl['desc'] + f", args: {current_lvl['args']}"]
         # wrong number of args
         elif len(cmd_parts) != len(current_lvl['args']):
-            return [f"invalid number of args: {current_lvl['args']}"]
+            args = args = [f'[{key}: {value}]' for key, value in current_lvl['args'].items()]
+            return [f"invalid number of args: {', '.join(args)}"]
         # actually doing the task
         if task_id == 101:
             return defined_tasks.add.account(self.database, cmd_parts[0], cmd_parts[1])

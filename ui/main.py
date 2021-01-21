@@ -43,7 +43,7 @@ class MainWindow(CursesWindow):
         self.table_expense = 0.0
 
         self.redraw()
-    
+
     def focus(self, enable: bool):
         """
         overwriting base due to the extra element
