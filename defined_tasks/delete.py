@@ -29,8 +29,8 @@ def expense(main_window, index: str) -> str:
     if list_index == -1:
         return [f"given transaction id does not exist"]
 
-    main_window.update_table_statistics( \
-        main_window.account.records[list_index].amount, 0)
+    main_window.update_table_statistics \
+        (main_window.account.records[list_index].amount, 0)
     main_window.account.delete_transaction(transaction_id)
     main_window.delete_table_row(list_index)
     return ['expense deleted successfully']

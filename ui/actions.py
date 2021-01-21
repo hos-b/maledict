@@ -16,7 +16,7 @@ class ActionWindow(CursesWindow):
         # padding on the sides
         list_width = int(w_width - 4)
         list_height = int(w_height - 3)
-        self.clist = CursesList(2, 1, list_width, list_height, self.options)
+        self.clist = CursesList(2, 1, list_width, list_height, self.options, False)
         # curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
         self.windows = windows
         # index of the list element that enabled the window

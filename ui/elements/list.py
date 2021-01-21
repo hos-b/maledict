@@ -3,7 +3,8 @@ from data.record import Record
 from misc.string_manip import fit_string
 
 class CursesList:
-    def __init__(self, x:int, y:int, l_width: int, l_height: int, items: list, static_line = None):
+    def __init__(self, x:int, y:int, l_width: int, l_height: int, items: list, \
+                 scrollbar_enable, static_line = None):
         """
         creates a traversable list with the given width and height. the x and y are
         relative to the containing window. width and height are the ncurses col and
@@ -15,11 +16,33 @@ class CursesList:
         self.l_height = l_height
         self.focused = False
         self.index = 0
-        self.scroll = 0
         self.items = items
         self.static_line = static_line
         self.sl_length = len(self.static_line) if static_line else 0
-    
+
+        # scrolling & scrollbar
+        self.scroll = 0
+        self.scrollbar_enable = scrollbar_enable
+        self._calculate_scrollbar_size()
+
+    def change_items(self, new_items: list):
+        """
+        changes the list itemes, resets index and recalculates
+        the scrollbar size
+        """
+        self.index = 0
+        self.items = new_items
+        self._calculate_scrollbar_size()
+
+    def delete_item(self, index: int):
+        """
+        removes an item given the index, updates the index and
+        recalculates the scrollbar size.
+        """
+        self.items.pop(index)
+        self.index = min(len(self.items) - 1, index)
+        self._calculate_scrollbar_size()
+
     def redraw (self, cwindow, curses_attr):
         """
         redraws the list. it's assumed that the this call is placed inside the draw
@@ -27,9 +50,22 @@ class CursesList:
         after the call.
         """
         limit = min(len(self.items), self.l_height)
+        sb_begin = 0
+        sb_end = 0
+        drawing_scrollbar = self.scrollbar_enable and self.scrollbar_size > 0
+        if drawing_scrollbar:
+            max_scroll = len(self.items) - self.l_height
+            sb_mid = (self.scroll / max_scroll) * (self.l_height - 1)
+            sb_mid = max(self.scrollbar_size / 2, min(sb_mid, self.l_height - self.scrollbar_size / 2))
+            sb_begin = int(sb_mid - self.scrollbar_size / 2)
+            sb_end = int(sb_begin + self.scrollbar_size)
+
+        # draw column headers
         if self.static_line:
             cwindow.addstr(self.y - 2, self.x, ' ' * self.sl_length, curses.A_UNDERLINE | curses_attr)
             cwindow.addstr(self.y - 1, self.x, self.static_line, curses.A_UNDERLINE | curses_attr | curses.A_BOLD)
+
+        # draw items
         for i in range (limit):
             list_index = i + self.scroll
             opt_str = self.items[list_index] # fit_string(, self.l_width)
@@ -37,6 +73,10 @@ class CursesList:
                 cwindow.addstr(self.y + i, self.x, opt_str, curses_attr | curses.A_STANDOUT)
             else:
                 cwindow.addstr(self.y + i, self.x, opt_str, curses_attr)
+            # drawing scrollbar
+            if drawing_scrollbar and sb_begin <= i <= sb_end:
+                cwindow.addstr(self.y + i, self.x + len(opt_str) , " ▒", curses_attr)
+
         # draw lower border if we're showing columns
         if self.static_line:
             cwindow.addstr(self.y + self.l_height, self.x, ' ' * self.sl_length, curses.A_UNDERLINE | curses_attr)
@@ -51,8 +91,8 @@ class CursesList:
             self.index -= 1
 
     def key_down(self):
-        if self.index == self.l_height - 1:
-            max_scroll = len(self.items) - self.l_height
+        max_scroll = len(self.items) - self.l_height
+        if self.index == self.l_height - 1 and max_scroll > 0:
             self.scroll = min(self.scroll + 1, max_scroll)
         else:
             self.index = min(self.index + 1, len(self.items) - 1)
@@ -74,3 +114,8 @@ class CursesList:
     def key_enter(self) -> (int, str):
         return self.index, self.items[self.index]
     
+    def _calculate_scrollbar_size(self):
+        if len(self.items) <= self.l_height:
+            self.scrollbar_size = 0
+        else:
+            self.scrollbar_size = max(1, (self.l_height * self.l_height) / len(self.items))

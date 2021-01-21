@@ -34,7 +34,8 @@ class MainWindow(CursesWindow):
         # padding on the sides
         self.list_width = int(w_width - 2)
         self.list_height = int((3 / 4) * self.w_height)
-        self.clist = CursesList(2, 5, self.list_width, self.list_height, [], \
+        self.clist = CursesList(2, 5, self.list_width, self.list_height, [], 
+                                conf['table']['scrollbar-enable'], \
                                 ' | '.join(Record.columns(self.icol, self.acol, \
                                                           self.ccol, self.sccol, \
                                                           self.pcol, self.ncol)))
@@ -82,9 +83,10 @@ class MainWindow(CursesWindow):
         """
         self.account = account
         if self.account is None:
-            self.clist.items = []
-            self.clist.index = 0
+            self.clist.change_items([])
             self.table_label = 'nothing'
+            self.table_income = 0.0
+            self.table_expense = 0.0
         else:
             self.refresh_table_records('all transactions')
 
@@ -105,8 +107,7 @@ class MainWindow(CursesWindow):
         deletes the table row given its index. delta is the resulted
         difference in account balance.
         """
-        self.clist.items.pop(index)
-        self.clist.index = min(len(self.clist.items) - 1, index)
+        self.clist.delete_item(index)
         self.redraw()
 
     def update_table_statistics(self, old_amount: float, new_amount: float):
@@ -133,23 +134,17 @@ class MainWindow(CursesWindow):
         """
         str_records = []
         self.table_expense = self.table_income = 0.0
+        # if not a custom query, just use the account records
         if custom_records is None:
-            for record in self.account.records:
-                str_records.append('   '.join(record.to_str(self.icol, self.acol, self.ccol, \
-                                                            self.sccol, self.pcol, self.ncol)))
-                if record.amount > 0:
-                    self.table_income += record.amount
-                else:
-                    self.table_expense -= record.amount
-        else:
-            for record in custom_records:
-                str_records.append('   '.join(record.to_str(self.icol, self.acol, self.ccol, \
-                                                            self.sccol, self.pcol, self.ncol)))
-                if record.amount > 0:
-                    self.table_income += record.amount
-                else:
-                    self.table_expense -= record.amount
-        self.clist.items = str_records
+            custom_records = self.account.records
+        for record in custom_records:
+            str_records.append('   '.join(record.to_str(self.icol, self.acol, self.ccol, \
+                                                        self.sccol, self.pcol, self.ncol)))
+            if record.amount > 0:
+                self.table_income += record.amount
+            else:
+                self.table_expense -= record.amount
+        self.clist.change_items(str_records)
         self.clist.index = 0
         self.clist.scroll = 0
         self.table_label = label

@@ -4,8 +4,9 @@ table:
   amount_length: 10
   category_length: 20
   subcategory_length: 20
-  payee_length: 22
-  note_length: 36
+  payee_length: 21
+  note_length: 34
+  scrollbar-enable: true
 
 # recurring transaction settings
 recurring:
