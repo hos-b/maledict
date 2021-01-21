@@ -1,0 +1,39 @@
+# transaction table column sizes
+table:
+  index_length: 7
+  amount_length: 10
+  category_length: 20
+  subcategory_length: 20
+  payee_length: 22
+  note_length: 36
+
+# recurring transaction settings
+recurring:
+  months: 6
+  significance_ratio: 0.7
+  discard_limit: 3
+  min_occurance: 5
+
+# window sizes
+main:
+  x: 5
+  y: 3
+  width_percentage: 0.65
+  height_percentage: 0.75
+
+action:
+  x_offset: 5
+  y: 3
+  width_percentage: 0.3
+  height_percentage: 0.75
+
+terminal:
+  x: 5
+  y_offset: 1
+  width_offset: -5
+  height_percentage: 0.2
+
+# terminal settings
+command_history_buffer_length: 50
+command_history_file_length: 20
+warm-up: true

@@ -11,7 +11,7 @@ import time
 
 class TerminalWindow(CursesWindow):
     def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
-                 windows: list, database: SQLiteProxy):
+                 windows: list, database: SQLiteProxy, conf: dict):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
 
         # good stuff
@@ -19,12 +19,13 @@ class TerminalWindow(CursesWindow):
         self.cursor_x = 0
         self.windows = windows
         self.database = database
-        
+        self.conf = conf
+
         # prediction stuff
         self.shadow_string = ''
         self.shadow_index = 0
         self.last_tab_press = time.time()
-        
+
         # pending actions
         self.pending_action = -1
         self.pending_tr_id = -1
@@ -37,7 +38,7 @@ class TerminalWindow(CursesWindow):
         self.cmd_history_buffer = ''
 
         # loading command yaml file
-        with open('config/commands.yaml') as file:    
+        with open('config/commands.yaml') as file:
             self.command_dict = yaml.load(file, Loader=yaml.FullLoader)
         try:
             f = open("database/.command_history", "r")
@@ -45,7 +46,9 @@ class TerminalWindow(CursesWindow):
                 self.command_history.append(line.strip())
         except FileNotFoundError:
             self.terminal_history.append("could not open command history file")
-        self.warmup()
+        if self.conf['warm-up']:
+            self.warmup()
+        self.redraw()
 
     def redraw(self):
         """
@@ -71,7 +74,7 @@ class TerminalWindow(CursesWindow):
             visible_history -= 1
         self.cwindow.box()
         self.cwindow.refresh()
-    
+
     def parse_and_execute(self, stdscr) -> list:
         """
         parses and executes the task currently written in the terminal.
@@ -87,9 +90,9 @@ class TerminalWindow(CursesWindow):
         if len(cmd_parts) == 1 and \
             variadic_equals_or(cmd_parts[0], 'help', '?'):
             return ['available commands: ' + ', '.join(self.command_dict.keys())]
-        # parsing the command 
+        # parsing the command
         while len(cmd_parts) != 0:
-            parsed += cmd_parts[0] + ' ' 
+            parsed += cmd_parts[0] + ' '
             if cmd_parts[0] not in current_lvl:
                 return [f"unknown command: {parsed}"]
             # go one level deeper
@@ -139,7 +142,7 @@ class TerminalWindow(CursesWindow):
         elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()
-            self.write_command_history()
+            self.write_command_history(self.conf['command_history_file_length'])
             exit()
         elif task_id == 100002:
             self.terminal_history.clear()
@@ -195,6 +198,8 @@ class TerminalWindow(CursesWindow):
             elif input_char == curses.KEY_ENTER or input_char == '\n':
                 if self.command != '':
                     self.command_history.append(self.command)
+                    self.command_history = self.command_history\
+                                         [-self.conf['command_history_buffer_length']:]
                     self.terminal_history.append(">>> " + self.command)
                     self.terminal_history += self.parse_and_execute(stdscr)
                 self.command = ''
@@ -306,7 +311,7 @@ class TerminalWindow(CursesWindow):
                 break
         pred_candidates = []
         current_lvl = self.command_dict
-        # parsing the command 
+        # parsing the command
         while len(cmd_parts) != 0:
             # go one level deeper, if the segment is complete and correct
             if cmd_parts[0] in current_lvl:
@@ -336,7 +341,7 @@ class TerminalWindow(CursesWindow):
         with open('database/.command_history', 'w') as f:
             for i in range(begin, end):
                 f.write(f"{self.command_history[i]}\n")
-    
+
     def warmup(self):
         """
         loads a text file in ./database/.warmup and executes all
@@ -348,17 +353,15 @@ class TerminalWindow(CursesWindow):
                 line = line.strip()
                 if line != '':
                     self.command = line
-                    results = self.parse_and_execute(None)
-                    self.terminal_history += results
+                    self.terminal_history += self.parse_and_execute(None)
                     self.command = ''
         except FileNotFoundError:
             self.terminal_history.append("could not open warmup file")
-        self.redraw()
 
     def submit_pending_command(self, stdscr) -> bool:
         """
         pending commands set by the action window are performed here.
-        returns True if the focus should afterwards be given to the 
+        returns True if the focus should afterwards be given to the
         main window (and not remain on the terminal).
         """
         pending = self.pending_action != -1
@@ -383,4 +386,3 @@ class TerminalWindow(CursesWindow):
             self.pending_tr_id = -1
             self.redraw()
         return pending
-            

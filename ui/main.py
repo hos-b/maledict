@@ -12,13 +12,21 @@ from datetime import date, datetime
 #pylint: disable=E1101
 
 class MainWindow(CursesWindow):
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: list):
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: list, conf: dict):
         """
         initializes the main window. the main window holds the
         current account, which acts as a proxy between the ui
         and the database.
         """
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
+        # reading column sizes
+        self.icol = conf['table']['index_length']
+        self.acol = conf['table']['amount_length']
+        self.ccol = conf['table']['category_length']
+        self.sccol = conf['table']['subcategory_length']
+        self.pcol = conf['table']['payee_length']
+        self.ncol = conf['table']['note_length']
+        # other stuff
         self.disable_actions = False
         self.account = None
         self.table_label = 'nothing'
@@ -27,7 +35,9 @@ class MainWindow(CursesWindow):
         self.list_width = int(w_width - 2)
         self.list_height = int((3 / 4) * self.w_height)
         self.clist = CursesList(2, 5, self.list_width, self.list_height, [], \
-                                ' | '.join(Record.columns(7, 10, 20, 20, 22, 36)))
+                                ' | '.join(Record.columns(self.icol, self.acol, \
+                                                          self.ccol, self.sccol, \
+                                                          self.pcol, self.ncol)))
         # shown income, expense
         self.table_income = 0.0
         self.table_expense = 0.0
@@ -86,7 +96,8 @@ class MainWindow(CursesWindow):
         record on the account object using update_transaction()
         """
         self.clist.items[index] = '   '.join(self.account.records[index] \
-                                       .to_str(7, 10, 20, 20, 22, 36))
+                                       .to_str(self.icol, self.acol, self.ccol, \
+                                               self.sccol, self.pcol, self.ncol))
 
     def delete_table_row(self, index: int):
         """
@@ -124,14 +135,16 @@ class MainWindow(CursesWindow):
         self.table_expense = self.table_income = 0.0
         if custom_records is None:
             for record in self.account.records:
-                str_records.append('   '.join(record.to_str(7, 10, 20, 20, 22, 36)))
+                str_records.append('   '.join(record.to_str(self.icol, self.acol, self.ccol, \
+                                                            self.sccol, self.pcol, self.ncol)))
                 if record.amount > 0:
                     self.table_income += record.amount
                 else:
                     self.table_expense -= record.amount
         else:
             for record in custom_records:
-                str_records.append('   '.join(record.to_str(7, 10, 20, 20, 22, 36)))
+                str_records.append('   '.join(record.to_str(self.icol, self.acol, self.ccol, \
+                                                            self.sccol, self.pcol, self.ncol)))
                 if record.amount > 0:
                     self.table_income += record.amount
                 else:
