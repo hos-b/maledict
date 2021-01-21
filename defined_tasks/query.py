@@ -1,4 +1,6 @@
 import curses
+from curses.ascii import ctrl as ctrl_plus
+
 from data.sqlite_proxy import SQLiteProxy
 from data.record import Record
 from ui.static import WMAIN
@@ -20,16 +22,20 @@ def sqlite(terminal, stdscr):
     query_history = []
     query_surf_index = 0
     query_history_buffer = ''
-    showing_bak = terminal.windows[WMAIN].showing
+    showing_bak = terminal.windows[WMAIN].table_label
     terminal.terminal_history.append("query mode activated")
     terminal.terminal_history.append(
         "> column names: transaction_id(primary key), datetime, "
         "amount, category, subcategory, business, note")
     terminal.terminal_history.append(f"> tables: {account.database.list_tables()}")
     terminal.terminal_history.append(
-        ">> action menu is disabled. deleting & updating has to be done via terminal.")
+        ">> action menu is disabled: deleting & updating has to be done via terminal")
     terminal.terminal_history.append(
         ">> listed records only update on valid select queries")
+    terminal.terminal_history.append(
+        ">> ctrl + (up|down|pgup|pgdown) can be used to scroll up & down the table")
+    terminal.terminal_history.append(
+        ">> sample query: SELECT * FROM table ORDER BY datetime(datetime) DESC;")
     terminal.command = ''
     terminal.cursor_x = 0
     terminal.redraw()
@@ -129,7 +135,7 @@ def sqlite(terminal, stdscr):
             terminal.scroll = 0
             query_surf_index = 0
             terminal.redraw()
-        # scrolling -------------------------------------------------------------------
+        # scrolling terminal ----------------------------------------------------------
         elif input_char == curses.KEY_PPAGE:
             max_scroll = len(terminal.terminal_history) + 3 - terminal.w_height
             # if we can show more than history + 3 reserved lines:
@@ -138,6 +144,27 @@ def sqlite(terminal, stdscr):
             terminal.redraw()
         elif input_char == curses.KEY_NPAGE:
             terminal.scroll = max(terminal.scroll - 1, 0)
+            terminal.redraw()
+        # scrolling table -------------------------------------------------------------
+        elif input_char == 555:
+            # ctrl + page up
+            terminal.windows[WMAIN].clist.key_pgup()
+            terminal.windows[WMAIN].redraw()
+            terminal.redraw()
+        elif input_char == 550:
+            # ctrl + page down
+            terminal.windows[WMAIN].clist.key_pgdn()
+            terminal.windows[WMAIN].redraw()
+            terminal.redraw()
+        elif input_char == 566:
+            # ctrl + up
+            terminal.windows[WMAIN].clist.key_up()
+            terminal.windows[WMAIN].redraw()
+            terminal.redraw()
+        elif input_char == 525:
+            # ctrl + down
+            terminal.windows[WMAIN].clist.key_down()
+            terminal.windows[WMAIN].redraw()
             terminal.redraw()
         # history surfing -------------------------------------------------------------
         elif input_char == curses.KEY_UP:
@@ -169,6 +196,29 @@ def sqlite(terminal, stdscr):
         elif input_char == curses.KEY_RIGHT:
             terminal.cursor_x = min(len(terminal.command), terminal.cursor_x + 1)
             terminal.redraw()
+        elif input_char == 545: # ctrl + left
+            cut_str = terminal.command[:terminal.cursor_x][::-1]
+            while len(cut_str) != 0 and cut_str[0] == ' ':
+                cut_str = cut_str[1:]
+                terminal.cursor_x = max(0, terminal.cursor_x - 1)
+            next_jump = cut_str.find(' ')
+            if next_jump == -1:
+                terminal.cursor_x = 0
+            else:
+                terminal.cursor_x = max(0, terminal.cursor_x - next_jump)
+            terminal.redraw()
+        elif input_char == 560: # ctrl + right
+            cut_str = terminal.command[terminal.cursor_x:]
+            while len(cut_str) != 0 and cut_str[0] == ' ':
+                cut_str = cut_str[1:]
+                terminal.cursor_x = min(terminal.cursor_x + 1, len(terminal.command))
+            next_jump = cut_str.find(' ')
+            if next_jump == -1:
+                terminal.cursor_x = len(terminal.command)
+            else:
+                terminal.cursor_x = min(terminal.cursor_x + next_jump, len(terminal.command))
+                cut_str = terminal.command[terminal.cursor_x:]
+            terminal.redraw()
         elif input_char == curses.KEY_HOME:
             terminal.cursor_x = 0
             terminal.redraw()
@@ -179,6 +229,8 @@ def sqlite(terminal, stdscr):
         else:
             # some command that's not used
             if type(input_char) is int:
+                terminal.terminal_history.append(f'non standard input: {str(input_char)}')
+                terminal.redraw()
                 continue
             if input_char == ' ':
                 # leading spaces don't count

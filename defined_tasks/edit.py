@@ -239,6 +239,33 @@ def expense(terminal, stdscr, index: str):
                 terminal.cursor_x = element_start[state] + \
                                     sub_element_start[state][sub_state]
                 terminal.redraw()
+        elif input_char == 545 and input_allowed(): # ctrl + left
+            cut_str = terminal.command[element_start[state]: \
+                                        terminal.cursor_x][::-1]
+            while len(cut_str) != 0 and cut_str[0] == ' ':
+                cut_str = cut_str[1:]
+                terminal.cursor_x = max(element_start[state], \
+                                        terminal.cursor_x - 1)
+            next_jump = cut_str.find(' ')
+            if next_jump == -1:
+                terminal.cursor_x = element_start[state]
+            else:
+                terminal.cursor_x = max(element_start[state], \
+                                        terminal.cursor_x - next_jump)
+            terminal.redraw()
+        elif input_char == 560: # ctrl + right
+            cut_str = terminal.command[terminal.cursor_x:]
+            while len(cut_str) != 0 and cut_str[0] == ' ':
+                cut_str = cut_str[1:]
+                terminal.cursor_x = min(terminal.cursor_x + 1, len(terminal.command))
+            next_jump = cut_str.find(' ')
+            if next_jump == -1:
+                terminal.cursor_x = len(terminal.command)
+            else:
+                terminal.cursor_x = min(terminal.cursor_x + next_jump, \
+                                        len(terminal.command))
+                cut_str = terminal.command[terminal.cursor_x:]
+            terminal.redraw()
         elif input_char == curses.KEY_HOME:
             if input_allowed():
                 terminal.cursor_x = element_start[state]

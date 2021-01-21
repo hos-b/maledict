@@ -225,6 +225,29 @@ class TerminalWindow(CursesWindow):
             elif input_char == curses.KEY_RIGHT:
                 self.cursor_x = min(len(self.command), self.cursor_x + 1)
                 self.redraw()
+            elif input_char == 545: # ctrl + left
+                cut_str = self.command[:self.cursor_x][::-1]
+                while len(cut_str) != 0 and cut_str[0] == ' ':
+                    cut_str = cut_str[1:]
+                    self.cursor_x = max(0, self.cursor_x - 1)
+                next_jump = cut_str.find(' ')
+                if next_jump == -1:
+                    self.cursor_x = 0
+                else:
+                    self.cursor_x = max(0, self.cursor_x - next_jump)
+                self.redraw()
+            elif input_char == 560: # ctrl + right
+                cut_str = self.command[self.cursor_x:]
+                while len(cut_str) != 0 and cut_str[0] == ' ':
+                    cut_str = cut_str[1:]
+                    self.cursor_x = min(self.cursor_x + 1, len(self.command))
+                next_jump = cut_str.find(' ')
+                if next_jump == -1:
+                    self.cursor_x = len(self.command)
+                else:
+                    self.cursor_x = min(self.cursor_x + next_jump, len(self.command))
+                    cut_str = self.command[self.cursor_x:]
+                self.redraw()
             elif input_char == curses.KEY_HOME:
                 self.cursor_x = 0
                 self.redraw()
