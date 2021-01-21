@@ -45,6 +45,8 @@ def expense(terminal, stdscr, index: str):
     S_DATE = 3; S_TIME = 4; S_NOTE = 5
     sub_element_start = {S_DATE: [0, 5, 8],
                          S_TIME: [0, 3]}
+    sub_element_length = {S_DATE: [4, 2, 2],
+                          S_TIME: [2, 2]}
     element_hint =  ['amount', 'payee', 'category', 'date', 'time', 'note']
     element_start = [0, 0, 0, 0, 0, 0]
     element_end   = [0, 0, 0, 0, 0, 0]
@@ -169,14 +171,20 @@ def expense(terminal, stdscr, index: str):
                 else:
                     element_start[state + 1] = element_end[state] + 4
                     state += 1
+                # handle date & time input
                 if state == S_DATE or state == S_TIME:
                     terminal.command += format_date(tr_date) \
                                         if state == S_DATE else \
                                         format_time(tr_date)
                     sub_state = 2 if state == S_DATE else 1
-                    terminal.cursor_x = element_start[state] + \
-                                        sub_element_start[state][sub_state]
+                    # enable reverse text
+                    terminal.rtext_start = element_start[state] + \
+                                           sub_element_start[state][sub_state]
+                    terminal.rtext_end = terminal.rtext_start + \
+                                         sub_element_length[state][sub_state]
+                    terminal.reverse_text_enable = True
                 else:
+                    terminal.reverse_text_enable = False
                     terminal.cursor_x = len(terminal.command)
                 update_predictions(org_record, False)
                 terminal.terminal_history[-1] = f"{get_hint()}"
@@ -227,8 +235,10 @@ def expense(terminal, stdscr, index: str):
                 terminal.redraw()
             else:
                 sub_state = max(0, sub_state - 1)
-                terminal.cursor_x = element_start[state] + \
-                                    sub_element_start[state][sub_state]
+                terminal.rtext_start = element_start[state] + \
+                                       sub_element_start[state][sub_state]
+                terminal.rtext_end = terminal.rtext_start + \
+                                     sub_element_length[state][sub_state]
                 terminal.redraw()
         elif input_char == curses.KEY_RIGHT:
             if input_allowed():
@@ -236,8 +246,10 @@ def expense(terminal, stdscr, index: str):
                 terminal.redraw()
             else:
                 sub_state = min(len(sub_element_start[state]) - 1, sub_state + 1)
-                terminal.cursor_x = element_start[state] + \
-                                    sub_element_start[state][sub_state]
+                terminal.rtext_start = element_start[state] + \
+                                       sub_element_start[state][sub_state]
+                terminal.rtext_end = terminal.rtext_start + \
+                                     sub_element_length[state][sub_state]
                 terminal.redraw()
         elif input_char == 545 and input_allowed(): # ctrl + left
             cut_str = terminal.command[element_start[state]: \

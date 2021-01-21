@@ -37,6 +37,11 @@ class TerminalWindow(CursesWindow):
         self.history_surf_index = 0
         self.cmd_history_buffer = ''
 
+        # revere video text
+        self.reverse_text_enable = False
+        self.rtext_start = 0
+        self.rtext_end = 0
+
         # loading command yaml file
         with open('config/commands.yaml') as file:
             self.command_dict = yaml.load(file, Loader=yaml.FullLoader)
@@ -59,7 +64,7 @@ class TerminalWindow(CursesWindow):
         visible_history = min(len(self.terminal_history), self.w_height - 3)
         visible_history += self.scroll
         # disable cursor if scrolling
-        curses.curs_set(int(self.scroll == 0 and self.focused))
+        curses.curs_set(int(self.scroll == 0 and self.focused and not self.reverse_text_enable))
 
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
         for i in range (self.w_height - 2):
@@ -67,7 +72,15 @@ class TerminalWindow(CursesWindow):
                 self.cwindow.addstr(i + 1, 2, ">>> ", curses_attr)
                 if self.shadow_string != '':
                     self.cwindow.addstr(i + 1, 6 + self.shadow_index, self.shadow_string, curses.A_DIM)
-                self.cwindow.addstr(i + 1, 6, self.command, curses_attr)
+                if self.reverse_text_enable:
+                    pre = self.command[:self.rtext_start]
+                    mid = self.command[self.rtext_start:self.rtext_end]
+                    pos = self.command[self.rtext_end:]
+                    self.cwindow.addstr(i + 1, 6, pre, curses_attr)
+                    self.cwindow.addstr(i + 1, 6 + len(pre), mid, curses_attr | curses.A_STANDOUT)
+                    self.cwindow.addstr(i + 1, 6 + len(pre) + len(mid), pos, curses_attr)
+                else:
+                    self.cwindow.addstr(i + 1, 6, self.command, curses_attr)
                 self.cwindow.move(i + 1, self.cursor_x + 6)
                 break
             self.cwindow.addstr(i + 1, 2, self.terminal_history[-visible_history], curses_attr)

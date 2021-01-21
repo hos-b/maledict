@@ -59,12 +59,15 @@ def expense(terminal, stdscr):
     terminal.terminal_history.append("expense mode activated")
     terminal.command = ''
     terminal.cursor_x = 0
+    curses.curs_set(1)
     tr_date = datetime.now()
     tr_date = tr_date.replace(second=0, microsecond=0)
     S_AMOUNT = 0; S_BUSINESS = 1; S_CATEGORY = 2
     S_DATE = 3; S_TIME = 4; S_NOTE = 5
     sub_element_start = {S_DATE: [0, 5, 8],
                          S_TIME: [0, 3]}
+    sub_element_length = {S_DATE: [4, 2, 2],
+                          S_TIME: [2, 2]}
     element_hint =  ['amount', 'payee', 'category', 'date', 'time', 'note']
     element_start = [0, 0, 0, 0, 0, 0]
     element_end   = [0, 0, 0, 0, 0, 0]
@@ -152,7 +155,6 @@ def expense(terminal, stdscr):
                 parsed_record = parse_expense(elements, tr_date, \
                                               terminal.windows[WMAIN].account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
-                # TODO: make this more efficient
                 terminal.windows[WMAIN].account.add_transaction(parsed_record)
                 terminal.windows[WMAIN].account.query_transactions(
                     terminal.windows[WMAIN].account.full_query, False)
@@ -174,7 +176,8 @@ def expense(terminal, stdscr):
             # accept & rectify the element, prepare next element
             if len(error) == 0:
                 terminal.command += ' | '
-                elements[state] = rectify_element(elements[state], state, terminal.windows[WMAIN].account)
+                elements[state] = rectify_element(elements[state], state, \
+                                                  terminal.windows[WMAIN].account)
                 # skip payee for income
                 if state == S_AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4
@@ -182,15 +185,21 @@ def expense(terminal, stdscr):
                 else:
                     element_start[state + 1] = element_end[state] + 4
                     state += 1
+                # handle date & time input
                 if state == S_DATE or state == S_TIME:
                     terminal.command += format_date(tr_date) \
                                         if state == S_DATE else \
                                         format_time(tr_date)
                     # prefer day|minute over other fields
                     sub_state = 2 if state == S_DATE else 1
-                    terminal.cursor_x = element_start[state] + \
-                                        sub_element_start[state][sub_state]
+                    # enable reverse text
+                    terminal.rtext_start = element_start[state] + \
+                                           sub_element_start[state][sub_state]
+                    terminal.rtext_end = terminal.rtext_start + \
+                                         sub_element_length[state][sub_state]
+                    terminal.reverse_text_enable = True
                 else:
+                    terminal.reverse_text_enable = False
                     terminal.cursor_x = len(terminal.command)
                 terminal.terminal_history[-1] = f"{get_hint()}"
                 update_predictions(False)
@@ -241,8 +250,10 @@ def expense(terminal, stdscr):
                 terminal.redraw()
             else:
                 sub_state = max(0, sub_state - 1)
-                terminal.cursor_x = element_start[state] + \
-                                    sub_element_start[state][sub_state]
+                terminal.rtext_start = element_start[state] + \
+                                       sub_element_start[state][sub_state]
+                terminal.rtext_end = terminal.rtext_start + \
+                                     sub_element_length[state][sub_state]
                 terminal.redraw()
         elif input_char == curses.KEY_RIGHT:
             if input_allowed():
@@ -250,8 +261,10 @@ def expense(terminal, stdscr):
                 terminal.redraw()
             else:
                 sub_state = min(len(sub_element_start[state]) - 1, sub_state + 1)
-                terminal.cursor_x = element_start[state] + \
-                                    sub_element_start[state][sub_state]
+                terminal.rtext_start = element_start[state] + \
+                                       sub_element_start[state][sub_state]
+                terminal.rtext_end = terminal.rtext_start + \
+                                     sub_element_length[state][sub_state]
                 terminal.redraw()
         elif input_char == 545 and input_allowed(): # ctrl + left ---------------------
             cut_str = terminal.command[element_start[state]: \
