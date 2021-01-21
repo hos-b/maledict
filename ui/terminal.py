@@ -279,6 +279,9 @@ class TerminalWindow(CursesWindow):
                 self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
             else:
+                # some command that's not used
+                if type(input_char) is int:
+                    continue
                 if input_char == ' ':
                     # leading spaces don't count
                     if len(self.command) == 0:

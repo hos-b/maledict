@@ -216,7 +216,7 @@ def expense(terminal, stdscr):
         # suggestion surfing, changing date & time ------------------------------------
         elif input_char == curses.KEY_UP:
             if input_allowed():
-                pass
+                continue
             else:
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
                 terminal.command = terminal.command[:element_start[state]] + \
@@ -226,7 +226,7 @@ def expense(terminal, stdscr):
                 terminal.redraw()
         elif input_char == curses.KEY_DOWN:
             if input_allowed():
-                pass
+                continue
             else:
                 tr_date = change_datetime(tr_date, state, sub_state, -1)
                 terminal.command = terminal.command[:element_start[state]] + \
@@ -282,6 +282,9 @@ def expense(terminal, stdscr):
         # normal input ----------------------------------------------------------------
         else:
             if not input_allowed():
+                continue
+            # some command that's not used
+            if type(input_char) is int:
                 continue
             if input_char == ' ':
                 # leading spaces don't count

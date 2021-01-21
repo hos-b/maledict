@@ -27,7 +27,7 @@ def main(stdscr):
     global windows
 
     # getting screen data
-    stdscr.addstr(0, 1, "Maledict [version: 1.0.0]")
+    stdscr.addstr(0, 1, "Maledict [version: 1.0.1]")
     stdscr.keypad(True)
 
     screen_width = curses.COLS - 1

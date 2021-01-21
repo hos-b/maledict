@@ -177,6 +177,9 @@ def sqlite(terminal, stdscr):
             terminal.redraw()
         # normal input ----------------------------------------------------------------
         else:
+            # some command that's not used
+            if type(input_char) is int:
+                continue
             if input_char == ' ':
                 # leading spaces don't count
                 if len(terminal.command) == 0:
