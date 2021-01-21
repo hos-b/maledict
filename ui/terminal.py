@@ -59,7 +59,7 @@ class TerminalWindow(CursesWindow):
         """
         redraws the window based on input, focus flag and predictions.
         """
-        self.cwindow.clear()
+        self.cwindow.erase()
         # not using first or last line, 1 reserved for current command
         visible_history = min(len(self.terminal_history), self.w_height - 3)
         visible_history += self.scroll

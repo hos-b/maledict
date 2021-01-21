@@ -57,7 +57,7 @@ class MainWindow(CursesWindow):
         """
         redraws the actions menu
         """
-        self.cwindow.clear()
+        self.cwindow.erase()
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
         account_str = self.account.name if self.account else 'not set'
         balance_str = f"balance: {self.account.balance:.2f}" if self.account else '0.0'

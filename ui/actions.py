@@ -37,7 +37,7 @@ class ActionWindow(CursesWindow):
         """
         redraws the actions menu
         """
-        self.cwindow.clear()
+        self.cwindow.erase()
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
         self.clist.redraw(self.cwindow, curses_attr)
         self.cwindow.box()
