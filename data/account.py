@@ -38,7 +38,7 @@ class Account:
         changes. if update is set to true, the dicts of the object are
         also updated.
         """
-        # if all transactions are being loaded, update balance
+        # if all transactions are being loaded, update balance [i can't regex]
         update_balance = query.lower().startswith(f'select * from {self.name}') and\
                          query.lower().count(' where ') == 0
         if update_balance:

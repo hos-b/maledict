@@ -1,5 +1,6 @@
 import yaml
 import curses
+from typing import Tuple
 
 import defined_tasks
 from ui.static import WMAIN
@@ -332,7 +333,7 @@ class TerminalWindow(CursesWindow):
                 self.scroll = 0
                 self.redraw()
 
-    def get_command_predictions(self, state = None) -> (list, int):
+    def get_command_predictions(self, state = None) -> Tuple[list, int]:
         """
         provides a list of predictions based on the current command
         and the index at which the prediction should be inserted.
