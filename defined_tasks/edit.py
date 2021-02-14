@@ -103,9 +103,9 @@ def expense(terminal, stdscr, index: str):
             kb_interrupt = False
         except KeyboardInterrupt:
             if kb_interrupt or terminal.command == '':
-                terminal.shadow_string = ''
-                terminal.shadow_index = 0
-                return ["edit mode deactivated"]
+                break
+            terminal.shadow_string = ''
+            terminal.shadow_index = 0
             kb_interrupt = True
             elements = ['', '', '', '', '', '']
             terminal.command = ''
@@ -326,5 +326,8 @@ def expense(terminal, stdscr, index: str):
             terminal.cursor_x += 1
             terminal.scroll = 0
             terminal.redraw()
-
-    return ["edit successful"]
+    
+    # in case the edit was cancelled half way
+    terminal.shadow_string = ''
+    terminal.shadow_index = 0
+    return ["edit mode deactivated"]
