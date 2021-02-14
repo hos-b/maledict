@@ -6,7 +6,7 @@ from data.account import Account
 from datetime import timedelta
 import re
 
-def check_input(input_str: str, state: int) -> list:
+def check_input(input_str: str, state: int) -> str:
     """
     checks whether the input at state x in expense mode is correct
     """
@@ -37,17 +37,17 @@ def check_input(input_str: str, state: int) -> list:
             date(int(year), int(month), int(day))
         except ValueError:
             return 'invalid date'
-        return []
+        return ''
     elif state == 4:
         hour, minute = input_str.split(':')
         try:
             time(int(hour), int(minute))
         except ValueError:
             return 'invalid time'
-        return []
+        return ''
     elif state == 5:
-        # TODO: check note? no rules apply ...
-        return []
+        # no rules for notes
+        return ''
 
 # add expense utils ------------------------------------------------------------------------
 def change_datetime(dt: datetime, state: int, substate: int, change: int) -> datetime:
@@ -79,6 +79,9 @@ def change_datetime(dt: datetime, state: int, substate: int, change: int) -> dat
     return dt
 
 def predict_business(amount: str, biz_temp: str, account: Account):
+    # making sure the key is correct
+    if '.' not in amount:
+        amount += '.0'
     if amount in account.recurring_amounts and \
        bool(re.match(biz_temp, account.recurring_amounts[amount].business, re.I)):
         return account.recurring_amounts[amount].business, \

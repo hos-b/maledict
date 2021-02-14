@@ -84,8 +84,8 @@ def expense(terminal, stdscr):
         return False
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f" {element_hint[state]}:"
-    def update_predictions(force_update: bool):
-        global predicted_record
+    def update_predictions(force_update: bool, predicted_record: Record):
+        # global predicted_record
         if state == S_BUSINESS:
             terminal.shadow_string, predicted_record = predict_business(elements[0], \
                 terminal.command[element_start[1]:], terminal.windows[WMAIN].account)
@@ -131,18 +131,18 @@ def expense(terminal, stdscr):
                 terminal.cursor_x = max(element_start[state], terminal.cursor_x - 1)
                 if terminal.cursor_x == len(terminal.command) - 1:
                     terminal.command = terminal.command[:terminal.cursor_x]
-                    update_predictions(True)
+                    update_predictions(True, predicted_record)
                 else:
                     terminal.command = terminal.command[:terminal.cursor_x] + \
                                     terminal.command[terminal.cursor_x + 1:]
-                    update_predictions(True)
+                    update_predictions(True, predicted_record)
                 terminal.redraw()
         elif input_char == curses.KEY_DC:
             if input_allowed() and len(terminal.command) != 0 and \
                terminal.cursor_x < len(terminal.command):
                 terminal.command = terminal.command[:terminal.cursor_x] + \
                                 terminal.command[terminal.cursor_x + 1:]
-                update_predictions(True)
+                update_predictions(True, predicted_record)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == '\n':
@@ -172,9 +172,9 @@ def expense(terminal, stdscr):
             # nothing written?
             elif elements[state] == '':
                 continue
-            error = check_input(elements[state], state)
+            errors = check_input(elements[state], state)
             # accept & rectify the element, prepare next element
-            if len(error) == 0:
+            if len(errors) == 0:
                 terminal.command += ' | '
                 elements[state] = rectify_element(elements[state], state, \
                                                   terminal.windows[WMAIN].account)
@@ -202,12 +202,12 @@ def expense(terminal, stdscr):
                     terminal.reverse_text_enable = False
                     terminal.cursor_x = len(terminal.command)
                 terminal.terminal_history[-1] = f"{get_hint()}"
-                update_predictions(False)
+                update_predictions(False, predicted_record)
             # reject & reset input
             else:
                 elements[state] = ''
                 element_end[state] = 0
-                terminal.terminal_history[-1]= error
+                terminal.terminal_history[-1]= errors
                 terminal.terminal_history.append(get_hint())
                 terminal.command = terminal.command[:element_start[state]]
                 terminal.cursor_x = len(terminal.command)
@@ -336,7 +336,7 @@ def expense(terminal, stdscr):
             else:
                 terminal.command = terminal.command[:terminal.cursor_x] + input_char \
                                  + terminal.command[terminal.cursor_x:]
-            update_predictions(True)
+            update_predictions(True, predicted_record)
             terminal.cursor_x += 1
             terminal.scroll = 0
             terminal.redraw()
