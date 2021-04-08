@@ -212,7 +212,7 @@ def expense(terminal, stdscr):
                 terminal.command = terminal.command[:element_start[state]]
                 terminal.cursor_x = len(terminal.command)
             terminal.redraw()
-        # scrolling -------------------------------------------------------------------
+        # history scrolling -----------------------------------------------------------
         elif input_char == curses.KEY_PPAGE:
             max_scroll = len(terminal.terminal_history) + 3 - terminal.w_height
             # if we can show more than history + 3 reserved lines:
@@ -221,6 +221,23 @@ def expense(terminal, stdscr):
             terminal.redraw()
         elif input_char == curses.KEY_NPAGE:
             terminal.scroll = max(terminal.scroll - 1, 0)
+            terminal.redraw()
+        # record scrolling ------------------------------------------------------------
+        elif input_char == 555: # ctrl + page up            
+            terminal.windows[WMAIN].clist.key_pgup()
+            terminal.windows[WMAIN].redraw()
+            terminal.redraw()
+        elif input_char == 550: # ctrl + page down
+            terminal.windows[WMAIN].clist.key_pgdn()
+            terminal.windows[WMAIN].redraw()
+            terminal.redraw()
+        elif input_char == 566: # ctrl + up
+            terminal.windows[WMAIN].clist.key_up()
+            terminal.windows[WMAIN].redraw()
+            terminal.redraw()
+        elif input_char == 525: # ctrl + down
+            terminal.windows[WMAIN].clist.key_down()
+            terminal.windows[WMAIN].redraw()
             terminal.redraw()
         # suggestion surfing, changing date & time ------------------------------------
         elif input_char == curses.KEY_UP:

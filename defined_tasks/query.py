@@ -146,23 +146,19 @@ def sqlite(terminal, stdscr):
             terminal.scroll = max(terminal.scroll - 1, 0)
             terminal.redraw()
         # scrolling table -------------------------------------------------------------
-        elif input_char == 555:
-            # ctrl + page up
+        elif input_char == 555: # ctrl + page up            
             terminal.windows[WMAIN].clist.key_pgup()
             terminal.windows[WMAIN].redraw()
             terminal.redraw()
-        elif input_char == 550:
-            # ctrl + page down
+        elif input_char == 550: # ctrl + page down
             terminal.windows[WMAIN].clist.key_pgdn()
             terminal.windows[WMAIN].redraw()
             terminal.redraw()
-        elif input_char == 566:
-            # ctrl + up
+        elif input_char == 566: # ctrl + up
             terminal.windows[WMAIN].clist.key_up()
             terminal.windows[WMAIN].redraw()
             terminal.redraw()
-        elif input_char == 525:
-            # ctrl + down
+        elif input_char == 525: # ctrl + down
             terminal.windows[WMAIN].clist.key_down()
             terminal.windows[WMAIN].redraw()
             terminal.redraw()
