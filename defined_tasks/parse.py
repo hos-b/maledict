@@ -66,7 +66,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     while read_input:
         input_char = stdscr.get_wch()
         # backspace, del --------------------------------------------------------------
-        if input_char == curses.KEY_BACKSPACE:
+        if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if len(terminal.command) != 0:
                 terminal.cursor_x = max(0, terminal.cursor_x - 1)
                 if terminal.cursor_x == len(terminal.command) - 1:
@@ -214,7 +214,7 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
     while read_input:
         input_char = stdscr.get_wch()
         # backspace, del --------------------------------------------------------------
-        if input_char == curses.KEY_BACKSPACE:
+        if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if len(terminal.command) != 0:
                 terminal.cursor_x = max(0, terminal.cursor_x - 1)
                 if terminal.cursor_x == len(terminal.command) - 1:

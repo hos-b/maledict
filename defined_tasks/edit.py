@@ -118,7 +118,7 @@ def expense(terminal, stdscr, index: str):
         except:
             continue
         # backspace, del --------------------------------------------------------------
-        if input_char == curses.KEY_BACKSPACE:
+        if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if input_allowed():
                 terminal.cursor_x = max(element_start[state], terminal.cursor_x - 1)
                 if terminal.cursor_x == len(terminal.command) - 1:

@@ -57,7 +57,7 @@ def sqlite(terminal, stdscr):
         except:
             continue
         # backspace, del --------------------------------------------------------------
-        if input_char == curses.KEY_BACKSPACE:
+        if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             terminal.cursor_x = max(0, terminal.cursor_x - 1)
             if terminal.cursor_x == len(terminal.command) - 1:
                 terminal.command = terminal.command[:terminal.cursor_x]
