@@ -1,4 +1,5 @@
 import curses
+from typing import Tuple
 from data.record import Record
 from misc.string_manip import fit_string
 
@@ -81,7 +82,7 @@ class CursesList:
         if self.static_line:
             cwindow.addstr(self.y + self.l_height, self.x, ' ' * self.sl_length, curses.A_UNDERLINE | curses_attr)
             span_str = f' {self.scroll}-{self.scroll + limit} out of {len(self.items)} '
-            cwindow.addstr(self.y + self.l_height, self.x + self.l_width - len(span_str) - 6, \
+            cwindow.addstr(self.y + self.l_height, self.x + self.l_width - len(span_str) - 15, \
                                             span_str, curses_attr | curses.A_ITALIC)
 
     def key_up(self):
@@ -111,7 +112,7 @@ class CursesList:
             if max_scroll > 0:
                 self.scroll = min(self.scroll + self.l_height, max_scroll)
 
-    def key_enter(self) -> (int, str):
+    def key_enter(self) -> Tuple[int, str]:
         return self.index, self.items[self.index]
     
     def _calculate_scrollbar_size(self):

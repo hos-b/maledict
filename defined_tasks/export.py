@@ -8,7 +8,7 @@ def csv(account: Account, path: str):
     try:
         file = open(path, 'w', newline='')
     except:
-        return [f"could not write to {file}"]
+        return [f"could not write to {path}"]
     csv_writer = pcsv.writer(file, delimiter=',')
 
     query = f'SELECT * FROM {account.name} ORDER BY datetime(datetime) DESC;'

@@ -1,5 +1,6 @@
-import curses
 import yaml
+import os
+import curses
 
 from ui.main import MainWindow
 from ui.actions import ActionWindow
@@ -34,10 +35,12 @@ def main(stdscr):
     screen_height = curses.LINES - 1
 
     # connecting to sqlite db
-    database = SQLiteProxy('database/maledict.db')
+    db_path = os.path.join(os.path.dirname(__file__), 'database/maledict.db')
+    database = SQLiteProxy(db_path)
 
     # reading config yaml
-    conf_file = open('config/settings.yaml')
+    config_path = os.path.join(os.path.dirname(__file__), 'config/settings.yaml')
+    conf_file = open(config_path)
     conf = yaml.load(conf_file, Loader=yaml.FullLoader)
 
     # get overview window

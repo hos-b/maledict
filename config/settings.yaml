@@ -5,7 +5,7 @@ table:
   category_length: 20
   subcategory_length: 20
   payee_length: 21
-  note_length: 34
+  note_length: 46
   scrollbar-enable: true
 
 # recurring transaction settings
@@ -17,20 +17,20 @@ recurring:
 
 # window sizes
 main:
-  x: 5
-  y: 3
-  width_percentage: 0.65
+  x: 5 # w.r.t. screen
+  y: 3 # w.r.t. screen
+  width_percentage: 0.80
   height_percentage: 0.75
 
 action:
-  x_offset: 5
-  y: 3
-  width_percentage: 0.3
+  x_offset: 2 # w.r.t main window
+  y: 3 # w.r.t. screen
+  width_percentage: 0.15
   height_percentage: 0.75
 
 terminal:
-  x: 5
-  y_offset: 1
+  x: 5 # w.r.t. screen
+  y_offset: 1 # w.r.t. main window
   width_offset: -5
   height_percentage: 0.2
 

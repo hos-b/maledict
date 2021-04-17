@@ -1,3 +1,4 @@
+import os
 import yaml
 import curses
 from typing import Tuple
@@ -44,10 +45,14 @@ class TerminalWindow(CursesWindow):
         self.rtext_end = 0
 
         # loading command yaml file
-        with open('config/commands.yaml') as file:
+        cmd_yaml_path = os.path.join(os.path.dirname(__file__),
+                                     '../config/commands.yaml')
+        with open(cmd_yaml_path) as file:
             self.command_dict = yaml.load(file, Loader=yaml.FullLoader)
         try:
-            f = open("database/.command_history", "r")
+            cmd_history_path = os.path.join(os.path.dirname(__file__),
+                                            '../database/.command_history')
+            f = open(cmd_history_path, 'r')
             for line in f:
                 self.command_history.append(line.strip())
         except FileNotFoundError:
@@ -195,7 +200,7 @@ class TerminalWindow(CursesWindow):
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char
             # backspace, del --------------------------------------------------------------
-            elif input_char == curses.KEY_BACKSPACE:
+            elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
                 if len(self.command) != 0:
                     self.cursor_x = max(0, self.cursor_x - 1)
                     if self.cursor_x == len(self.command) - 1:
@@ -319,8 +324,8 @@ class TerminalWindow(CursesWindow):
                 # some command that's not used
                 if type(input_char) is int:
                     continue
+                # ignore leading spaces
                 if input_char == ' ':
-                    # leading spaces don't count
                     if len(self.command) == 0:
                         continue
                 if self.cursor_x == len(self.command):
@@ -379,7 +384,9 @@ class TerminalWindow(CursesWindow):
         """
         end = len(self.command_history)
         begin = max(0, end - count)
-        with open('database/.command_history', 'w') as f:
+        cmd_history_path = os.path.join(os.path.dirname(__file__),
+                                        '../database/.command_history')
+        with open(cmd_history_path, 'w') as f:
             for i in range(begin, end):
                 f.write(f"{self.command_history[i]}\n")
 
@@ -389,7 +396,9 @@ class TerminalWindow(CursesWindow):
         the commands inside.
         """
         try:
-            f = open("database/.warmup", "r")
+            warmup_path = os.path.join(os.path.dirname(__file__),
+                                       '../database/.warmup')
+            f = open(warmup_path, 'r')
             for line in f:
                 line = line.strip()
                 if line != '':
