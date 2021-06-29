@@ -11,10 +11,8 @@ import misc.statics as statics
 from parser.mk_parser import MKParser
 from data.sqlite_proxy import SQLiteProxy
 
-#pylint: disable=E1101
 
-
-debugstr = ""
+# debugstr = ""
 database = None
 windows = []
 
@@ -24,7 +22,7 @@ def wrap_up(conf: dict):
     windows[statics.WTERMINAL].write_command_history(conf['command_history_file_length'])
 
 def main(stdscr):
-    global debugstr
+    # global debugstr
     global database
     global windows
 

@@ -249,7 +249,7 @@ def expense(terminal, stdscr, index: str):
                 terminal.rtext_end = terminal.rtext_start + \
                                      sub_element_length[state][sub_state]
                 terminal.redraw()
-        elif input_char == 545 and input_allowed(): # ctrl + left
+        elif input_char == statics.CTRL_LEFT and input_allowed():
             cut_str = terminal.command[element_start[state]: \
                                         terminal.cursor_x][::-1]
             while len(cut_str) != 0 and cut_str[0] == ' ':
@@ -263,7 +263,7 @@ def expense(terminal, stdscr, index: str):
                 terminal.cursor_x = max(element_start[state], \
                                         terminal.cursor_x - next_jump)
             terminal.redraw()
-        elif input_char == 560: # ctrl + right
+        elif input_char == statics.CTRL_RIGHT:
             cut_str = terminal.command[terminal.cursor_x:]
             while len(cut_str) != 0 and cut_str[0] == ' ':
                 cut_str = cut_str[1:]

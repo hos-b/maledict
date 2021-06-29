@@ -1,3 +1,4 @@
+from os import stat
 from misc.utils import variadic_contains_or, check_input
 from misc.utils import predict_business, predict_category
 from misc.string_manip import format_date, format_time
@@ -223,19 +224,19 @@ def expense(terminal, stdscr):
             terminal.scroll = max(terminal.scroll - 1, 0)
             terminal.redraw()
         # record scrolling ------------------------------------------------------------
-        elif input_char == 555: # ctrl + page up
+        elif input_char == statics.CTRL_PG_UP:
             terminal.windows[statics.WMAIN].clist.key_pgup()
             terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
-        elif input_char == 550: # ctrl + page down
+        elif input_char == statics.CTRL_PG_DOWN:
             terminal.windows[statics.WMAIN].clist.key_pgdn()
             terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
-        elif input_char == 566: # ctrl + up
+        elif input_char == statics.CTRL_UP:
             terminal.windows[statics.WMAIN].clist.key_up()
             terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
-        elif input_char == 525: # ctrl + down
+        elif input_char == statics.CTRL_DOWN:
             terminal.windows[statics.WMAIN].clist.key_down()
             terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
@@ -284,7 +285,7 @@ def expense(terminal, stdscr):
                 terminal.rtext_end = terminal.rtext_start + \
                                      sub_element_length[state][sub_state]
                 terminal.redraw()
-        elif input_char == 545 and input_allowed(): # ctrl + left ---------------------
+        elif input_char == statics.CTRL_LEFT and input_allowed():
             cut_str = terminal.command[element_start[state]: \
                                         terminal.cursor_x][::-1]
             while len(cut_str) != 0 and cut_str[0] == ' ':
@@ -298,7 +299,7 @@ def expense(terminal, stdscr):
                 terminal.cursor_x = max(element_start[state], \
                                         terminal.cursor_x - next_jump)
             terminal.redraw()
-        elif input_char == 560 and input_allowed(): # ctrl + right --------------------
+        elif input_char == statics.CTRL_RIGHT and input_allowed():
             cut_str = terminal.command[terminal.cursor_x:]
             while len(cut_str) != 0 and cut_str[0] == ' ':
                 cut_str = cut_str[1:]
@@ -343,9 +344,10 @@ def expense(terminal, stdscr):
                 continue
             # some command that's not used
             if type(input_char) is int:
+
                 continue
             if input_char == ' ':
-                # leading spaces don't count
+                # supress leading spaces
                 if len(terminal.command) == element_start[state]:
                     terminal.redraw()
                     continue

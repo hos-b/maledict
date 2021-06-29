@@ -1,5 +1,4 @@
 import curses
-from curses.ascii import ctrl as ctrl_plus
 
 from data.record import Record
 import misc.statics as statics
@@ -144,19 +143,19 @@ def sqlite(terminal, stdscr):
             terminal.scroll = max(terminal.scroll - 1, 0)
             terminal.redraw()
         # scrolling table -------------------------------------------------------------
-        elif input_char == 555: # ctrl + page up            
+        elif input_char == statics.CTRL_PG_UP:
             terminal.windows[statics.WMAIN].clist.key_pgup()
             terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
-        elif input_char == 550: # ctrl + page down
+        elif input_char == statics.CTRL_PG_DOWN:
             terminal.windows[statics.WMAIN].clist.key_pgdn()
             terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
-        elif input_char == 566: # ctrl + up
+        elif input_char == statics.CTRL_UP:
             terminal.windows[statics.WMAIN].clist.key_up()
             terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
-        elif input_char == 525: # ctrl + down
+        elif input_char == statics.CTRL_DOWN:
             terminal.windows[statics.WMAIN].clist.key_down()
             terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
@@ -190,7 +189,7 @@ def sqlite(terminal, stdscr):
         elif input_char == curses.KEY_RIGHT:
             terminal.cursor_x = min(len(terminal.command), terminal.cursor_x + 1)
             terminal.redraw()
-        elif input_char == 545: # ctrl + left
+        elif input_char == statics.CTRL_LEFT:
             cut_str = terminal.command[:terminal.cursor_x][::-1]
             while len(cut_str) != 0 and cut_str[0] == ' ':
                 cut_str = cut_str[1:]
@@ -201,7 +200,7 @@ def sqlite(terminal, stdscr):
             else:
                 terminal.cursor_x = max(0, terminal.cursor_x - next_jump)
             terminal.redraw()
-        elif input_char == 560: # ctrl + right
+        elif input_char == statics.CTRL_RIGHT:
             cut_str = terminal.command[terminal.cursor_x:]
             while len(cut_str) != 0 and cut_str[0] == ' ':
                 cut_str = cut_str[1:]
