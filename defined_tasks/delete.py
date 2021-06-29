@@ -1,5 +1,4 @@
-from data.sqlite_proxy import SQLiteProxy
-from ui.static import WMAIN
+import misc.statics as statics
 from sqlite3 import OperationalError as SQLiteOperationalError
 
 def account(terminal, name: str) -> str:
@@ -10,9 +9,9 @@ def account(terminal, name: str) -> str:
     except:
         return [f"could not delete account {name}... go figure out why"]
     # if removing the current account
-    current_account = terminal.windows[WMAIN].account
+    current_account = terminal.windows[statics.WMAIN].account
     if current_account and current_account.name == name:
-        terminal.windows[WMAIN].change_current_account(None)
+        terminal.windows[statics.WMAIN].change_current_account(None)
 
     return [f"successfully deleted {name}"]
 

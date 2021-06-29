@@ -3,17 +3,14 @@ from misc.utils import predict_business, predict_category
 from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element, parse_expense
 from data.record import Record
-from data.sqlite_proxy import SQLiteProxy
-from ui.static import WMAIN
+import misc.statics as statics
 
 import curses
 import re
-from sqlite3 import OperationalError as SQLiteOperationalError
-from datetime import datetime
 
 def expense(terminal, stdscr, index: str):
      # exception handling
-    if terminal.windows[WMAIN].account == None:
+    if terminal.windows[statics.WMAIN].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot edit expenses in warmup mode"]
@@ -23,7 +20,7 @@ def expense(terminal, stdscr, index: str):
         return [f"expected hex value, got {index}"]
 
     list_index = -1
-    for idx, record in enumerate(terminal.windows[WMAIN].account.records):
+    for idx, record in enumerate(terminal.windows[statics.WMAIN].account.records):
         if record.transaction_id == transaction_id:
             list_index = idx
             break
@@ -31,7 +28,7 @@ def expense(terminal, stdscr, index: str):
         return [f"given transaction id does not exist"]
 
     # predictions
-    org_record = terminal.windows[WMAIN].account.records[list_index].copy()
+    org_record = terminal.windows[statics.WMAIN].account.records[list_index].copy()
     pre_amount_str = '+' + str(org_record.amount) \
                       if org_record.amount > 0 else str(org_record.amount)
     tr_date = org_record.t_datetime
@@ -72,7 +69,7 @@ def expense(terminal, stdscr, index: str):
                 return
             terminal.shadow_string, predicted_record = predict_business(elements[0], \
                     terminal.command[element_start[S_BUSINESS]:], \
-                    terminal.windows[WMAIN].account)
+                    terminal.windows[statics.WMAIN].account)
             terminal.shadow_index = element_start[S_BUSINESS]
         elif state == S_CATEGORY:
             if not force_update and predicted_record is not None:
@@ -83,7 +80,7 @@ def expense(terminal, stdscr, index: str):
                 return
             terminal.shadow_string, predicted_record = predict_category(elements[1], \
                     terminal.command[element_start[S_CATEGORY]:], \
-                    terminal.windows[WMAIN].account)
+                    terminal.windows[statics.WMAIN].account)
             terminal.shadow_index = element_start[S_CATEGORY]
         elif state == S_NOTE and bool(re.match(terminal.command[element_start[5]:], \
                                       org_record.note, re.I)):
@@ -144,13 +141,13 @@ def expense(terminal, stdscr, index: str):
             # done with editing
             if state == S_NOTE:
                 parsed_record = parse_expense(elements, tr_date, \
-                                              terminal.windows[WMAIN].account)
-                terminal.windows[WMAIN].account.update_transaction(transaction_id, \
+                                              terminal.windows[statics.WMAIN].account)
+                terminal.windows[statics.WMAIN].account.update_transaction(transaction_id, \
                                                                    parsed_record)
-                terminal.windows[WMAIN].update_table_row(list_index)
-                terminal.windows[WMAIN].update_table_statistics(org_record.amount, \
+                terminal.windows[statics.WMAIN].update_table_row(list_index)
+                terminal.windows[statics.WMAIN].update_table_statistics(org_record.amount, \
                                                                 parsed_record.amount)
-                terminal.windows[WMAIN].redraw()
+                terminal.windows[statics.WMAIN].redraw()
                 terminal.command = ''
                 terminal.shadow_index = 0
                 terminal.shadow_string = ''
@@ -163,7 +160,7 @@ def expense(terminal, stdscr, index: str):
             # accept & rectify the element, prepare next element
             if len(error) == 0:
                 terminal.command += ' | '
-                elements[state] = rectify_element(elements[state], state, terminal.windows[WMAIN].account)
+                elements[state] = rectify_element(elements[state], state, terminal.windows[statics.WMAIN].account)
                 # skip payee for income
                 if state == S_AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4

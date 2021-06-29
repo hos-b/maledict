@@ -4,7 +4,7 @@ from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element, parse_expense
 from data.record import Record
 from data.sqlite_proxy import SQLiteProxy
-from ui.static import WMAIN
+import misc.statics as statics
 import curses
 from sqlite3 import OperationalError as SQLiteOperationalError
 from datetime import datetime
@@ -50,7 +50,7 @@ def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
 
 def expense(terminal, stdscr):
     # exception handling
-    if terminal.windows[WMAIN].account == None:
+    if terminal.windows[statics.WMAIN].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot add expenses in warmup mode"]
@@ -88,7 +88,7 @@ def expense(terminal, stdscr):
         # global predicted_record
         if state == S_BUSINESS:
             terminal.shadow_string, predicted_record = predict_business(elements[0], \
-                terminal.command[element_start[1]:], terminal.windows[WMAIN].account)
+                terminal.command[element_start[1]:], terminal.windows[statics.WMAIN].account)
             terminal.shadow_index = element_start[1]
         elif state == S_CATEGORY:
             if not force_update and predicted_record is not None:
@@ -96,7 +96,7 @@ def expense(terminal, stdscr):
                 terminal.shadow_index = element_start[2]
                 return
             terminal.shadow_string, predicted_record = predict_category(elements[1], \
-                terminal.command[element_start[2]:], terminal.windows[WMAIN].account)
+                terminal.command[element_start[2]:], terminal.windows[statics.WMAIN].account)
             terminal.shadow_index = element_start[2]
         else:
             terminal.shadow_string = ''
@@ -153,12 +153,12 @@ def expense(terminal, stdscr):
             # adding the expense
             if state == S_NOTE:
                 parsed_record = parse_expense(elements, tr_date, \
-                                              terminal.windows[WMAIN].account)
+                                              terminal.windows[statics.WMAIN].account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
-                terminal.windows[WMAIN].account.add_transaction(parsed_record)
-                terminal.windows[WMAIN].account.query_transactions(
-                    terminal.windows[WMAIN].account.full_query, False)
-                terminal.windows[WMAIN].refresh_table_records('all transactions')
+                terminal.windows[statics.WMAIN].account.add_transaction(parsed_record)
+                terminal.windows[statics.WMAIN].account.query_transactions(
+                    terminal.windows[statics.WMAIN].account.full_query, False)
+                terminal.windows[statics.WMAIN].refresh_table_records('all transactions')
                 terminal.terminal_history[-1] = str(elements)
                 elements = ['', '', '', '', '', '']
                 terminal.command = ''
@@ -177,7 +177,7 @@ def expense(terminal, stdscr):
             if len(errors) == 0:
                 terminal.command += ' | '
                 elements[state] = rectify_element(elements[state], state, \
-                                                  terminal.windows[WMAIN].account)
+                                                  terminal.windows[statics.WMAIN].account)
                 # skip payee for income
                 if state == S_AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4
@@ -223,24 +223,25 @@ def expense(terminal, stdscr):
             terminal.scroll = max(terminal.scroll - 1, 0)
             terminal.redraw()
         # record scrolling ------------------------------------------------------------
-        elif input_char == 555: # ctrl + page up            
-            terminal.windows[WMAIN].clist.key_pgup()
-            terminal.windows[WMAIN].redraw()
+        elif input_char == 555: # ctrl + page up
+            terminal.windows[statics.WMAIN].clist.key_pgup()
+            terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
         elif input_char == 550: # ctrl + page down
-            terminal.windows[WMAIN].clist.key_pgdn()
-            terminal.windows[WMAIN].redraw()
+            terminal.windows[statics.WMAIN].clist.key_pgdn()
+            terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
         elif input_char == 566: # ctrl + up
-            terminal.windows[WMAIN].clist.key_up()
-            terminal.windows[WMAIN].redraw()
+            terminal.windows[statics.WMAIN].clist.key_up()
+            terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
         elif input_char == 525: # ctrl + down
-            terminal.windows[WMAIN].clist.key_down()
-            terminal.windows[WMAIN].redraw()
+            terminal.windows[statics.WMAIN].clist.key_down()
+            terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
         # suggestion surfing, changing date & time ------------------------------------
         elif input_char == curses.KEY_UP:
+            # TODO add suggestion surfing
             if input_allowed():
                 continue
             else:
@@ -358,7 +359,7 @@ def expense(terminal, stdscr):
             terminal.scroll = 0
             terminal.redraw()
 
-    terminal.windows[WMAIN].account.flush_transactions()
+    terminal.windows[statics.WMAIN].account.flush_transactions()
     terminal.shadow_string = ''
     terminal.shadow_index = 0
     return ["expense mode deactivated"]

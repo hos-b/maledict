@@ -5,7 +5,8 @@ import curses
 from ui.main import MainWindow
 from ui.actions import ActionWindow
 from ui.terminal import TerminalWindow
-from ui.static import WTERMINAL, WACTION, WMAIN
+
+import misc.statics as statics
 
 from parser.mk_parser import MKParser
 from data.sqlite_proxy import SQLiteProxy
@@ -20,7 +21,7 @@ windows = []
 def wrap_up(conf: dict):
     database.connection.commit()
     database.db_close()
-    windows[WTERMINAL].write_command_history(conf['command_history_file_length'])
+    windows[statics.WTERMINAL].write_command_history(conf['command_history_file_length'])
 
 def main(stdscr):
     global debugstr
@@ -47,12 +48,12 @@ def main(stdscr):
     windows.append(MainWindow(stdscr, conf['main']['x'], conf['main']['y'], \
                    conf['main']['width_percentage'] * screen_width, \
                    conf['main']['height_percentage'] * screen_height, windows, conf))
-    windows.append(ActionWindow(stdscr, windows[WMAIN].max_x + conf['action']['x_offset'], \
+    windows.append(ActionWindow(stdscr, windows[statics.WMAIN].max_x + conf['action']['x_offset'], \
                                 conf['action']['y'], conf['action']['width_percentage'] * \
                                 screen_width , conf['action']['height_percentage'] * \
                                 screen_height, windows))
-    windows.append(TerminalWindow(stdscr, conf['terminal']['x'], windows[WMAIN].max_y + \
-                                  conf['terminal']['y_offset'], windows[WACTION].max_x + \
+    windows.append(TerminalWindow(stdscr, conf['terminal']['x'], windows[statics.WMAIN].max_y + \
+                                  conf['terminal']['y_offset'], windows[statics.WACTION].max_x + \
                                   conf['terminal']['width_offset'], conf['terminal']['height_percentage'] * \
                                   screen_height, windows, database, conf))
 

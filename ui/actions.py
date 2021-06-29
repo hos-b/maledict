@@ -1,8 +1,7 @@
 import curses
-from ui.static import WTERMINAL
+import misc.statics as statics
 from ui.base import CursesWindow
 from ui.elements.list import CursesList
-from data.sqlite_proxy import SQLiteProxy
 #pylint: disable=E1101
 
 class ActionWindow(CursesWindow):
@@ -67,8 +66,8 @@ class ActionWindow(CursesWindow):
                         self.clist.index = 0
                         return curses.KEY_F1
                     # edit
-                    self.windows[WTERMINAL].pending_action = opt_idx
-                    self.windows[WTERMINAL].pending_tr_id = self.transaction_id
+                    self.windows[statics.WTERMINAL].pending_action = opt_idx
+                    self.windows[statics.WTERMINAL].pending_tr_id = self.transaction_id
                     self.clist.index = 0
                     # switch to terminal to take care of pending tasks
                     return curses.KEY_F2

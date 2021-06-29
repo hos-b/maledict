@@ -1,10 +1,9 @@
 import curses
 
-from ui.static import WACTION
+import misc.statics as statics
 from ui.base import CursesWindow
 from ui.elements.list import CursesList
 
-from data.sqlite_proxy import SQLiteProxy
 from data.account import Account
 from data.record import Record
 from datetime import date, datetime
@@ -177,7 +176,7 @@ class MainWindow(CursesWindow):
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 if not self.disable_actions:
                     idx, _ = self.clist.key_enter()
-                    self.windows[WACTION].transaction_id = \
+                    self.windows[statics.WACTION].transaction_id = \
                         self.account.records[idx].transaction_id
                     return curses.KEY_F60
 

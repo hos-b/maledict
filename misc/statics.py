@@ -1,0 +1,15 @@
+# global ints
+
+# window IDs
+WMAIN = 0
+WACTION = 1
+WTERMINAL = 2
+
+
+# keyboard shortcuts
+CTRL_LEFT_1 = 545
+CTRL_RIGHT_1 = 560
+CTRL_PG_UP_1 = 555
+CTRL_PG_DOWN_1 = 550
+CTRL_UP_1 = 566
+CTRL_DOWN_1 = 525

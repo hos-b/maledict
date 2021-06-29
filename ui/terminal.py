@@ -4,7 +4,7 @@ import curses
 from typing import Tuple
 
 import defined_tasks
-from ui.static import WMAIN
+import misc.statics as statics
 from ui.base import CursesWindow
 from data.sqlite_proxy import SQLiteProxy
 from misc.string_manip import variadic_equals_or
@@ -150,9 +150,9 @@ class TerminalWindow(CursesWindow):
         elif task_id == 501:
             return defined_tasks.delete.account(self, cmd_parts[0])
         elif task_id == 502:
-            return defined_tasks.delete.expense(self.windows[WMAIN], cmd_parts[0])
+            return defined_tasks.delete.expense(self.windows[statics.WMAIN], cmd_parts[0])
         elif 600<= task_id < 700:
-            return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_parts, self.windows[WMAIN])
+            return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_parts, self.windows[statics.WMAIN])
         elif task_id == 701:
             return defined_tasks.export.csv(self.windows[0].account, cmd_parts[0])
         elif task_id == 801:
@@ -424,7 +424,7 @@ class TerminalWindow(CursesWindow):
             # delete action
             elif self.pending_action == 1:
                 self.terminal_history += \
-                    defined_tasks.delete.expense(self.windows[WMAIN], \
+                    defined_tasks.delete.expense(self.windows[statics.WMAIN], \
                                                  hex(self.pending_tr_id))
 
             # reset

@@ -1,28 +1,26 @@
 import curses
 from curses.ascii import ctrl as ctrl_plus
 
-from data.sqlite_proxy import SQLiteProxy
 from data.record import Record
-from ui.static import WMAIN
-from sqlite3 import OperationalError as SQLiteOperationalError
+import misc.statics as statics
 from datetime import datetime
 
 def sqlite(terminal, stdscr):
     # exception handling
-    if terminal.windows[WMAIN].account == None:
+    if terminal.windows[statics.WMAIN].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot query in warmup mode"]
 
-    account = terminal.windows[WMAIN].account
+    account = terminal.windows[statics.WMAIN].account
     db_connection = account.database.connection
-    terminal.windows[WMAIN].disable_actions = True
+    terminal.windows[statics.WMAIN].disable_actions = True
     potential_table_update = False
     query_mode = True
     query_history = []
     query_surf_index = 0
     query_history_buffer = ''
-    showing_bak = terminal.windows[WMAIN].table_label
+    showing_bak = terminal.windows[statics.WMAIN].table_label
     terminal.terminal_history.append("query mode activated")
     terminal.terminal_history.append(
         "> column names: transaction_id(primary key), datetime, "
@@ -115,7 +113,7 @@ def sqlite(terminal, stdscr):
                             business,
                             note,
                             t_id))
-                    terminal.windows[WMAIN].refresh_table_records( \
+                    terminal.windows[statics.WMAIN].refresh_table_records( \
                         'custom sql query results', custom_records)
                 elif len(db_items) > 0 and len(db_items[0]) < 7:
                     terminal.terminal_history.append(
@@ -147,20 +145,20 @@ def sqlite(terminal, stdscr):
             terminal.redraw()
         # scrolling table -------------------------------------------------------------
         elif input_char == 555: # ctrl + page up            
-            terminal.windows[WMAIN].clist.key_pgup()
-            terminal.windows[WMAIN].redraw()
+            terminal.windows[statics.WMAIN].clist.key_pgup()
+            terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
         elif input_char == 550: # ctrl + page down
-            terminal.windows[WMAIN].clist.key_pgdn()
-            terminal.windows[WMAIN].redraw()
+            terminal.windows[statics.WMAIN].clist.key_pgdn()
+            terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
         elif input_char == 566: # ctrl + up
-            terminal.windows[WMAIN].clist.key_up()
-            terminal.windows[WMAIN].redraw()
+            terminal.windows[statics.WMAIN].clist.key_up()
+            terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
         elif input_char == 525: # ctrl + down
-            terminal.windows[WMAIN].clist.key_down()
-            terminal.windows[WMAIN].redraw()
+            terminal.windows[statics.WMAIN].clist.key_down()
+            terminal.windows[statics.WMAIN].redraw()
             terminal.redraw()
         # history surfing -------------------------------------------------------------
         elif input_char == curses.KEY_UP:
@@ -246,6 +244,6 @@ def sqlite(terminal, stdscr):
     # restoring state, updating just to be safe
     if potential_table_update:
         account.query_transactions(account.full_query, True)
-    terminal.windows[WMAIN].refresh_table_records(showing_bak)
-    terminal.windows[WMAIN].disable_actions = False
+    terminal.windows[statics.WMAIN].refresh_table_records(showing_bak)
+    terminal.windows[statics.WMAIN].disable_actions = False
     return ["query mode deactivated"]

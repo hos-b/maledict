@@ -1,11 +1,10 @@
-from data.sqlite_proxy import SQLiteProxy
 from data.account import Account
-from ui.static import WMAIN
+import misc.statics as statics
 
 def account(terminal, name: str) -> list:
     accounts = terminal.database.list_tables()
     if name in accounts:
-        terminal.windows[WMAIN].change_current_account(Account(name, terminal.database, terminal.conf))
+        terminal.windows[statics.WMAIN].change_current_account(Account(name, terminal.database, terminal.conf))
         # blst = [(key, value.business + ':' + value.category + ':' + value.subcategory) for key, value in terminal.windows[WMAIN].account.recurring_amounts.items()]
         # clst = [(key, value.category + ':' + value.subcategory) for key, value in terminal.windows[WMAIN].account.recurring_biz.items()]
         # terminal.terminal_history.append(str(blst))
