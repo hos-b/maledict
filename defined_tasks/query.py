@@ -120,9 +120,11 @@ def sqlite(terminal, stdscr):
                     for item in db_items:
                         item_list = [str(x) for x in item]
                         terminal.terminal_history.append(','.join(item_list))
+                elif len(db_items) == 0:
+                    terminal.terminal_history.append('no results')
                 else:
                     terminal.terminal_history.append(
-                        'select queries without 7 column results are invalid')
+                        'unexpected query response. investigate the code.')
             # other commands
             else:
                 potential_table_update = True
