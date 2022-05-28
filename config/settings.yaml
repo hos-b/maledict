@@ -19,11 +19,13 @@ recurring:
 main:
   x: 5 # w.r.t. screen
   y: 3 # w.r.t. screen
+  list_x_offset: 2 # w.r.t. main window
+  list_y_offset: 5 # w.r.t. main window
   width_percentage: 0.80
   height_percentage: 0.75
 
 action:
-  x_offset: 2 # w.r.t main window
+  x_offset: 2 # w.r.t. main window
   y: 3 # w.r.t. screen
   width_percentage: 0.15
   height_percentage: 0.75

@@ -10,8 +10,11 @@ from datetime import date, datetime
 
 #pylint: disable=E1101
 
+
 class MainWindow(CursesWindow):
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: list, conf: dict):
+
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: list,
+                 conf: dict):
         """
         initializes the main window. the main window holds the
         current account, which acts as a proxy between the ui
@@ -33,10 +36,12 @@ class MainWindow(CursesWindow):
         # padding on the sides
         self.list_width = int(w_width - 2)
         self.list_height = int((3 / 4) * self.w_height)
-        self.clist = CursesList(2, 5, self.list_width, self.list_height, [], 
-                                conf['table']['scrollbar-enable'], \
-                                ' | '.join(Record.columns(self.icol, self.acol, \
-                                                          self.ccol, self.sccol, \
+        self.clist = CursesList(conf['main']['list_x_offset'],
+                                conf['main']['list_y_offset'],
+                                self.list_width, self.list_height, [],
+                                conf['table']['scrollbar-enable'],
+                                ' | '.join(Record.columns(self.icol, self.acol,
+                                                          self.ccol, self.sccol,
                                                           self.pcol, self.ncol)))
         # shown income, expense
         self.table_income = 0.0
@@ -71,7 +76,8 @@ class MainWindow(CursesWindow):
         self.cwindow.addstr(3, self.max_x - len(expense_str) - 25, \
                             f"period expense: {expense_str}", curses_attr)
         self.clist.redraw(self.cwindow, curses_attr)
-        self.cwindow.addstr(8 + self.list_height, 3, f"showing: {self.table_label}", curses_attr)
+        self.cwindow.addstr(8 + self.list_height, 3,
+                            f"showing: {self.table_label}", curses_attr)
         self.cwindow.box()
         self.cwindow.refresh()
 
@@ -125,7 +131,7 @@ class MainWindow(CursesWindow):
         else:
             self.table_income += new_amount
 
-    def refresh_table_records(self, label: str, custom_records = None):
+    def refresh_table_records(self, label: str, custom_records=None):
         """
         refreshes the transaction table to show the latest changes from the
         the database. if custom records are provided, they will be displayed
@@ -174,9 +180,9 @@ class MainWindow(CursesWindow):
                 self.clist.key_pgdn()
                 self.redraw()
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
+                # actions are disabled in query mode
                 if not self.disable_actions:
-                    idx, _ = self.clist.key_enter()
+                    idx, _ = self.clist.get_selected_item()
                     self.windows[statics.WACTION].transaction_id = \
                         self.account.records[idx].transaction_id
                     return curses.KEY_F60
-
