@@ -24,7 +24,7 @@ class CursesList:
         # scrolling & scrollbar
         self.scroll = 0
         self.scrollbar_enable = scrollbar_enable
-        self._calculate_scrollbar_size()
+        self.__calculate_scrollbar_size()
 
     def change_items(self, new_items: list):
         """
@@ -33,7 +33,7 @@ class CursesList:
         """
         self.index = 0
         self.items = new_items
-        self._calculate_scrollbar_size()
+        self.__calculate_scrollbar_size()
 
     def delete_item(self, index: int):
         """
@@ -42,7 +42,7 @@ class CursesList:
         """
         self.items.pop(index)
         self.index = min(len(self.items) - 1, index)
-        self._calculate_scrollbar_size()
+        self.__calculate_scrollbar_size()
 
     def redraw (self, cwindow, curses_attr):
         """
@@ -112,10 +112,10 @@ class CursesList:
             if max_scroll > 0:
                 self.scroll = min(self.scroll + self.l_height, max_scroll)
 
-    def key_enter(self) -> Tuple[int, str]:
-        return self.index, self.items[self.index]
+    def get_selected_item(self) -> Tuple[int, str]:
+        return self.index + self.scroll, self.items[self.index + self.scroll]
     
-    def _calculate_scrollbar_size(self):
+    def __calculate_scrollbar_size(self):
         if len(self.items) <= self.l_height:
             self.scrollbar_size = 0
         else:
