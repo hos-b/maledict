@@ -1,8 +1,10 @@
 import curses
 
+from data.account import Account
 from data.record import Record
 import misc.statics as statics
 from datetime import datetime
+
 
 def sqlite(terminal, stdscr):
     # exception handling
@@ -11,7 +13,7 @@ def sqlite(terminal, stdscr):
     if stdscr is None:
         return ["cannot query in warmup mode"]
 
-    account = terminal.windows[statics.WMAIN].account
+    account: Account = terminal.windows[statics.WMAIN].account
     db_connection = account.database.connection
     terminal.windows[statics.WMAIN].disable_actions = True
     potential_table_update = False
@@ -24,15 +26,19 @@ def sqlite(terminal, stdscr):
     terminal.terminal_history.append(
         "> column names: transaction_id(primary key), datetime, "
         "amount, category, subcategory, business, note")
-    terminal.terminal_history.append(f"> tables: {account.database.list_tables()}")
     terminal.terminal_history.append(
-        ">> action menu is disabled: deleting & updating has to be done via terminal")
+        f"> tables: {account.database.list_tables()}")
+    terminal.terminal_history.append(
+        ">> action menu is disabled: deleting & updating has to be done via terminal"
+    )
     terminal.terminal_history.append(
         ">> listed records only update on valid select queries")
     terminal.terminal_history.append(
-        ">> ctrl + (up|down|pgup|pgdown) can be used to scroll up & down the table")
+        ">> ctrl + (up|down|pgup|pgdown) can be used to scroll up & down the table"
+    )
     terminal.terminal_history.append(
-        ">> sample query: SELECT * FROM table ORDER BY datetime(datetime) DESC;")
+        ">> sample query: SELECT * FROM table ORDER BY datetime(datetime) DESC;"
+    )
     terminal.command = ''
     terminal.cursor_x = 0
     terminal.redraw()
@@ -48,7 +54,8 @@ def sqlite(terminal, stdscr):
             kb_interrupt = True
             terminal.command = ''
             terminal.cursor_x = 0
-            terminal.terminal_history.append('press ctrl + c again to exit query mode')
+            terminal.terminal_history.append(
+                'press ctrl + c again to exit query mode')
             terminal.redraw()
             continue
         except:
@@ -63,7 +70,8 @@ def sqlite(terminal, stdscr):
                                 terminal.command[terminal.cursor_x + 1:]
             terminal.redraw()
         elif input_char == curses.KEY_DC:
-            if len(terminal.command) > 0 and terminal.cursor_x < len(terminal.command):
+            if len(terminal.command) > 0 and terminal.cursor_x < len(
+                    terminal.command):
                 terminal.command = terminal.command[:terminal.cursor_x] + \
                                 terminal.command[terminal.cursor_x + 1:]
                 terminal.redraw()
@@ -75,7 +83,8 @@ def sqlite(terminal, stdscr):
             query_history.append(query)
             terminal.terminal_history.append('>>> ' + query)
             if query[-1] != ';' or query.count(';') > 1:
-                terminal.terminal_history.append('no semicolons! (or too many)')
+                terminal.terminal_history.append(
+                    'no semicolons! (or too many)')
                 terminal.command = ''
                 terminal.cursor_x = 0
                 terminal.scroll = 0
@@ -102,16 +111,14 @@ def sqlite(terminal, stdscr):
                 db_items = cursor.fetchall()
                 custom_records = []
                 if len(db_items) > 0 and len(db_items[0]) == 7:
-                    for (t_id, dt_str, amount, category, \
-                        subcategory, business, note) in db_items:
+                    for (t_id, dt_str, amount_primary, amount_secondary,
+                         category, subcategory, business, note) in db_items:
                         custom_records.append(
-                            Record(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"),
-                            amount,
-                            category,
-                            subcategory,
-                            business,
-                            note,
-                            t_id))
+                            Record(
+                                datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"),
+                                account.currency_type(amount_primary,
+                                                      amount_secondary),
+                                category, subcategory, business, note, t_id))
                     terminal.windows[statics.WMAIN].refresh_table_records( \
                         'custom sql query results', custom_records)
                 elif len(db_items) > 0 and len(db_items[0]) < 7:
@@ -169,7 +176,7 @@ def sqlite(terminal, stdscr):
                 if query_surf_index == 0:
                     query_history_buffer = terminal.command
                 query_surf_index = min(query_surf_index + 1,
-                                                len(query_history))
+                                       len(query_history))
                 terminal.command = query_history[-query_surf_index]
                 terminal.cursor_x = len(terminal.command)
                 terminal.redraw()
@@ -189,7 +196,8 @@ def sqlite(terminal, stdscr):
             terminal.cursor_x = max(0, terminal.cursor_x - 1)
             terminal.redraw()
         elif input_char == curses.KEY_RIGHT:
-            terminal.cursor_x = min(len(terminal.command), terminal.cursor_x + 1)
+            terminal.cursor_x = min(len(terminal.command),
+                                    terminal.cursor_x + 1)
             terminal.redraw()
         elif input_char == statics.CTRL_LEFT:
             cut_str = terminal.command[:terminal.cursor_x][::-1]
@@ -206,12 +214,14 @@ def sqlite(terminal, stdscr):
             cut_str = terminal.command[terminal.cursor_x:]
             while len(cut_str) != 0 and cut_str[0] == ' ':
                 cut_str = cut_str[1:]
-                terminal.cursor_x = min(terminal.cursor_x + 1, len(terminal.command))
+                terminal.cursor_x = min(terminal.cursor_x + 1,
+                                        len(terminal.command))
             next_jump = cut_str.find(' ')
             if next_jump == -1:
                 terminal.cursor_x = len(terminal.command)
             else:
-                terminal.cursor_x = min(terminal.cursor_x + next_jump, len(terminal.command))
+                terminal.cursor_x = min(terminal.cursor_x + next_jump,
+                                        len(terminal.command))
                 cut_str = terminal.command[terminal.cursor_x:]
             terminal.redraw()
         elif input_char == curses.KEY_HOME:
@@ -224,7 +234,8 @@ def sqlite(terminal, stdscr):
         else:
             # some command that's not used
             if type(input_char) is int:
-                terminal.terminal_history.append(f'non standard input: {str(input_char)}')
+                terminal.terminal_history.append(
+                    f'non standard input: {str(input_char)}')
                 terminal.redraw()
                 continue
             if input_char == ' ':
@@ -233,7 +244,8 @@ def sqlite(terminal, stdscr):
                     terminal.redraw()
                     continue
             if terminal.cursor_x == len(terminal.command):
-                terminal.command = terminal.command[:terminal.cursor_x] + input_char
+                terminal.command = terminal.command[:terminal.
+                                                    cursor_x] + input_char
             else:
                 terminal.command = terminal.command[:terminal.cursor_x] + input_char \
                                  + terminal.command[terminal.cursor_x:]

@@ -10,6 +10,7 @@ import curses
 from sqlite3 import OperationalError as SQLiteOperationalError
 from datetime import datetime
 
+
 def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
     try:
         balance_f = float(initial_balance)
@@ -29,7 +30,9 @@ def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
     if forbidden:
         return [f"account name cannot contain {frch}"]
     if balance_f < 0:
-        return ["initial account balance cannot be negative. are you really that poor?"]
+        return [
+            "initial account balance cannot be negative. are you really that poor?"
+        ]
 
     try:
         database.create_table(name)
@@ -42,7 +45,8 @@ def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
     # the account object doesn't get created until we use set account, therefor
     # we cannot use the much more convenient call: account.add_transaction(...)
     if balance_f > 0:
-        intial_record = Record(datetime(1, 1, 1, 0, 0, 0, 0), balance_f, '', '', '', 'initial balance')
+        intial_record = Record(datetime(1, 1, 1, 0, 0, 0, 0), balance_f, '',
+                               '', '', 'initial balance')
         database.add_record(name, intial_record)
         database.connection.commit()
 
@@ -63,28 +67,33 @@ def expense(terminal, stdscr):
     curses.curs_set(1)
     tr_date = datetime.now()
     tr_date = tr_date.replace(second=0, microsecond=0)
-    S_AMOUNT = 0; S_BUSINESS = 1; S_CATEGORY = 2
-    S_DATE = 3; S_TIME = 4; S_NOTE = 5
-    sub_element_start = {S_DATE: [0, 5, 8],
-                         S_TIME: [0, 3]}
-    sub_element_length = {S_DATE: [4, 2, 2],
-                          S_TIME: [2, 2]}
-    element_hint =  ['amount', 'payee', 'category', 'date', 'time', 'note']
+    S_AMOUNT = 0
+    S_BUSINESS = 1
+    S_CATEGORY = 2
+    S_DATE = 3
+    S_TIME = 4
+    S_NOTE = 5
+    sub_element_start = {S_DATE: [0, 5, 8], S_TIME: [0, 3]}
+    sub_element_length = {S_DATE: [4, 2, 2], S_TIME: [2, 2]}
+    element_hint = ['amount', 'payee', 'category', 'date', 'time', 'note']
     element_start = [0, 0, 0, 0, 0, 0]
-    element_end   = [0, 0, 0, 0, 0, 0]
+    element_end = [0, 0, 0, 0, 0, 0]
     elements = ['', '', '', '', '', '']
     state = 0
     sub_state = 0
     # predictions
     predicted_record = None
+
     # some functions ------------------------------------------------------------------
     def input_allowed():
         if state == S_AMOUNT or state == S_BUSINESS or \
            state == S_CATEGORY or state == S_NOTE:
             return True
         return False
+
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f" {element_hint[state]}:"
+
     def update_predictions(force_update: bool, predicted_record: Record):
         # global predicted_record
         if state == S_BUSINESS:
@@ -102,6 +111,7 @@ def expense(terminal, stdscr):
         else:
             terminal.shadow_string = ''
             terminal.shadow_index = 0
+
     # start accepting input -----------------------------------------------------------
     terminal.terminal_history.append(f"{get_hint()}")
     terminal.redraw()
@@ -120,7 +130,8 @@ def expense(terminal, stdscr):
             state = sub_state = 0
             terminal.shadow_string = ''
             terminal.shadow_index = 0
-            terminal.terminal_history[-1] = 'press ctrl + c again to exit expense mode'
+            terminal.terminal_history[
+                -1] = 'press ctrl + c again to exit expense mode'
             terminal.terminal_history.append(f'{get_hint()}')
             terminal.redraw()
             continue
@@ -129,7 +140,8 @@ def expense(terminal, stdscr):
         # backspace, del --------------------------------------------------------------
         if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if input_allowed():
-                terminal.cursor_x = max(element_start[state], terminal.cursor_x - 1)
+                terminal.cursor_x = max(element_start[state],
+                                        terminal.cursor_x - 1)
                 if terminal.cursor_x == len(terminal.command) - 1:
                     terminal.command = terminal.command[:terminal.cursor_x]
                     update_predictions(True, predicted_record)
@@ -156,10 +168,12 @@ def expense(terminal, stdscr):
                 parsed_record = parse_expense(elements, tr_date, \
                                               terminal.windows[statics.WMAIN].account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
-                terminal.windows[statics.WMAIN].account.add_transaction(parsed_record)
+                terminal.windows[statics.WMAIN].account.add_transaction(
+                    parsed_record)
                 terminal.windows[statics.WMAIN].account.query_transactions(
                     terminal.windows[statics.WMAIN].account.full_query, False)
-                terminal.windows[statics.WMAIN].refresh_table_records('all transactions')
+                terminal.windows[statics.WMAIN].refresh_table_records(
+                    'all transactions')
                 terminal.terminal_history[-1] = str(elements)
                 elements = ['', '', '', '', '', '']
                 terminal.command = ''
@@ -177,8 +191,9 @@ def expense(terminal, stdscr):
             # accept & rectify the element, prepare next element
             if len(errors) == 0:
                 terminal.command += ' | '
-                elements[state] = rectify_element(elements[state], state, \
-                                                  terminal.windows[statics.WMAIN].account)
+                elements[state] = rectify_element(
+                    elements[state], state,
+                    terminal.windows[statics.WMAIN].account)
                 # skip payee for income
                 if state == S_AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4
@@ -208,7 +223,7 @@ def expense(terminal, stdscr):
             else:
                 elements[state] = ''
                 element_end[state] = 0
-                terminal.terminal_history[-1]= errors
+                terminal.terminal_history[-1] = errors
                 terminal.terminal_history.append(get_hint())
                 terminal.command = terminal.command[:element_start[state]]
                 terminal.cursor_x = len(terminal.command)
@@ -265,7 +280,8 @@ def expense(terminal, stdscr):
         # cursor shift ----------------------------------------------------------------
         elif input_char == curses.KEY_LEFT:
             if input_allowed():
-                terminal.cursor_x = max(element_start[state], terminal.cursor_x - 1)
+                terminal.cursor_x = max(element_start[state],
+                                        terminal.cursor_x - 1)
                 terminal.redraw()
             else:
                 sub_state = max(0, sub_state - 1)
@@ -276,10 +292,12 @@ def expense(terminal, stdscr):
                 terminal.redraw()
         elif input_char == curses.KEY_RIGHT:
             if input_allowed():
-                terminal.cursor_x = min(len(terminal.command), terminal.cursor_x + 1)
+                terminal.cursor_x = min(len(terminal.command),
+                                        terminal.cursor_x + 1)
                 terminal.redraw()
             else:
-                sub_state = min(len(sub_element_start[state]) - 1, sub_state + 1)
+                sub_state = min(
+                    len(sub_element_start[state]) - 1, sub_state + 1)
                 terminal.rtext_start = element_start[state] + \
                                        sub_element_start[state][sub_state]
                 terminal.rtext_end = terminal.rtext_start + \
@@ -303,7 +321,8 @@ def expense(terminal, stdscr):
             cut_str = terminal.command[terminal.cursor_x:]
             while len(cut_str) != 0 and cut_str[0] == ' ':
                 cut_str = cut_str[1:]
-                terminal.cursor_x = min(terminal.cursor_x + 1, len(terminal.command))
+                terminal.cursor_x = min(terminal.cursor_x + 1,
+                                        len(terminal.command))
             next_jump = cut_str.find(' ')
             if next_jump == -1:
                 terminal.cursor_x = len(terminal.command)
@@ -352,7 +371,8 @@ def expense(terminal, stdscr):
                     terminal.redraw()
                     continue
             if terminal.cursor_x == len(terminal.command):
-                terminal.command = terminal.command[:terminal.cursor_x] + input_char
+                terminal.command = terminal.command[:terminal.
+                                                    cursor_x] + input_char
             else:
                 terminal.command = terminal.command[:terminal.cursor_x] + input_char \
                                  + terminal.command[terminal.cursor_x:]

@@ -59,7 +59,7 @@ class ActionWindow(CursesWindow):
                 self.clist.key_down()
                 self.redraw()
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
-                opt_idx, _ = self.clist.key_enter()
+                opt_idx, _ = self.clist.get_selected_item()
                 if 0 <= opt_idx <= 2:
                     # if cancel, return focus to main window
                     if opt_idx == 2:

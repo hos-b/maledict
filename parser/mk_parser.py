@@ -1,6 +1,7 @@
 """
 Parser for MISA MoneyKeeper exported CSV (from xlsx)
 """
+from data.currency import Euro
 from data.record import Record
 from datetime import datetime
 from parser.base import ParserBase
@@ -30,7 +31,8 @@ class MKParser(ParserBase):
         # parsing amount
         if amount.count('.') > 1:
             return None, f"wrong amount format: got {amount}, expected EUR.CENT"
-        record_amount = float(amount)
+        # TODO: remove Euro presumption
+        record_amount = Euro.from_float(float(amount))
         return Record(record_datetime, record_amount, cat.strip(), \
                       subcat.strip(), business.strip(), note.strip()), "success"
 
