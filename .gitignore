@@ -4,5 +4,5 @@ settings.json
 **/database/csv
 database/.command_history
 database/maledict.db
-database/maledict.db.wip
+database/maledict.db.bak
 database/.warmup
