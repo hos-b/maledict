@@ -34,7 +34,7 @@ def main(stdscr):
     screen_height = curses.LINES - 1
 
     # connecting to sqlite db
-    db_path = os.path.join(os.path.dirname(__file__), 'database/maledict.db.wip')
+    db_path = os.path.join(os.path.dirname(__file__), 'database/maledict.db')
     database = SQLiteProxy(db_path)
 
     # reading config yaml

@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List
+from typing import List, Tuple
 from data.record import Record
 
 
@@ -29,6 +29,7 @@ class SQLiteProxy:
 
         cursor = self.connection.cursor()
         cursor.execute(sql_table_crt)
+        self.connection.commit()
 
     def drop_table(self, name: str):
         if self.connection is None:
@@ -86,7 +87,9 @@ class SQLiteProxy:
         cursor.execute(sql_remove, (transaction_id, ))
         self.connection.commit()
 
-    def query(self, query: str) -> list:
+    def query(
+            self,
+            query: str) -> List[Tuple[int, str, int, int, str, str, str, str]]:
         cursor = self.connection.cursor()
         cursor.execute(query)
         return cursor.fetchall()
@@ -98,6 +101,9 @@ class SQLiteProxy:
     def db_open(self, db_file: str):
         try:
             self.connection = sqlite3.connect(db_file)
-            print(sqlite3.version)
+            print(f'sqlite3.version: {sqlite3.version}')
         except sqlite3.Error as e:
             print(e)
+
+    def db_flush(self):
+        self.connection.commit()

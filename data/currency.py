@@ -41,12 +41,6 @@ class Currency(ABC):
             else:
                 return f'{self._primary}{self._seperator}{abs(self._secondary)}'
 
-    def __str__(self):
-        return self.as_str(True)
-
-    def __repr__(self) -> str:
-        return self.as_str(True)
-
     def is_expense(self) -> bool:
         if self._primary == 0:
             return self._secondary < 0
@@ -62,6 +56,12 @@ class Currency(ABC):
             raise TypeError(
                 f'unsupported operand type(s) for {op}: {self.__class__.__name__} '
                 f'and {other.__class__.__name__}')
+    
+    def __str__(self):
+        return self.as_str(True)
+
+    def __repr__(self) -> str:
+        return self.as_str(True)
 
     def __neg__(self):
         sls = self._primary * self._secondary_limit + self._secondary
