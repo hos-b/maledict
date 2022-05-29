@@ -36,7 +36,12 @@ terminal:
   width_offset: -5
   height_percentage: 0.2
 
+currency:
+  seperator: '.'
+  type: 'Euro'
+
 # terminal settings
 command_history_buffer_length: 50
 command_history_file_length: 20
 warm-up: true
+

@@ -1,19 +1,24 @@
-import yaml
 from datetime import datetime, timedelta
 
+from data.currency import Currency, Euro
 from data.sqlite_proxy import SQLiteProxy
 from data.record import Record
 from parser.base import ParserBase
-import re
+
 
 class Account:
     """
     Account class, handles reading to & writing from transaction database
     """
+
     def __init__(self, name: str, database: SQLiteProxy, conf: dict):
         self.name = name
         self.database = database
-        self.balance = 0.0
+        if conf['currency']['type'] == 'Euro':
+            self.currency_type = Euro
+        else:
+            raise ValueError(f'unknown currency {conf["currency"]["type"]}')
+        self.balance: Currency = self.currency_type(0, 0)
         self.records = []
         self.categories = {}
         self.subcategories = {}
@@ -22,14 +27,14 @@ class Account:
         # extracted patterns
         self.recurring_amounts = {}
         self.recurring_biz = {}
-        self.full_query =  f'SELECT * FROM {self.name} ORDER BY datetime(datetime) DESC;'
+        self.full_query = f'SELECT * FROM {self.name} ORDER BY datetime(datetime) DESC;'
         self.query_transactions(self.full_query, True)
 
         # if not empty, find recurring transactions
         if len(self.records) > 0:
-            self.find_recurring(conf['recurring']['months'], \
-                                conf['recurring']['significance_ratio'], \
-                                conf['recurring']['discard_limit'], \
+            self.find_recurring(conf['recurring']['months'],
+                                conf['recurring']['significance_ratio'],
+                                conf['recurring']['discard_limit'],
                                 conf['recurring']['min_occurance'])
 
     def query_transactions(self, query: str, update_dicts: bool):
@@ -38,28 +43,25 @@ class Account:
         changes. if update is set to true, the dicts of the object are
         also updated.
         """
-        # if all transactions are being loaded, update balance [i can't regex]
-        update_balance = query.lower().startswith(f'select * from {self.name}') and\
+        # if all transactions are being loaded, update balance [i can't regex enough]
+        update_balance = query.lower().startswith(f'select * from {self.name}') and \
                          query.lower().count(' where ') == 0
         if update_balance:
-            self.balance = 0.0
+            self.balance = self.currency_type(0, 0)
 
         db_records = self.database.query(query)
         self.records = []
-        for (t_id, dt_str, amount, category, \
+        for (t_id, dt_str, amount_primary, amount_secondary, category, \
              subcategory, business, note) in db_records:
             if update_dicts:
                 self.update_dicts(category, subcategory, business)
+            amount = self.currency_type(amount_primary, amount_secondary)
             # if reloading all
             if update_balance:
                 self.balance += amount
-            self.records.append(Record(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"),
-                                       amount,
-                                       category,
-                                       subcategory,
-                                       business,
-                                       note,
-                                       t_id))
+            self.records.append(
+                Record(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"), amount,
+                       category, subcategory, business, note, t_id))
 
     def add_transaction(self, record: Record):
         """
@@ -73,11 +75,11 @@ class Account:
         """
         deletes a transaction given the id
         """
-        for t_id, record in enumerate(self.records):
+        for t_idx, record in enumerate(self.records):
             if record.transaction_id == transaction_id:
                 self.balance -= record.amount
                 self.database.delete_record(self.name, transaction_id)
-                self.records.pop(t_id)
+                self.records.pop(t_idx)
                 break
 
     def update_transaction(self, transaction_id: int, updated_record: Record):
@@ -87,7 +89,8 @@ class Account:
         """
         for t_id, record in enumerate(self.records):
             if record.transaction_id == transaction_id:
-                self.database.update_record(self.name, transaction_id, updated_record)
+                self.database.update_record(self.name, transaction_id,
+                                            updated_record)
                 old_amount = self.records[t_id].amount
                 self.records[t_id] = updated_record
                 self.records[t_id].transaction_id = transaction_id
@@ -111,7 +114,8 @@ class Account:
                 if record.category in parser.categories:
                     record.category = parser.categories[record.category]
                 if record.subcategory in parser.subcategories:
-                    record.subcategory = parser.subcategories[record.subcategory]
+                    record.subcategory = parser.subcategories[
+                        record.subcategory]
             self.add_transaction(record)
         self.flush_transactions()
         self.query_transactions(self.full_query, False)
@@ -140,7 +144,8 @@ class Account:
         """
         last_date = None
         try:
-            last_date = self.records[0].t_datetime - timedelta(days=31 * months)
+            last_date = self.records[0].t_datetime - timedelta(days=31 *
+                                                               months)
         except OverflowError:
             last_date = self.records[-1].t_datetime
 
@@ -163,9 +168,11 @@ class Account:
                            self.records[current_index].subcategory == record.subcategory:
                             amount_dict[amount_key][i] = (record, count + 1)
                         else:
-                            amount_dict[amount_key].append((self.records[current_index].copy(), 1))
+                            amount_dict[amount_key].append(
+                                (self.records[current_index].copy(), 1))
             else:
-                amount_dict[amount_key] = [(self.records[current_index].copy(), 1)]
+                amount_dict[amount_key] = [(self.records[current_index].copy(),
+                                            1)]
             # looking for recurring businesses
             if biznes_key in biznes_dict:
                 if len(biznes_dict[biznes_key]) <= discard_limit:
@@ -175,9 +182,11 @@ class Account:
                            self.records[current_index].subcategory == record.subcategory:
                             biznes_dict[biznes_key][i] = (record, count + 1)
                         else:
-                            biznes_dict[biznes_key].append((self.records[current_index].copy(), 1))
+                            biznes_dict[biznes_key].append(
+                                (self.records[current_index].copy(), 1))
             else:
-                biznes_dict[biznes_key] = [(self.records[current_index].copy(), 1)]
+                biznes_dict[biznes_key] = [(self.records[current_index].copy(),
+                                            1)]
 
             current_index += 1
             # if all out of records
@@ -187,7 +196,8 @@ class Account:
         for amount_key, lst in amount_dict.items():
             key_sum = sum([pair[1] for pair in lst])
             for record, count in lst:
-                if count > min_occurance and (count / key_sum) > significance_ratio:
+                if count > min_occurance and (count /
+                                              key_sum) > significance_ratio:
                     record.note = ''
                     self.recurring_amounts[amount_key] = record
                     break
@@ -195,7 +205,8 @@ class Account:
         for biznes_key, lst in biznes_dict.items():
             key_sum = sum([pair[1] for pair in lst])
             for record, count in lst:
-                if count > min_occurance and (count / key_sum) > significance_ratio:
+                if count > min_occurance and (count /
+                                              key_sum) > significance_ratio:
                     record.note = ''
                     self.recurring_biz[biznes_key] = record
                     break

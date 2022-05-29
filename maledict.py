@@ -27,14 +27,14 @@ def main(stdscr):
     global windows
 
     # getting screen data
-    stdscr.addstr(0, 1, "Maledict [version: 1.0.1]")
+    stdscr.addstr(0, 1, "Maledict [version: 1.0.2]")
     stdscr.keypad(True)
 
     screen_width = curses.COLS - 1
     screen_height = curses.LINES - 1
 
     # connecting to sqlite db
-    db_path = os.path.join(os.path.dirname(__file__), 'database/maledict.db')
+    db_path = os.path.join(os.path.dirname(__file__), 'database/maledict.db.wip')
     database = SQLiteProxy(db_path)
 
     # reading config yaml
