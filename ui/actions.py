@@ -1,5 +1,5 @@
 import curses
-import misc.statics as statics
+from misc.statics import WinID
 from ui.base import CursesWindow
 from ui.elements.list import CursesList
 #pylint: disable=E1101
@@ -66,8 +66,8 @@ class ActionWindow(CursesWindow):
                         self.clist.index = 0
                         return curses.KEY_F1
                     # edit
-                    self.windows[statics.WTERMINAL].pending_action = opt_idx
-                    self.windows[statics.WTERMINAL].pending_tr_id = self.transaction_id
+                    self.windows[WinID.Terminal].pending_action = opt_idx
+                    self.windows[WinID.Terminal].pending_tr_id = self.transaction_id
                     self.clist.index = 0
                     # switch to terminal to take care of pending tasks
                     return curses.KEY_F2

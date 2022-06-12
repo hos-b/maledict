@@ -1,9 +1,11 @@
+from enum import IntEnum
+
 # global ints
 
-# window IDs
-WMAIN = 0
-WACTION = 1
-WTERMINAL = 2
+class WinID(IntEnum):
+    Main = 0
+    Action = 1
+    Terminal = 2
 
 
 # keyboard shortcuts
@@ -23,16 +25,24 @@ __CTRL_PG_UP_2 = 556
 __CTRL_PG_DOWN_2 = 551
 
 if __layout == 1:
-    CTRL_LEFT = __CTRL_LEFT_1
-    CTRL_RIGHT = __CTRL_RIGHT_1
-    CTRL_PG_UP = __CTRL_PG_UP_1
-    CTRL_UP = __CTRL_UP_1
-    CTRL_DOWN = __CTRL_DOWN_1
-    CTRL_PG_DOWN = __CTRL_PG_DOWN_1
+    _CTRL_LEFT = __CTRL_LEFT_1
+    _CTRL_RIGHT = __CTRL_RIGHT_1
+    _CTRL_PG_UP = __CTRL_PG_UP_1
+    _CTRL_UP = __CTRL_UP_1
+    _CTRL_DOWN = __CTRL_DOWN_1
+    _CTRL_PG_DOWN = __CTRL_PG_DOWN_1
 else:
-    CTRL_LEFT = __CTRL_LEFT_2
-    CTRL_RIGHT = __CTRL_RIGHT_2
-    CTRL_PG_UP = __CTRL_PG_UP_2
-    CTRL_UP = __CTRL_UP_2
-    CTRL_DOWN = __CTRL_DOWN_2
-    CTRL_PG_DOWN = __CTRL_PG_DOWN_2
+    _CTRL_LEFT = __CTRL_LEFT_2
+    _CTRL_RIGHT = __CTRL_RIGHT_2
+    _CTRL_PG_UP = __CTRL_PG_UP_2
+    _CTRL_UP = __CTRL_UP_2
+    _CTRL_DOWN = __CTRL_DOWN_2
+    _CTRL_PG_DOWN = __CTRL_PG_DOWN_2
+
+class KeyCombo(IntEnum):
+    CTRL_LEFT: int = _CTRL_LEFT
+    CTRL_RIGHT: int = _CTRL_RIGHT
+    CTRL_PG_UP: int = _CTRL_PG_UP
+    CTRL_UP: int = _CTRL_UP
+    CTRL_DOWN: int = _CTRL_DOWN
+    CTRL_PG_DOWN: int = _CTRL_PG_DOWN

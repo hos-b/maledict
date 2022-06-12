@@ -4,7 +4,7 @@ import curses
 from typing import Tuple
 
 import defined_tasks
-import misc.statics as statics
+from misc.statics import WinID, KeyCombo
 from ui.base import CursesWindow
 from data.sqlite_proxy import SQLiteProxy
 from misc.string_manip import variadic_equals_or
@@ -150,9 +150,9 @@ class TerminalWindow(CursesWindow):
         elif task_id == 501:
             return defined_tasks.delete.account(self, cmd_parts[0])
         elif task_id == 502:
-            return defined_tasks.delete.expense(self.windows[statics.WMAIN], cmd_parts[0])
+            return defined_tasks.delete.expense(self.windows[WinID.Main], cmd_parts[0])
         elif 600<= task_id < 700:
-            return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_parts, self.windows[statics.WMAIN])
+            return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_parts, self.windows[WinID.Main])
         elif task_id == 701:
             return defined_tasks.export.csv(self.windows[0].account, cmd_parts[0])
         elif task_id == 801:
@@ -244,7 +244,7 @@ class TerminalWindow(CursesWindow):
             elif input_char == curses.KEY_RIGHT:
                 self.cursor_x = min(len(self.command), self.cursor_x + 1)
                 self.redraw()
-            elif input_char == statics.CTRL_LEFT:
+            elif input_char == KeyCombo.CTRL_LEFT:
                 cut_str = self.command[:self.cursor_x][::-1]
                 while len(cut_str) != 0 and cut_str[0] == ' ':
                     cut_str = cut_str[1:]
@@ -255,7 +255,7 @@ class TerminalWindow(CursesWindow):
                 else:
                     self.cursor_x = max(0, self.cursor_x - next_jump)
                 self.redraw()
-            elif input_char == statics.CTRL_RIGHT:
+            elif input_char == KeyCombo.CTRL_RIGHT:
                 cut_str = self.command[self.cursor_x:]
                 while len(cut_str) != 0 and cut_str[0] == ' ':
                     cut_str = cut_str[1:]
@@ -424,7 +424,7 @@ class TerminalWindow(CursesWindow):
             # delete action
             elif self.pending_action == 1:
                 self.terminal_history += \
-                    defined_tasks.delete.expense(self.windows[statics.WMAIN], \
+                    defined_tasks.delete.expense(self.windows[WinID.Main], \
                                                  hex(self.pending_tr_id))
 
             # reset

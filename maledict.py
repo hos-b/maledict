@@ -1,25 +1,24 @@
-import yaml
 import os
+import yaml
 import curses
 
 from ui.main import MainWindow
 from ui.actions import ActionWindow
 from ui.terminal import TerminalWindow
-
-import misc.statics as statics
-
-from parser.mk_parser import MKParser
+from misc.statics import WinID
 from data.sqlite_proxy import SQLiteProxy
-
 
 # debugstr = ""
 database = None
 windows = []
 
+
 def wrap_up(conf: dict):
     database.connection.commit()
     database.db_close()
-    windows[statics.WTERMINAL].write_command_history(conf['command_history_file_length'])
+    windows[WinID.Terminal].write_command_history(
+        conf['command_history_file_length'])
+
 
 def main(stdscr):
     # global debugstr
@@ -38,7 +37,8 @@ def main(stdscr):
     database = SQLiteProxy(db_path)
 
     # reading config yaml
-    config_path = os.path.join(os.path.dirname(__file__), 'config/settings.yaml')
+    config_path = os.path.join(os.path.dirname(__file__),
+                               'config/settings.yaml')
     conf_file = open(config_path)
     conf = yaml.load(conf_file, Loader=yaml.FullLoader)
 
@@ -46,12 +46,12 @@ def main(stdscr):
     windows.append(MainWindow(stdscr, conf['main']['x'], conf['main']['y'], \
                    conf['main']['width_percentage'] * screen_width, \
                    conf['main']['height_percentage'] * screen_height, windows, conf))
-    windows.append(ActionWindow(stdscr, windows[statics.WMAIN].max_x + conf['action']['x_offset'], \
+    windows.append(ActionWindow(stdscr, windows[WinID.Main].max_x + conf['action']['x_offset'], \
                                 conf['action']['y'], conf['action']['width_percentage'] * \
                                 screen_width , conf['action']['height_percentage'] * \
                                 screen_height, windows))
-    windows.append(TerminalWindow(stdscr, conf['terminal']['x'], windows[statics.WMAIN].max_y + \
-                                  conf['terminal']['y_offset'], windows[statics.WACTION].max_x + \
+    windows.append(TerminalWindow(stdscr, conf['terminal']['x'], windows[WinID.Main].max_y + \
+                                  conf['terminal']['y_offset'], windows[WinID.Action].max_x + \
                                   conf['terminal']['width_offset'], conf['terminal']['height_percentage'] * \
                                   screen_height, windows, database, conf))
 
@@ -78,5 +78,6 @@ def main(stdscr):
         elif break_char == curses.KEY_F50:
             wrap_up(conf)
             break
+
 
 curses.wrapper(main)

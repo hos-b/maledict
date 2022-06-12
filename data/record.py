@@ -4,7 +4,7 @@ Record class for transactions
 from datetime import datetime
 from data.currency import Currency
 from misc.string_manip import fit_string
-
+from copy import deepcopy
 
 class Record:
 
@@ -49,6 +49,12 @@ class Record:
             fit_string(self.note, note_l).ljust(note_l)
         ]
 
+    def __str__(self):
+        return self.as_str(True)
+
+    def __repr__(self) -> str:
+        return self.as_str(True)
+
     @staticmethod
     def columns(index_l, amount_l, cat_l, subcat_l, bus_l, note_l) -> list:
         """
@@ -62,5 +68,4 @@ class Record:
         ]
 
     def copy(self):
-        return Record(self.t_datetime, self.amount, self.category, \
-                      self.subcategory, self.business, self.note, self.transaction_id)
+        return deepcopy(self)

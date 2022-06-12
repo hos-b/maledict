@@ -2,7 +2,7 @@ import csv
 import curses
 from parser.mk_parser import MKParser
 from parser.maledict_parser import MaledictParser
-import misc.statics as statics
+from misc.statics import WinID
 
 def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     """
@@ -12,7 +12,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     completion and window switching is disabled.
     """
     # exception handling
-    if terminal.windows[statics.WMAIN].account == None:
+    if terminal.windows[WinID.Main].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot parse mkcsv in warmup mode"]
@@ -150,8 +150,8 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
             terminal.scroll = 0
             terminal.redraw()
 
-    terminal.windows[statics.WMAIN].account.commit_parser(parser, translate_mode)
-    terminal.windows[statics.WMAIN].refresh_table_records('all')
+    terminal.windows[WinID.Main].account.commit_parser(parser, translate_mode)
+    terminal.windows[WinID.Main].refresh_table_records('all')
     return msg_list
 
 def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> list:
@@ -162,7 +162,7 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
     completion and window switching is disabled.
     """
     # exception handling
-    if terminal.windows[statics.WMAIN].account == None:
+    if terminal.windows[WinID.Main].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot parse mkcsv in warmup mode"]
@@ -298,6 +298,6 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
             terminal.scroll = 0
             terminal.redraw()
 
-    terminal.windows[statics.WMAIN].account.commit_parser(parser, translate_mode)
-    terminal.windows[statics.WMAIN].refresh_table_records('all')
+    terminal.windows[WinID.Main].account.commit_parser(parser, translate_mode)
+    terminal.windows[WinID.Main].refresh_table_records('all')
     return msg_list

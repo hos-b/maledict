@@ -1,4 +1,4 @@
-import misc.statics as statics
+from misc.statics import WinID
 from sqlite3 import OperationalError as SQLiteOperationalError
 
 
@@ -10,9 +10,9 @@ def account(terminal, name: str) -> str:
     except:
         return [f"could not delete account {name}... go figure out why"]
     # if removing the current account
-    current_account = terminal.windows[statics.WMAIN].account
+    current_account = terminal.windows[WinID.Main].account
     if current_account and current_account.name == name:
-        terminal.windows[statics.WMAIN].change_current_account(None)
+        terminal.windows[WinID.Main].change_current_account(None)
 
     return [f"successfully deleted {name}"]
 

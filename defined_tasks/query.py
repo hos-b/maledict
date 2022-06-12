@@ -2,26 +2,26 @@ import curses
 
 from data.account import Account
 from data.record import Record
-import misc.statics as statics
+from misc.statics import WinID, KeyCombo
 from datetime import datetime
 
 
 def sqlite(terminal, stdscr):
     # exception handling
-    if terminal.windows[statics.WMAIN].account == None:
+    if terminal.windows[WinID.Main].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot query in warmup mode"]
 
-    account: Account = terminal.windows[statics.WMAIN].account
+    account: Account = terminal.windows[WinID.Main].account
     db_connection = account.database.connection
-    terminal.windows[statics.WMAIN].disable_actions = True
+    terminal.windows[WinID.Main].disable_actions = True
     potential_table_update = False
     query_mode = True
     query_history = []
     query_surf_index = 0
     query_history_buffer = ''
-    showing_bak = terminal.windows[statics.WMAIN].table_label
+    showing_bak = terminal.windows[WinID.Main].table_label
     terminal.terminal_history.append("query mode activated")
     terminal.terminal_history.append(
         "> column names: transaction_id(primary key), datetime, "
@@ -119,7 +119,7 @@ def sqlite(terminal, stdscr):
                                 account.currency_type(amount_primary,
                                                       amount_secondary),
                                 category, subcategory, business, note, t_id))
-                    terminal.windows[statics.WMAIN].refresh_table_records( \
+                    terminal.windows[WinID.Main].refresh_table_records( \
                         'custom sql query results', custom_records)
                 elif len(db_items) > 0 and len(db_items[0]) < 7:
                     terminal.terminal_history.append(
@@ -152,21 +152,21 @@ def sqlite(terminal, stdscr):
             terminal.scroll = max(terminal.scroll - 1, 0)
             terminal.redraw()
         # scrolling table -------------------------------------------------------------
-        elif input_char == statics.CTRL_PG_UP:
-            terminal.windows[statics.WMAIN].clist.key_pgup()
-            terminal.windows[statics.WMAIN].redraw()
+        elif input_char == KeyCombo.CTRL_PG_UP:
+            terminal.windows[WinID.Main].clist.key_pgup()
+            terminal.windows[WinID.Main].redraw()
             terminal.redraw()
-        elif input_char == statics.CTRL_PG_DOWN:
-            terminal.windows[statics.WMAIN].clist.key_pgdn()
-            terminal.windows[statics.WMAIN].redraw()
+        elif input_char == KeyCombo.CTRL_PG_DOWN:
+            terminal.windows[WinID.Main].clist.key_pgdn()
+            terminal.windows[WinID.Main].redraw()
             terminal.redraw()
-        elif input_char == statics.CTRL_UP:
-            terminal.windows[statics.WMAIN].clist.key_up()
-            terminal.windows[statics.WMAIN].redraw()
+        elif input_char == KeyCombo.CTRL_UP:
+            terminal.windows[WinID.Main].clist.key_up()
+            terminal.windows[WinID.Main].redraw()
             terminal.redraw()
-        elif input_char == statics.CTRL_DOWN:
-            terminal.windows[statics.WMAIN].clist.key_down()
-            terminal.windows[statics.WMAIN].redraw()
+        elif input_char == KeyCombo.CTRL_DOWN:
+            terminal.windows[WinID.Main].clist.key_down()
+            terminal.windows[WinID.Main].redraw()
             terminal.redraw()
         # history surfing -------------------------------------------------------------
         elif input_char == curses.KEY_UP:
@@ -199,7 +199,7 @@ def sqlite(terminal, stdscr):
             terminal.cursor_x = min(len(terminal.command),
                                     terminal.cursor_x + 1)
             terminal.redraw()
-        elif input_char == statics.CTRL_LEFT:
+        elif input_char == KeyCombo.CTRL_LEFT:
             cut_str = terminal.command[:terminal.cursor_x][::-1]
             while len(cut_str) != 0 and cut_str[0] == ' ':
                 cut_str = cut_str[1:]
@@ -210,7 +210,7 @@ def sqlite(terminal, stdscr):
             else:
                 terminal.cursor_x = max(0, terminal.cursor_x - next_jump)
             terminal.redraw()
-        elif input_char == statics.CTRL_RIGHT:
+        elif input_char == KeyCombo.CTRL_RIGHT:
             cut_str = terminal.command[terminal.cursor_x:]
             while len(cut_str) != 0 and cut_str[0] == ' ':
                 cut_str = cut_str[1:]
@@ -257,6 +257,6 @@ def sqlite(terminal, stdscr):
     # restoring state, updating just to be safe
     if potential_table_update:
         account.query_transactions(account.full_query, True)
-    terminal.windows[statics.WMAIN].refresh_table_records(showing_bak)
-    terminal.windows[statics.WMAIN].disable_actions = False
+    terminal.windows[WinID.Main].refresh_table_records(showing_bak)
+    terminal.windows[WinID.Main].disable_actions = False
     return ["query mode deactivated"]

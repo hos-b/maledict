@@ -2,20 +2,18 @@ import curses
 from typing import List
 from data.currency import Currency, Euro
 
-import misc.statics as statics
+from misc.statics import WinID
 from ui.base import CursesWindow
 from ui.elements.list import CursesList
 
 from data.account import Account
 from data.record import Record
-from datetime import date, datetime
-
-#pylint: disable=E1101
+from datetime import datetime
 
 
 class MainWindow(CursesWindow):
 
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: list,
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: List[CursesWindow],
                  conf: dict):
         """
         initializes the main window. the main window holds the
@@ -190,6 +188,6 @@ class MainWindow(CursesWindow):
                 # actions are disabled in query mode
                 if not self.disable_actions:
                     idx, _ = self.clist.get_selected_item()
-                    self.windows[statics.WACTION].transaction_id = \
+                    self.windows[WinID.Action].transaction_id = \
                         self.account.records[idx].transaction_id
                     return curses.KEY_F60

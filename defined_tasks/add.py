@@ -5,7 +5,7 @@ from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element, parse_expense
 from data.record import Record
 from data.sqlite_proxy import SQLiteProxy
-import misc.statics as statics
+from misc.statics import WinID, KeyCombo
 import curses
 from sqlite3 import OperationalError as SQLiteOperationalError
 from datetime import datetime
@@ -55,7 +55,7 @@ def account(database: SQLiteProxy, name: str, initial_balance: str) -> str:
 
 def expense(terminal, stdscr):
     # exception handling
-    if terminal.windows[statics.WMAIN].account == None:
+    if terminal.windows[WinID.Main].account == None:
         return ["current account not set"]
     if stdscr is None:
         return ["cannot add expenses in warmup mode"]
@@ -98,7 +98,7 @@ def expense(terminal, stdscr):
         # global predicted_record
         if state == S_BUSINESS:
             terminal.shadow_string, predicted_record = predict_business(elements[0], \
-                terminal.command[element_start[1]:], terminal.windows[statics.WMAIN].account)
+                terminal.command[element_start[1]:], terminal.windows[WinID.Main].account)
             terminal.shadow_index = element_start[1]
         elif state == S_CATEGORY:
             if not force_update and predicted_record is not None:
@@ -106,7 +106,7 @@ def expense(terminal, stdscr):
                 terminal.shadow_index = element_start[2]
                 return
             terminal.shadow_string, predicted_record = predict_category(elements[1], \
-                terminal.command[element_start[2]:], terminal.windows[statics.WMAIN].account)
+                terminal.command[element_start[2]:], terminal.windows[WinID.Main].account)
             terminal.shadow_index = element_start[2]
         else:
             terminal.shadow_string = ''
@@ -166,13 +166,13 @@ def expense(terminal, stdscr):
             # adding the expense
             if state == S_NOTE:
                 parsed_record = parse_expense(elements, tr_date, \
-                                              terminal.windows[statics.WMAIN].account)
+                                              terminal.windows[WinID.Main].account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
-                terminal.windows[statics.WMAIN].account.add_transaction(
+                terminal.windows[WinID.Main].account.add_transaction(
                     parsed_record)
-                terminal.windows[statics.WMAIN].account.query_transactions(
-                    terminal.windows[statics.WMAIN].account.full_query, False)
-                terminal.windows[statics.WMAIN].refresh_table_records(
+                terminal.windows[WinID.Main].account.query_transactions(
+                    terminal.windows[WinID.Main].account.full_query, False)
+                terminal.windows[WinID.Main].refresh_table_records(
                     'all transactions')
                 terminal.terminal_history[-1] = str(elements)
                 elements = ['', '', '', '', '', '']
@@ -193,7 +193,7 @@ def expense(terminal, stdscr):
                 terminal.command += ' | '
                 elements[state] = rectify_element(
                     elements[state], state,
-                    terminal.windows[statics.WMAIN].account)
+                    terminal.windows[WinID.Main].account)
                 # skip payee for income
                 if state == S_AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4
@@ -239,21 +239,21 @@ def expense(terminal, stdscr):
             terminal.scroll = max(terminal.scroll - 1, 0)
             terminal.redraw()
         # record scrolling ------------------------------------------------------------
-        elif input_char == statics.CTRL_PG_UP:
-            terminal.windows[statics.WMAIN].clist.key_pgup()
-            terminal.windows[statics.WMAIN].redraw()
+        elif input_char == KeyCombo.CTRL_PG_UP:
+            terminal.windows[WinID.Main].clist.key_pgup()
+            terminal.windows[WinID.Main].redraw()
             terminal.redraw()
-        elif input_char == statics.CTRL_PG_DOWN:
-            terminal.windows[statics.WMAIN].clist.key_pgdn()
-            terminal.windows[statics.WMAIN].redraw()
+        elif input_char == KeyCombo.CTRL_PG_DOWN:
+            terminal.windows[WinID.Main].clist.key_pgdn()
+            terminal.windows[WinID.Main].redraw()
             terminal.redraw()
-        elif input_char == statics.CTRL_UP:
-            terminal.windows[statics.WMAIN].clist.key_up()
-            terminal.windows[statics.WMAIN].redraw()
+        elif input_char == KeyCombo.CTRL_UP:
+            terminal.windows[WinID.Main].clist.key_up()
+            terminal.windows[WinID.Main].redraw()
             terminal.redraw()
-        elif input_char == statics.CTRL_DOWN:
-            terminal.windows[statics.WMAIN].clist.key_down()
-            terminal.windows[statics.WMAIN].redraw()
+        elif input_char == KeyCombo.CTRL_DOWN:
+            terminal.windows[WinID.Main].clist.key_down()
+            terminal.windows[WinID.Main].redraw()
             terminal.redraw()
         # suggestion surfing, changing date & time ------------------------------------
         elif input_char == curses.KEY_UP:
@@ -303,7 +303,7 @@ def expense(terminal, stdscr):
                 terminal.rtext_end = terminal.rtext_start + \
                                      sub_element_length[state][sub_state]
                 terminal.redraw()
-        elif input_char == statics.CTRL_LEFT and input_allowed():
+        elif input_char == KeyCombo.CTRL_LEFT and input_allowed():
             cut_str = terminal.command[element_start[state]: \
                                         terminal.cursor_x][::-1]
             while len(cut_str) != 0 and cut_str[0] == ' ':
@@ -317,7 +317,7 @@ def expense(terminal, stdscr):
                 terminal.cursor_x = max(element_start[state], \
                                         terminal.cursor_x - next_jump)
             terminal.redraw()
-        elif input_char == statics.CTRL_RIGHT and input_allowed():
+        elif input_char == KeyCombo.CTRL_RIGHT and input_allowed():
             cut_str = terminal.command[terminal.cursor_x:]
             while len(cut_str) != 0 and cut_str[0] == ' ':
                 cut_str = cut_str[1:]
@@ -381,7 +381,7 @@ def expense(terminal, stdscr):
             terminal.scroll = 0
             terminal.redraw()
 
-    terminal.windows[statics.WMAIN].account.flush_transactions()
+    terminal.windows[WinID.Main].account.flush_transactions()
     terminal.shadow_string = ''
     terminal.shadow_index = 0
     return ["expense mode deactivated"]
