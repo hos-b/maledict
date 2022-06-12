@@ -3,6 +3,7 @@ ncurses-based expense tracker
 
 ## requirements
 - python
+- pyyaml
 
 ## bugs
 won't fit perfectly in all [small] windows because `window.getmaxyx()` always returns larger dimensions than the actual screen size, at least on i3. won't fix.
