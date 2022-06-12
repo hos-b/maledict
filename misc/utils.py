@@ -167,12 +167,7 @@ def parse_expense(elements: list, dt: datetime, account: Account) -> Record:
     elif elements[2] in account.subcategories:
         cat = account.subcategories[elements[2]]
         subcat = elements[2]
-
-    sgn = sign(float(elements[0]))
-    parts = [st for st in elements[0].split('.')]
-    if len(parts) == 1:
-        parts.append('0')
-    amount = account.currency_type(int(parts[0]), int(parts[1]) * sgn)
+    amount = account.currency_type.from_str(elements[0])
     return Record(dt.replace(microsecond=0), amount, cat, subcat, elements[1],
                   elements[5])
 

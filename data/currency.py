@@ -30,16 +30,36 @@ class Currency(ABC):
         self._primary: int = prim
         self._secondary: int = sec
 
-    def as_str(self, zero_pad: bool = False):
-        if zero_pad:
-            return f'{self._primary}{self._seperator}{str(abs(self._secondary)).ljust(self._max_secondary_width, "0")}'
+    @classmethod
+    def from_str(cls, cu_string: str) -> Currency:
+        try:
+            sgn = sign(float(cu_string))
+        except:
+            raise ValueError(
+                f'{cu_string} is not a valid value for {cls.__name__}')
+        parts = cu_string.split(cls._seperator)
+        if len(parts) == 1:
+            parts.append('0')
+        elif len(parts) == 2:
+            if len(parts[1]) > cls._max_secondary_width:
+                raise ValueError(
+                    f'{cu_string} is not a valid value for {cls.__name__}')
+            # add missing trailing zeros, if any
+            if not parts[1].startswith('0'):
+                parts[1] = parts[1] + '0' * (cls._max_secondary_width -
+                                             len(parts[1]))
         else:
-            if self._secondary == 0:
-                if self._primary == 0:
-                    return '0.0'
-                return str(self._primary)
-            else:
-                return f'{self._primary}{self._seperator}{abs(self._secondary)}'
+            raise ValueError(
+                f'{cu_string} is not a valid value for {cls.__name__}')
+        return cls(int(parts[0]), int(parts[1]) * sgn)
+
+    def as_str(self, zero_pad: bool = False):
+        if self._secondary == 0:
+            if zero_pad:
+                return f'{self._primary}{self._seperator}{"0" * self._max_secondary_width}'
+            return str(self._primary)
+        else:
+            return f'{self._primary}{self._seperator}{str(abs(self._secondary)).rjust(self._max_secondary_width, "0")}'
 
     def is_expense(self) -> bool:
         if self._primary == 0:
@@ -56,7 +76,7 @@ class Currency(ABC):
             raise TypeError(
                 f'unsupported operand type(s) for {op}: {self.__class__.__name__} '
                 f'and {other.__class__.__name__}')
-    
+
     def __str__(self):
         return self.as_str(True)
 
@@ -68,18 +88,15 @@ class Currency(ABC):
         sls = -sls
         new_obj = copy(self)
         new_obj._primary = int(sls / self._secondary_limit)
-        new_obj._secondary = (abs(sls) %
-                              self._secondary_limit) * sign(sls)
+        new_obj._secondary = (abs(sls) % self._secondary_limit) * sign(sls)
         return new_obj
 
     def __abs__(self):
         sls = abs(self._primary * self._secondary_limit + self._secondary)
         new_obj = copy(self)
         new_obj._primary = int(sls / self._secondary_limit)
-        new_obj._secondary = (abs(sls) %
-                              self._secondary_limit) * sign(sls)
+        new_obj._secondary = (abs(sls) % self._secondary_limit) * sign(sls)
         return new_obj
-
 
     def __add__(self, other: Currency):
         self.__verify_type('+', other)
