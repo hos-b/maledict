@@ -4,6 +4,16 @@ from data.record import Record
 
 
 class SQLiteProxy:
+    table_map = {
+        'transaction_id': 0,
+        'datetime': 1,
+        'amount_primary': 2,
+        'amount_secondary': 3,
+        'category': 4,
+        'subcategory': 5,
+        'business': 6,
+        'note': 7,
+    }
 
     def __init__(self, db_file):
         """

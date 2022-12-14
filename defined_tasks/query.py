@@ -1,4 +1,8 @@
+import re
 import curses
+import sqlite3
+
+from typing import Dict
 
 from data.account import Account
 from data.record import Record
@@ -15,19 +19,19 @@ def sqlite(terminal, stdscr):
 
     account: Account = terminal.windows[WinID.Main].account
     db_connection = account.database.connection
+    table_map: Dict[str, int] = account.database.table_map
+    inv_table_map: Dict[int, str] = {v: k for k, v in table_map.items()}
+    table_cols = [i[0] for i in sorted(table_map.items(), key = lambda x: x[1])]
     terminal.windows[WinID.Main].disable_actions = True
     potential_table_update = False
-    query_mode = True
     query_history = []
     query_surf_index = 0
     query_history_buffer = ''
-    showing_bak = terminal.windows[WinID.Main].table_label
+    old_table_label = terminal.windows[WinID.Main].table_label
     terminal.terminal_history.append("query mode activated")
+    terminal.terminal_history.append(f"> column names: {', '.join(table_cols)}")
     terminal.terminal_history.append(
-        "> column names: transaction_id(primary key), datetime, "
-        "amount, category, subcategory, business, note")
-    terminal.terminal_history.append(
-        f"> tables: {account.database.list_tables()}")
+        f"> tables: {', '.join(account.database.list_tables())}")
     terminal.terminal_history.append(
         ">> action menu is disabled: deleting & updating has to be done via terminal"
     )
@@ -37,14 +41,14 @@ def sqlite(terminal, stdscr):
         ">> ctrl + (up|down|pgup|pgdown) can be used to scroll up & down the table"
     )
     terminal.terminal_history.append(
-        ">> sample query: SELECT * FROM table ORDER BY datetime(datetime) DESC;"
+        ">> sample query: SELECT * FROM <table> ORDER BY datetime(datetime) DESC;"
     )
     terminal.command = ''
     terminal.cursor_x = 0
     terminal.redraw()
     # start accepting input -----------------------------------------------------------
     kb_interrupt = False
-    while query_mode:
+    while True:
         try:
             input_char = stdscr.get_wch()
             kb_interrupt = False
@@ -82,20 +86,11 @@ def sqlite(terminal, stdscr):
                 continue
             query_history.append(query)
             terminal.terminal_history.append('>>> ' + query)
-            if query[-1] != ';' or query.count(';') > 1:
-                terminal.terminal_history.append(
-                    'no semicolons! (or too many)')
-                terminal.command = ''
-                terminal.cursor_x = 0
-                terminal.scroll = 0
-                query_surf_index = 0
-                terminal.redraw()
-                continue
             cursor = db_connection.cursor()
             try:
                 cursor.execute(query)
-            except:
-                terminal.terminal_history.append('could not execute query')
+            except sqlite3.Exception as e:
+                terminal.terminal_history.append(f'could not execute query: {e}')
                 terminal.command = ''
                 terminal.cursor_x = 0
                 terminal.scroll = 0
@@ -107,31 +102,61 @@ def sqlite(terminal, stdscr):
                 'warning: query does not target current account ({})'. \
                 format(account.name))
             # SELECT command
-            if query.lower().startswith('select '):
+            if re.match('^SELECT', query, re.IGNORECASE):
                 db_items = cursor.fetchall()
-                custom_records = []
-                if len(db_items) > 0 and len(db_items[0]) == 7:
-                    for (t_id, dt_str, amount_primary, amount_secondary,
-                         category, subcategory, business, note) in db_items:
-                        custom_records.append(
-                            Record(
-                                datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"),
-                                account.currency_type(amount_primary,
-                                                      amount_secondary),
-                                category, subcategory, business, note, t_id))
-                    terminal.windows[WinID.Main].refresh_table_records( \
-                        'custom sql query results', custom_records)
-                elif len(db_items) > 0 and len(db_items[0]) < 7:
-                    terminal.terminal_history.append(
-                        'unsupported select query, printing...')
-                    for item in db_items:
-                        item_list = [str(x) for x in item]
-                        terminal.terminal_history.append(','.join(item_list))
-                elif len(db_items) == 0:
+                if len(db_items) == 0:
                     terminal.terminal_history.append('no results')
                 else:
-                    terminal.terminal_history.append(
-                        'unexpected query response. investigate the code.')
+                    if len(db_items[0]) == 8:
+                        custom_records = []
+                        for (t_id, dt_str, amount_primary, amount_secondary,
+                            category, subcategory, business, note) in db_items:
+                            custom_records.append(
+                                Record(
+                                    datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"),
+                                    account.currency_type(amount_primary, amount_secondary),
+                                    category, subcategory, business, note, t_id))
+                        terminal.windows[WinID.Main].refresh_table_records(
+                            'custom sql query results', custom_records)
+                    elif len(db_items[0]) < 8:
+                        # try to parse the query
+                        parse_success = False
+                        match = re.match(r'SELECT ((?:(?:\w+\.)?\w+,?\s?)+) FROM',
+                            query, re.IGNORECASE)
+                        if match:
+                            parsed_cols = [c.strip() for c in match.group(1).split(',')]
+                            available_col_idx = []
+                            parse_success = True
+                            for col in parsed_cols:
+                                if col not in table_map:
+                                    parse_success = False
+                                    break
+                                available_col_idx.append(table_map[col])
+                        if parse_success:
+                            custom_records = []
+                            for item in db_items:
+                                # t_id, dt_str, amount_primary, amount_secondary,
+                                # category, subcategory, business, note
+                                record = [0, '1970-01-01 00:00:00', 0, 0, '', '', '', '']
+                                for i, c in enumerate(available_col_idx):
+                                    record[c] = item[i]
+
+                                custom_records.append(
+                                    Record(
+                                        datetime.strptime(record[1], "%Y-%m-%d %H:%M:%S"),
+                                        account.currency_type(record[2], record[3]),
+                                        record[4], record[5], record[6], record[7], record[0]))
+                            terminal.windows[WinID.Main].refresh_table_records(
+                                'custom sql query results', custom_records)
+                        else:
+                            terminal.terminal_history.append(
+                                'unsupported select query, printing...')
+                            for item in db_items:
+                                item_list = [str(x) for x in item]
+                                terminal.terminal_history.append(','.join(item_list))
+                    else:
+                        terminal.terminal_history.append(
+                            'unexpected query response. investigate the code.')
             # other commands
             else:
                 potential_table_update = True
@@ -257,6 +282,6 @@ def sqlite(terminal, stdscr):
     # restoring state, updating just to be safe
     if potential_table_update:
         account.query_transactions(account.full_query, True)
-    terminal.windows[WinID.Main].refresh_table_records(showing_bak)
+    terminal.windows[WinID.Main].refresh_table_records(old_table_label)
     terminal.windows[WinID.Main].disable_actions = False
     return ["query mode deactivated"]
