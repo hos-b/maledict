@@ -386,14 +386,14 @@ class TerminalWindow(CursesWindow):
         elif isinstance(strings, list):
             self.print_history += strings
 
-    def scroll(self, up_down: int, reserved_line_count = 3):
+    def scroll(self, up_down: int, reserved_lines = 3):
         """
         scrolls print history up or down by a number.
         """
         if up_down == +1:
             # if we can show more than history + 3 reserved lines:
             max_scroll = len(self.print_history) + \
-                reserved_line_count - self.w_height
+                reserved_lines - self.w_height
             if max_scroll > 0:
                 self.scroll = min(self.scroll + 1, max_scroll)
         elif up_down == -1:
@@ -402,12 +402,13 @@ class TerminalWindow(CursesWindow):
             raise NotImplementedError('nah')
         self.redraw()
             
-    def scroll_page_up(self):
+    def scroll_page_up(self, reserved_lines = 3):
         """
         goes one page up in the print history
         """
-        max_scroll = len(self.terminal_history) + 3 - self.w_height
         # if we can show more than history + 3 reserved lines:
+        max_scroll = len(self.terminal_history) + \
+            reserved_lines - self.w_height
         if max_scroll > 0:
             self.scroll = min(self.scroll + 1, max_scroll)
         self.redraw()
@@ -419,11 +420,11 @@ class TerminalWindow(CursesWindow):
         self.scroll = max(self.scroll - 1, 0)
         self.redraw()
 
-    def cursor_move_left(self):
+    def cursor_move_left(self, start_offset: int = 0):
         """
         self explanatory
         """
-        self.cursor_x = max(0, self.cursor_x - 1)
+        self.cursor_x = max(start_offset, self.cursor_x - 1)
         self.redraw()
 
     def cursor_move_right(self):
@@ -433,19 +434,19 @@ class TerminalWindow(CursesWindow):
         self.cursor_x = min(len(self.command), self.cursor_x + 1)
         self.redraw()
 
-    def cursor_jump_left(self):
+    def cursor_jump_left(self, start_offset: int = 0):
         """
         moves the cursor to the beginning of current word.
         """
         cut_str = self.command[:self.cursor_x][::-1]
         while len(cut_str) != 0 and cut_str[0] == ' ':
             cut_str = cut_str[1:]
-            self.cursor_x = max(0, self.cursor_x - 1)
+            self.cursor_x = max(start_offset, self.cursor_x - 1)
         next_jump = cut_str.find(' ')
         if next_jump == -1:
-            self.cursor_x = 0
+            self.cursor_x = start_offset
         else:
-            self.cursor_x = max(0, self.cursor_x - next_jump)
+            self.cursor_x = max(start_offset, self.cursor_x - next_jump)
         self.redraw()
 
     def cursor_jump_right(self):
@@ -464,11 +465,11 @@ class TerminalWindow(CursesWindow):
             cut_str = self.command[self.cursor_x:]
         self.redraw()
 
-    def cursor_jump_start(self):
+    def cursor_jump_start(self, start_offset: int = 0):
         """
         moves cursor to the beginning of the line.
         """
-        self.cursor_x = 0
+        self.cursor_x = start_offset
         self.redraw()
 
     def cursor_jump_end(self):
@@ -534,7 +535,7 @@ class TerminalWindow(CursesWindow):
                         self.command[self.cursor_x + 1:]
         self.redraw()
     
-    def insert_char(self, input_char):
+    def insert_char(self, input_char, redraw: bool = True):
         """
         appends a character at the current cursor location
         given its code.
@@ -553,4 +554,5 @@ class TerminalWindow(CursesWindow):
         self.cursor_x += 1
         self.history_surf_index = 0
         self.scroll = 0
-        self.redraw()
+        if redraw:
+            self.redraw()
