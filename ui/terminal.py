@@ -511,21 +511,22 @@ class TerminalWindow(CursesWindow):
             self.cursor_x = len(self.command)
         self.redraw()
 
-    def delete_previous_char(self):
+    def delete_previous_char(self, start_offset: int = 0, redraw: bool = True):
         """
         backspace key implementation
         """
         if len(self.command) == 0:
             return
-        self.cursor_x = max(0, self.cursor_x - 1)
+        self.cursor_x = max(start_offset, self.cursor_x - 1)
         if self.cursor_x == len(self.command) - 1:
             self.command = self.command[:self.cursor_x]
         else:
             self.command = self.command[:self.cursor_x] + \
                             self.command[self.cursor_x + 1:]
-        self.redraw()
+        if redraw:
+            self.redraw()
 
-    def delete_next_char(self):
+    def delete_next_char(self, redraw: bool = True):
         """
         delete key implementation.
         """
@@ -533,7 +534,8 @@ class TerminalWindow(CursesWindow):
             return
         self.command = self.command[:self.cursor_x] + \
                         self.command[self.cursor_x + 1:]
-        self.redraw()
+        if redraw:
+            self.redraw()
     
     def insert_char(self, input_char, redraw: bool = True):
         """

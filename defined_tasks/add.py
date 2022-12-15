@@ -1,7 +1,5 @@
 import curses
-import logging as l
 
-from enum import IntEnum
 from datetime import datetime
 from sqlite3 import OperationalError as SQLiteOperationalError
 from sqlite3 import Error as SQLiteError
@@ -9,7 +7,8 @@ from sqlite3 import Error as SQLiteError
 from misc.utils import variadic_contains_or, check_input
 from misc.utils import predict_business, predict_category
 from misc.string_manip import format_date, format_time
-from misc.utils import change_datetime, rectify_element, parse_expense
+from misc.utils import change_datetime, rectify_element 
+from misc.utils import parse_expense, ExpState
 from data.record import Record
 from data.currency import Euro
 from data.sqlite_proxy import SQLiteProxy
@@ -59,14 +58,6 @@ def account(database: SQLiteProxy, name: str, initial_balance: str, currency_typ
 
     return [f"successfully added {name} with {initial_balance} initial balance"]
 
-class State(IntEnum):
-    AMOUNT = 0
-    BUSINESS = 1
-    CATEGORY = 2
-    DATE = 3
-    TIME = 4
-    NOTE = 5
-
 def expense(terminal, stdscr):
     # exception handling
     if terminal.windows[WinID.Main].account == None:
@@ -75,14 +66,13 @@ def expense(terminal, stdscr):
         return ["cannot add expenses in warmup mode"]
 
     expense_mode = True
-    terminal.print_history.append("expense mode activated")
-    terminal.command = ''
-    terminal.cursor_x = 0
+    terminal.append_to_history("expense mode activated")
+    terminal.reset_input_field()
     curses.curs_set(1)
     tr_date = datetime.now()
     tr_date = tr_date.replace(second=0, microsecond=0)
-    sub_element_start = {State.DATE: [0, 5, 8], State.TIME: [0, 3]}
-    sub_element_length = {State.DATE: [4, 2, 2], State.TIME: [2, 2]}
+    sub_element_start = {ExpState.DATE: [0, 5, 8], ExpState.TIME: [0, 3]}
+    sub_element_length = {ExpState.DATE: [4, 2, 2], ExpState.TIME: [2, 2]}
     element_hint = ['amount', 'payee', 'category', 'date', 'time', 'note']
     element_start = [0, 0, 0, 0, 0, 0]
     element_end = [0, 0, 0, 0, 0, 0]
@@ -91,12 +81,10 @@ def expense(terminal, stdscr):
     sub_state = 0
     # predictions
     predicted_record = None
-    l.basicConfig(filename='/tmp/maledict.log', encoding='utf-8', level=l.DEBUG)
-
     # some functions ------------------------------------------------------------------
     def input_allowed():
-        if state == State.AMOUNT or state == State.BUSINESS or \
-           state == State.CATEGORY or state == State.NOTE:
+        if state == ExpState.AMOUNT or state == ExpState.BUSINESS or \
+           state == ExpState.CATEGORY or state == ExpState.NOTE:
             return True
         return False
 
@@ -105,12 +93,11 @@ def expense(terminal, stdscr):
 
     def update_predictions(force_update: bool, predicted_record: Record):
         # global predicted_record
-        if state == State.BUSINESS:
+        if state == ExpState.BUSINESS:
             terminal.shadow_string, predicted_record = predict_business(elements[0], \
                 terminal.command[element_start[1]:], terminal.windows[WinID.Main].account)
             terminal.shadow_index = element_start[1]
-            l.debug(f'Bshadow: {terminal.shadow_string} @ {terminal.shadow_index}')
-        elif state == State.CATEGORY:
+        elif state == ExpState.CATEGORY:
             if not force_update and predicted_record is not None:
                 terminal.shadow_string = predicted_record.subcategory
                 terminal.shadow_index = element_start[2]
@@ -118,14 +105,12 @@ def expense(terminal, stdscr):
             terminal.shadow_string, predicted_record = predict_category(elements[1], \
                 terminal.command[element_start[2]:], terminal.windows[WinID.Main].account)
             terminal.shadow_index = element_start[2]
-            l.debug(f'Cshadow: {terminal.shadow_string} @ {terminal.shadow_index}')
         else:
             terminal.shadow_string = ''
             terminal.shadow_index = 0
-            l.debug(f'shadow cleared')
 
     # start accepting input -----------------------------------------------------------
-    terminal.print_history.append(f"{get_hint()}")
+    terminal.append_to_history(get_hint())
     terminal.redraw()
     kb_interrupt = False
     while expense_mode:
@@ -137,14 +122,13 @@ def expense(terminal, stdscr):
                 break
             kb_interrupt = True
             elements = ['', '', '', '', '', '']
-            terminal.command = ''
-            terminal.cursor_x = 0
+            terminal.reset_input_field()
             state = sub_state = 0
             terminal.shadow_string = ''
             terminal.shadow_index = 0
             terminal.print_history[
                 -1] = 'press ctrl + c again to exit expense mode'
-            terminal.print_history.append(f'{get_hint()}')
+            terminal.append_to_history(get_hint())
             terminal.redraw()
             continue
         except:
@@ -152,21 +136,12 @@ def expense(terminal, stdscr):
         # backspace, del --------------------------------------------------------------
         if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if input_allowed():
-                terminal.cursor_x = max(element_start[state],
-                                        terminal.cursor_x - 1)
-                if terminal.cursor_x == len(terminal.command) - 1:
-                    terminal.command = terminal.command[:terminal.cursor_x]
-                    update_predictions(True, predicted_record)
-                else:
-                    terminal.command = terminal.command[:terminal.cursor_x] + \
-                                    terminal.command[terminal.cursor_x + 1:]
-                    update_predictions(True, predicted_record)
+                terminal.delete_previous_char(element_start[state], False)
+                update_predictions(True, predicted_record)
                 terminal.redraw()
         elif input_char == curses.KEY_DC:
-            if input_allowed() and len(terminal.command) != 0 and \
-               terminal.cursor_x < len(terminal.command):
-                terminal.command = terminal.command[:terminal.cursor_x] + \
-                                terminal.command[terminal.cursor_x + 1:]
+            if input_allowed():
+                terminal.delete_next_char(False)
                 update_predictions(True, predicted_record)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
@@ -176,7 +151,7 @@ def expense(terminal, stdscr):
                                                element_end[state] + 1].strip()
             terminal.redraw()
             # adding the expense
-            if state == State.NOTE:
+            if state == ExpState.NOTE:
                 parsed_record = parse_expense(elements, tr_date, \
                                               terminal.windows[WinID.Main].account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
@@ -188,10 +163,9 @@ def expense(terminal, stdscr):
                     'all transactions')
                 terminal.print_history[-1] = str(elements)
                 elements = ['', '', '', '', '', '']
-                terminal.command = ''
-                terminal.cursor_x = 0
+                terminal.reset_input_field()
+                terminal.append_to_history(get_hint())
                 state = sub_state = 0
-                terminal.print_history.append(f"{get_hint()}")
                 terminal.shadow_string = ''
                 terminal.shadow_index = 0
                 terminal.redraw()
@@ -207,19 +181,19 @@ def expense(terminal, stdscr):
                     elements[state], state,
                     terminal.windows[WinID.Main].account)
                 # skip payee for income
-                if state == State.AMOUNT and elements[state][0] == '+':
+                if state == ExpState.AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4
                     state += 2
                 else:
                     element_start[state + 1] = element_end[state] + 4
                     state += 1
                 # handle date & time input
-                if state == State.DATE or state == State.TIME:
+                if state == ExpState.DATE or state == ExpState.TIME:
                     terminal.command += format_date(tr_date) \
-                                        if state == State.DATE else \
+                                        if state == ExpState.DATE else \
                                         format_time(tr_date)
                     # prefer day|minute over other fields
-                    sub_state = 2 if state == State.DATE else 1
+                    sub_state = 2 if state == ExpState.DATE else 1
                     # enable reverse text
                     terminal.rtext_start = element_start[state] + \
                                            sub_element_start[state][sub_state]
@@ -229,14 +203,14 @@ def expense(terminal, stdscr):
                 else:
                     terminal.reverse_text_enable = False
                     terminal.cursor_x = len(terminal.command)
-                terminal.print_history[-1] = f"{get_hint()}"
+                terminal.print_history[-1] = get_hint()
                 update_predictions(False, predicted_record)
             # reject & reset input
             else:
                 elements[state] = ''
                 element_end[state] = 0
                 terminal.print_history[-1] = errors
-                terminal.print_history.append(get_hint())
+                terminal.append_to_history(get_hint())
                 terminal.command = terminal.command[:element_start[state]]
                 terminal.cursor_x = len(terminal.command)
             terminal.redraw()
@@ -270,7 +244,7 @@ def expense(terminal, stdscr):
             else:
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
                 terminal.command = terminal.command[:element_start[state]] + \
-                                   format_date(tr_date) if state == State.DATE \
+                                   format_date(tr_date) if state == ExpState.DATE \
                                    else terminal.command[:element_start[state]] + \
                                    format_time(tr_date)
                 terminal.redraw()
@@ -280,7 +254,7 @@ def expense(terminal, stdscr):
             else:
                 tr_date = change_datetime(tr_date, state, sub_state, -1)
                 terminal.command = terminal.command[:element_start[state]] + \
-                                   format_date(tr_date) if state == State.DATE \
+                                   format_date(tr_date) if state == ExpState.DATE \
                                    else terminal.command[:element_start[state]] + \
                                    format_time(tr_date)
                 terminal.redraw()
@@ -321,7 +295,7 @@ def expense(terminal, stdscr):
             if input_allowed():
                 terminal.cursor_jump_end()
             else:
-                sub_state = 2 if state == State.DATE else 1
+                sub_state = 2 if state == ExpState.DATE else 1
                 terminal.cursor_x = element_start[state] + \
                                     sub_element_start[state][sub_state]
         # do predictions --------------------------------------------------------------
