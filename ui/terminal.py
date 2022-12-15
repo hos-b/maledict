@@ -1,7 +1,7 @@
 import os
 import yaml
 import curses
-from typing import Tuple
+from typing import Tuple, Union
 
 import defined_tasks
 from misc.statics import WinID, KeyCombo
@@ -29,12 +29,12 @@ class TerminalWindow(CursesWindow):
         self.last_tab_press = time.time()
 
         # pending actions
-        self.pending_action = -1
-        self.pending_tr_id = -1
+        self.pending_action = None
+        self.pending_tr_id = None
 
         # history stuff
         self.command = ''
-        self.terminal_history = []
+        self.print_history = []
         self.command_history = []
         self.history_surf_index = 0
         self.cmd_history_buffer = ''
@@ -56,7 +56,7 @@ class TerminalWindow(CursesWindow):
             for line in f:
                 self.command_history.append(line.strip())
         except FileNotFoundError:
-            self.terminal_history.append("could not open command history file")
+            self.append_to_history("could not open command history file")
         if self.conf['warm-up']:
             self.warmup()
         self.redraw()
@@ -67,29 +67,33 @@ class TerminalWindow(CursesWindow):
         """
         self.cwindow.erase()
         # not using first or last line, 1 reserved for current command
-        visible_history = min(len(self.terminal_history), self.w_height - 3)
+        visible_history = min(len(self.print_history), self.w_height - 3)
         visible_history += self.scroll
         # disable cursor if scrolling
-        curses.curs_set(int(self.scroll == 0 and self.focused and not self.reverse_text_enable))
-
+        curses.curs_set(int(self.scroll == 0 and self.focused and 
+            not self.reverse_text_enable))
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
         for i in range (self.w_height - 2):
             if visible_history == 0:
                 self.cwindow.addstr(i + 1, 2, ">>> ", curses_attr)
                 if self.shadow_string != '':
-                    self.cwindow.addstr(i + 1, 6 + self.shadow_index, self.shadow_string, curses.A_DIM)
+                    self.cwindow.addstr(i + 1, 6 + self.shadow_index, 
+                        self.shadow_string, curses.A_DIM)
                 if self.reverse_text_enable:
                     pre = self.command[:self.rtext_start]
                     mid = self.command[self.rtext_start:self.rtext_end]
                     pos = self.command[self.rtext_end:]
                     self.cwindow.addstr(i + 1, 6, pre, curses_attr)
-                    self.cwindow.addstr(i + 1, 6 + len(pre), mid, curses_attr | curses.A_STANDOUT)
-                    self.cwindow.addstr(i + 1, 6 + len(pre) + len(mid), pos, curses_attr)
+                    self.cwindow.addstr(i + 1, 6 + len(pre), mid,
+                        curses_attr | curses.A_STANDOUT)
+                    self.cwindow.addstr(i + 1, 6 + len(pre) + len(mid),
+                        pos, curses_attr)
                 else:
                     self.cwindow.addstr(i + 1, 6, self.command, curses_attr)
                 self.cwindow.move(i + 1, self.cursor_x + 6)
                 break
-            self.cwindow.addstr(i + 1, 2, self.terminal_history[-visible_history], curses_attr)
+            self.cwindow.addstr(i + 1, 2, self.print_history[-visible_history],
+                curses_attr)
             visible_history -= 1
         self.cwindow.box()
         self.cwindow.refresh()
@@ -151,7 +155,7 @@ class TerminalWindow(CursesWindow):
             return defined_tasks.delete.account(self, cmd_parts[0])
         elif task_id == 502:
             return defined_tasks.delete.expense(self.windows[WinID.Main], cmd_parts[0])
-        elif 600<= task_id < 700:
+        elif 600 <= task_id < 700:
             return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_parts, self.windows[WinID.Main])
         elif task_id == 701:
             return defined_tasks.export.csv(self.windows[0].account, cmd_parts[0])
@@ -165,7 +169,7 @@ class TerminalWindow(CursesWindow):
             self.write_command_history(self.conf['command_history_file_length'])
             exit()
         elif task_id == 100002:
-            self.terminal_history.clear()
+            self.print_history.clear()
             self.scroll = 0
             return []
         else:
@@ -191,7 +195,7 @@ class TerminalWindow(CursesWindow):
                 self.history_surf_index = 0
                 self.scroll = 0
                 kb_interrupt = True
-                self.terminal_history.append('press ctrl-c again to exit maledict')
+                self.append_to_history('press ctrl-c again to exit maledict')
                 self.redraw()
                 continue
             except:
@@ -201,101 +205,44 @@ class TerminalWindow(CursesWindow):
                 return input_char
             # backspace, del --------------------------------------------------------------
             elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
-                if len(self.command) != 0:
-                    self.cursor_x = max(0, self.cursor_x - 1)
-                    if self.cursor_x == len(self.command) - 1:
-                        self.command = self.command[:self.cursor_x]
-                    else:
-                        self.command = self.command[:self.cursor_x] + \
-                                       self.command[self.cursor_x + 1:]
-                    self.redraw()
+                self.delete_previous_char()
             elif input_char == curses.KEY_DC:
-                if len(self.command) != 0 and self.cursor_x < len(self.command):
-                    self.command = self.command[:self.cursor_x] + \
-                                    self.command[self.cursor_x + 1:]
-                    self.redraw()
+                self.delete_next_char()
             # execute ---------------------------------------------------------------------
             elif input_char == curses.KEY_ENTER or input_char == '\n':
                 if self.command != '':
                     self.command_history.append(self.command)
-                    self.command_history = self.command_history\
+                    self.command_history = self.command_history \
                                          [-self.conf['command_history_buffer_length']:]
-                    self.terminal_history.append(">>> " + self.command)
-                    self.terminal_history += self.parse_and_execute(stdscr)
-                self.command = ''
+                    self.append_to_history(">>> {}", self.command)
+                    self.append_to_history(self.parse_and_execute(stdscr))
                 self.history_surf_index = 0
-                self.cursor_x = 0
                 self.scroll = 0
+                self.reset_input_field()
                 self.redraw()
             # scrolling -------------------------------------------------------------------
             elif input_char == curses.KEY_PPAGE:
-                max_scroll = len(self.terminal_history) + 3 - self.w_height
-                # if we can show more than history + 3 reserved lines:
-                if max_scroll > 0:
-                    self.scroll = min(self.scroll + 1, max_scroll)
-                self.redraw()
+                self.scroll_page_up()
             elif input_char == curses.KEY_NPAGE:
-                self.scroll = max(self.scroll - 1, 0)
-                self.redraw()
+                self.scroll_page_down()
             # cursor shift ----------------------------------------------------------------
             elif input_char == curses.KEY_LEFT:
-                self.cursor_x = max(0, self.cursor_x - 1)
-                self.redraw()
+                self.cursor_move_left()
             elif input_char == curses.KEY_RIGHT:
-                self.cursor_x = min(len(self.command), self.cursor_x + 1)
-                self.redraw()
+                self.cursor_move_right()
             elif input_char == KeyCombo.CTRL_LEFT:
-                cut_str = self.command[:self.cursor_x][::-1]
-                while len(cut_str) != 0 and cut_str[0] == ' ':
-                    cut_str = cut_str[1:]
-                    self.cursor_x = max(0, self.cursor_x - 1)
-                next_jump = cut_str.find(' ')
-                if next_jump == -1:
-                    self.cursor_x = 0
-                else:
-                    self.cursor_x = max(0, self.cursor_x - next_jump)
-                self.redraw()
+                self.cursor_jump_left()
             elif input_char == KeyCombo.CTRL_RIGHT:
-                cut_str = self.command[self.cursor_x:]
-                while len(cut_str) != 0 and cut_str[0] == ' ':
-                    cut_str = cut_str[1:]
-                    self.cursor_x = min(self.cursor_x + 1, len(self.command))
-                next_jump = cut_str.find(' ')
-                if next_jump == -1:
-                    self.cursor_x = len(self.command)
-                else:
-                    self.cursor_x = min(self.cursor_x + next_jump, len(self.command))
-                    cut_str = self.command[self.cursor_x:]
-                self.redraw()
+                self.cursor_jump_right()
             elif input_char == curses.KEY_HOME:
-                self.cursor_x = 0
-                self.redraw()
+                self.cursor_jump_start()
             elif input_char == curses.KEY_END:
-                self.cursor_x = len(self.command)
-                self.redraw()
+                self.cursor_jump_end()
             # history surfing -------------------------------------------------------------
             elif input_char == curses.KEY_UP:
-                if len(self.command_history) != 0:
-                    self.scroll = 0
-                    # if we weren't surfing, save the current command in buffer
-                    if self.history_surf_index == 0:
-                        self.cmd_history_buffer = self.command
-                    self.history_surf_index = min(self.history_surf_index + 1,
-                                                 len(self.command_history))
-                    self.command = self.command_history[-self.history_surf_index]
-                    self.cursor_x = len(self.command)
-                    self.redraw()
+                self.command_history_up()
             elif input_char == curses.KEY_DOWN:
-                if self.history_surf_index != 0:
-                    self.scroll = 0
-                    self.history_surf_index -= 1
-                    if self.history_surf_index == 0:
-                        self.command = self.cmd_history_buffer
-                        self.cursor_x = len(self.command)
-                    else:
-                        self.command = self.command_history[-self.history_surf_index]
-                        self.cursor_x = len(self.command)
-                    self.redraw()
+                self.command_history_down()
             # do predictions --------------------------------------------------------------
             elif input_char == '\t':
                 p_candidates, p_insert_index, i_str = self.get_command_predictions()
@@ -306,7 +253,7 @@ class TerminalWindow(CursesWindow):
                 if len(p_candidates) == 1:
                     pre_str = self.command[:p_insert_index]
                     post_str = self.command[p_insert_index + len(i_str):]
-                    post_str = ' ' if (post_str == '' and \
+                    post_str = ' ' if (post_str == '' and 
                                        not p_candidates[0].endswith(' ')) \
                                    else post_str
                     self.command = pre_str + p_candidates[0] + post_str
@@ -315,28 +262,13 @@ class TerminalWindow(CursesWindow):
                     self.redraw()
                 # check double tab
                 elif (time.time() - self.last_tab_press) < 0.3:
-                    self.terminal_history.append(">>> " + self.command)
-                    self.terminal_history.append(' | '.join(p_candidates))
+                    self.append_to_history(">>> {}", self.command)
+                    self.append_to_history(' | '.join(p_candidates))
                     self.redraw()
                 self.last_tab_press = time.time()
             # normal input ----------------------------------------------------------------
             else:
-                # some command that's not used
-                if type(input_char) is int:
-                    continue
-                # ignore leading spaces
-                if input_char == ' ':
-                    if len(self.command) == 0:
-                        continue
-                if self.cursor_x == len(self.command):
-                    self.command = self.command[:self.cursor_x] + input_char
-                else:
-                    self.command = self.command[:self.cursor_x] + input_char + \
-                                   self.command[self.cursor_x:]
-                self.cursor_x += 1
-                self.history_surf_index = 0
-                self.scroll = 0
-                self.redraw()
+                self.insert_char(input_char)
 
     def get_command_predictions(self, state = None) -> Tuple[list, int]:
         """
@@ -403,10 +335,12 @@ class TerminalWindow(CursesWindow):
                 line = line.strip()
                 if line != '':
                     self.command = line
-                    self.terminal_history += self.parse_and_execute(None)
+                    self.append_to_history(self.parse_and_execute(None))
                     self.command = ''
         except FileNotFoundError:
-            self.terminal_history.append("could not open warmup file")
+            self.append_to_history("could not find warmup file")
+        except Exception:
+            self.append_to_history("could not open warmup file")
 
     def submit_pending_command(self, stdscr) -> bool:
         """
@@ -414,25 +348,209 @@ class TerminalWindow(CursesWindow):
         returns True if the focus should afterwards be given to the
         main window (and not remain on the terminal).
         """
-        pending = self.pending_action != -1
-        if pending:
+        if self.pending_action:
             # edit action
             if self.pending_action == 0:
-                self.terminal_history += \
-                    defined_tasks.edit.expense(self, stdscr, \
-                                               hex(self.pending_tr_id))
+                self.append_to_history(
+                    defined_tasks.edit.expense(self, stdscr,
+                                               hex(self.pending_tr_id)))
             # delete action
             elif self.pending_action == 1:
-                self.terminal_history += \
-                    defined_tasks.delete.expense(self.windows[WinID.Main], \
-                                                 hex(self.pending_tr_id))
-
+                self.append_to_history(
+                    defined_tasks.delete.expense(self.windows[WinID.Main],
+                                                 hex(self.pending_tr_id)))
             # reset
-            self.command = ''
             self.history_surf_index = 0
-            self.cursor_x = 0
             self.scroll = 0
-            self.pending_action = -1
-            self.pending_tr_id = -1
+            self.pending_action = None
+            self.pending_tr_id = None
             self.redraw()
-        return pending
+            return True
+        return False
+
+    def reset_input_field(self):
+        """
+        clears the command line and resets the cursor.
+        """
+        self.command = ''
+        self.cursor_x = 0
+
+    def append_to_history(self, strings: Union[str, list], *args):
+        """
+        appends the given string to the terminal history.
+        it also accepts an arg list for string formatting.
+        if the argument is a list, all elements are appended.
+        """
+        if isinstance(strings, str):
+            self.print_history.append(strings.format(*args))
+        elif isinstance(strings, list):
+            self.print_history += strings
+
+    def scroll(self, up_down: int, reserved_line_count = 3):
+        """
+        scrolls print history up or down by a number.
+        """
+        if up_down == +1:
+            # if we can show more than history + 3 reserved lines:
+            max_scroll = len(self.print_history) + \
+                reserved_line_count - self.w_height
+            if max_scroll > 0:
+                self.scroll = min(self.scroll + 1, max_scroll)
+        elif up_down == -1:
+            self.scroll = max(self.scroll - 1, 0)
+        else:
+            raise NotImplementedError('nah')
+        self.redraw()
+            
+    def scroll_page_up(self):
+        """
+        goes one page up in the print history
+        """
+        max_scroll = len(self.terminal_history) + 3 - self.w_height
+        # if we can show more than history + 3 reserved lines:
+        if max_scroll > 0:
+            self.scroll = min(self.scroll + 1, max_scroll)
+        self.redraw()
+
+    def scroll_page_down(self):
+        """
+        goes one page down in the print history
+        """
+        self.scroll = max(self.scroll - 1, 0)
+        self.redraw()
+
+    def cursor_move_left(self):
+        """
+        self explanatory
+        """
+        self.cursor_x = max(0, self.cursor_x - 1)
+        self.redraw()
+
+    def cursor_move_right(self):
+        """
+        self explanatory
+        """
+        self.cursor_x = min(len(self.command), self.cursor_x + 1)
+        self.redraw()
+
+    def cursor_jump_left(self):
+        """
+        moves the cursor to the beginning of current word.
+        """
+        cut_str = self.command[:self.cursor_x][::-1]
+        while len(cut_str) != 0 and cut_str[0] == ' ':
+            cut_str = cut_str[1:]
+            self.cursor_x = max(0, self.cursor_x - 1)
+        next_jump = cut_str.find(' ')
+        if next_jump == -1:
+            self.cursor_x = 0
+        else:
+            self.cursor_x = max(0, self.cursor_x - next_jump)
+        self.redraw()
+
+    def cursor_jump_right(self):
+        """
+        moves the cursor to the end of the current word.
+        """
+        cut_str = self.command[self.cursor_x:]
+        while len(cut_str) != 0 and cut_str[0] == ' ':
+            cut_str = cut_str[1:]
+            self.cursor_x = min(self.cursor_x + 1, len(self.command))
+        next_jump = cut_str.find(' ')
+        if next_jump == -1:
+            self.cursor_x = len(self.command)
+        else:
+            self.cursor_x = min(self.cursor_x + next_jump, len(self.command))
+            cut_str = self.command[self.cursor_x:]
+        self.redraw()
+
+    def cursor_jump_start(self):
+        """
+        moves cursor to the beginning of the line.
+        """
+        self.cursor_x = 0
+        self.redraw()
+
+    def cursor_jump_end(self):
+        """
+        moves cursor to the end of the line.
+        """
+        self.cursor_x = len(self.command)
+        self.redraw()
+
+    def command_history_up(self):
+        """
+        goes to the previous item in the command history.
+        """
+        if len(self.command_history) == 0:
+            return
+        self.scroll = 0
+        # if we weren't surfing, save the current command in buffer
+        if self.history_surf_index == 0:
+            self.cmd_history_buffer = self.command
+        self.history_surf_index = min(self.history_surf_index + 1,
+                                        len(self.command_history))
+        self.command = self.command_history[-self.history_surf_index]
+        self.cursor_x = len(self.command)
+        self.redraw()
+
+    def command_history_down(self):
+        """
+        goes to the next item in the command history.
+        """
+        if self.history_surf_index == 0:
+            return
+        self.scroll = 0
+        self.history_surf_index -= 1
+        if self.history_surf_index == 0:
+            self.command = self.cmd_history_buffer
+            self.cursor_x = len(self.command)
+        else:
+            self.command = self.command_history[-self.history_surf_index]
+            self.cursor_x = len(self.command)
+        self.redraw()
+
+    def delete_previous_char(self):
+        """
+        backspace key implementation
+        """
+        if len(self.command) == 0:
+            return
+        self.cursor_x = max(0, self.cursor_x - 1)
+        if self.cursor_x == len(self.command) - 1:
+            self.command = self.command[:self.cursor_x]
+        else:
+            self.command = self.command[:self.cursor_x] + \
+                            self.command[self.cursor_x + 1:]
+        self.redraw()
+
+    def delete_next_char(self):
+        """
+        delete key implementation.
+        """
+        if len(self.command) == 0 or self.cursor_x == len(self.command):
+            return
+        self.command = self.command[:self.cursor_x] + \
+                        self.command[self.cursor_x + 1:]
+        self.redraw()
+    
+    def insert_char(self, input_char):
+        """
+        appends a character at the current cursor location
+        given its code.
+        """
+        # ignore unused key combinations
+        if type(input_char) is int:
+            return
+        # ignore leading spaces
+        if input_char == ' ' and len(self.command) == 0:
+            return
+        if self.cursor_x == len(self.command):
+            self.command = self.command[:self.cursor_x] + input_char
+        else:
+            self.command = self.command[:self.cursor_x] + input_char + \
+                            self.command[self.cursor_x:]
+        self.cursor_x += 1
+        self.history_surf_index = 0
+        self.scroll = 0
+        self.redraw()
