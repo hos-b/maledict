@@ -1,10 +1,22 @@
+import re
+
 from datetime import date, time, datetime
 from calendar import monthrange
+from enum import IntEnum
+
 from data.record import Record
 from misc.string_manip import variadic_contains_or
 from data.account import Account
 from datetime import timedelta
-import re
+
+
+class ExpState(IntEnum):
+    AMOUNT = 0
+    BUSINESS = 1
+    CATEGORY = 2
+    DATE = 3
+    TIME = 4
+    NOTE = 5
 
 
 def check_input(input_str: str, state: int) -> str:
