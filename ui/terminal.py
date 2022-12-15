@@ -324,12 +324,12 @@ class TerminalWindow(CursesWindow):
 
     def warmup(self):
         """
-        loads a text file in ./database/.warmup and executes all
+        loads a text file in ./database/.maledictrc and executes all
         the commands inside.
         """
         try:
             warmup_path = os.path.join(os.path.dirname(__file__),
-                                       '../database/.warmup')
+                                       '../database/.maledictrc')
             f = open(warmup_path, 'r')
             for line in f:
                 line = line.strip()

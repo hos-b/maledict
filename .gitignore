@@ -5,4 +5,4 @@ settings.json
 database/.command_history
 database/maledict.db
 database/maledict.db.bak
-database/.warmup
+database/.maledictrc
