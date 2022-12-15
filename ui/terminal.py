@@ -407,7 +407,7 @@ class TerminalWindow(CursesWindow):
         goes one page up in the print history
         """
         # if we can show more than history + 3 reserved lines:
-        max_scroll = len(self.terminal_history) + \
+        max_scroll = len(self.print_history) + \
             reserved_lines - self.w_height
         if max_scroll > 0:
             self.scroll = min(self.scroll + 1, max_scroll)
@@ -462,7 +462,6 @@ class TerminalWindow(CursesWindow):
             self.cursor_x = len(self.command)
         else:
             self.cursor_x = min(self.cursor_x + next_jump, len(self.command))
-            cut_str = self.command[self.cursor_x:]
         self.redraw()
 
     def cursor_jump_start(self, start_offset: int = 0):
