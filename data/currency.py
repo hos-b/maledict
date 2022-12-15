@@ -30,29 +30,6 @@ class Currency(ABC):
         self._primary: int = prim
         self._secondary: int = sec
 
-    @classmethod
-    def from_str(cls, cu_string: str) -> Currency:
-        try:
-            sgn = sign(float(cu_string))
-        except:
-            raise ValueError(
-                f'{cu_string} is not a valid value for {cls.__name__}')
-        parts = cu_string.split(cls._seperator)
-        if len(parts) == 1:
-            parts.append('0')
-        elif len(parts) == 2:
-            if len(parts[1]) > cls._max_secondary_width:
-                raise ValueError(
-                    f'{cu_string} is not a valid value for {cls.__name__}')
-            # add missing trailing zeros, if any
-            if not parts[1].startswith('0'):
-                parts[1] = parts[1] + '0' * (cls._max_secondary_width -
-                                             len(parts[1]))
-        else:
-            raise ValueError(
-                f'{cu_string} is not a valid value for {cls.__name__}')
-        return cls(int(parts[0]), int(parts[1]) * sgn)
-
     def as_str(self, zero_pad: bool = False):
         if self._secondary == 0:
             if zero_pad:
@@ -72,10 +49,20 @@ class Currency(ABC):
         return self._primary > 0
 
     def __verify_type(self, op: str, other):
-        if not isinstance(other, type(self)):
+        if not (isinstance(other, (type(self), int, float))):
             raise TypeError(
-                f'unsupported operand type(s) for {op}: {self.__class__.__name__} '
-                f'and {other.__class__.__name__}')
+                f'unsupported operand type(s) for {op}: '
+                f'{self.__class__.__name__} and {other.__class__.__name__}')
+
+    def __convert_operand(self, operand):
+        if isinstance(operand, type(self)):
+            return operand
+        elif isinstance(operand, (int, float)):
+            return self.from_float(operand)
+        else:
+            raise TypeError(
+                f'cannot convert operand of type {type(operand)} '
+                f'to {self.__class__.__name__}')
 
     def __str__(self):
         return self.as_str(True)
@@ -100,6 +87,7 @@ class Currency(ABC):
 
     def __add__(self, other: Currency):
         self.__verify_type('+', other)
+        other = self.__convert_operand(other)
         sls = self._primary * self._secondary_limit + self._secondary
         ots = other._primary * other._secondary_limit + other._secondary
         sum_sec = sls + ots
@@ -111,6 +99,7 @@ class Currency(ABC):
 
     def __iadd__(self, other: Currency):
         self.__verify_type('+', other)
+        other = self.__convert_operand(other)
         sls = self._primary * self._secondary_limit + self._secondary
         ots = other._primary * other._secondary_limit + other._secondary
         sum_sec = sls + ots
@@ -121,6 +110,7 @@ class Currency(ABC):
 
     def __sub__(self, other: Currency):
         self.__verify_type('-', other)
+        other = self.__convert_operand(other)
         sls = self._primary * self._secondary_limit + self._secondary
         ots = -(other._primary * other._secondary_limit + other._secondary)
         sum_sec = sls + ots
@@ -132,6 +122,7 @@ class Currency(ABC):
 
     def __isub__(self, other: Currency):
         self.__verify_type('-', other)
+        other = self.__convert_operand(other)
         sls = self._primary * self._secondary_limit + self._secondary
         ots = -(other._primary * other._secondary_limit + other._secondary)
         sum_sec = sls + ots
@@ -142,6 +133,7 @@ class Currency(ABC):
 
     def __lt__(self, other: Currency):
         self.__verify_type('<', other)
+        other = self.__convert_operand(other)
         if abs(self._primary) < abs(other._primary):
             return True
         if abs(self._primary) == abs(other._primary) and abs(
@@ -151,6 +143,7 @@ class Currency(ABC):
 
     def __gt__(self, other: Currency):
         self.__verify_type('>', other)
+        other = self.__convert_operand(other)
         if abs(self._primary) > abs(other._primary):
             return True
         if abs(self._primary) == abs(other._primary) and abs(
@@ -160,11 +153,13 @@ class Currency(ABC):
 
     def __eq__(self, other: Currency):
         self.__verify_type('==', other)
+        other = self.__convert_operand(other)
         return abs(self._primary) == abs(other._primary) and abs(
             self._secondary) == abs(other._secondary)
 
     def __ne__(self, other: Currency):
         self.__verify_type('!=', other)
+        other = self.__convert_operand(other)
         return abs(self._primary) != abs(other._primary) or abs(
             self._secondary) != abs(other._secondary)
 
@@ -181,6 +176,29 @@ class Currency(ABC):
         prm = int(value)
         sec = int(round((value - prm) * cls._secondary_limit))
         return cls(prm * sgn, sec * sgn)
+
+    @classmethod
+    def from_str(cls, cu_string: str) -> Currency:
+        try:
+            sgn = sign(float(cu_string))
+        except:
+            raise ValueError(
+                f'{cu_string} is not a valid value for {cls.__name__}')
+        parts = cu_string.split(cls._seperator)
+        if len(parts) == 1:
+            parts.append('0')
+        elif len(parts) == 2:
+            if len(parts[1]) > cls._max_secondary_width:
+                raise ValueError(
+                    f'{cu_string} is not a valid value for {cls.__name__}')
+            # add missing trailing zeros, if any
+            if not parts[1].startswith('0'):
+                parts[1] = parts[1] + '0' * (cls._max_secondary_width -
+                                             len(parts[1]))
+        else:
+            raise ValueError(
+                f'{cu_string} is not a valid value for {cls.__name__}')
+        return cls(int(parts[0]), int(parts[1]) * sgn)
 
     @property
     def float_value(self):
