@@ -63,7 +63,7 @@ class MainWindow(CursesWindow):
         self.cwindow.erase()
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
         account_str = self.account.name if self.account else 'not set'
-        balance_str = f'balance: {self.account.balance.as_str(True) if self.account else "0.0"}'
+        balance_str = self.account.balance.as_str(True) if self.account else "0.0"
         income_str = self.table_income.as_str(True)
         expense_str = self.table_expense.as_str(True)
         numlen = max(len(income_str), len(expense_str))
