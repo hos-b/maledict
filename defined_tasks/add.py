@@ -220,20 +220,20 @@ def expense(terminal, stdscr):
         elif input_char == curses.KEY_NPAGE:
             terminal.scroll_page_down()
         # record scrolling ------------------------------------------------------------
-        elif input_char == KeyCombo.CTRL_PG_UP:
-            terminal.windows[WinID.Main].clist.key_pgup()
-            terminal.windows[WinID.Main].redraw()
-            terminal.redraw()
-        elif input_char == KeyCombo.CTRL_PG_DOWN:
-            terminal.windows[WinID.Main].clist.key_pgdn()
-            terminal.windows[WinID.Main].redraw()
-            terminal.redraw()
         elif input_char == KeyCombo.CTRL_UP:
-            terminal.windows[WinID.Main].clist.key_up()
+            terminal.windows[WinID.Main].clist.move_selection_up()
             terminal.windows[WinID.Main].redraw()
             terminal.redraw()
         elif input_char == KeyCombo.CTRL_DOWN:
-            terminal.windows[WinID.Main].clist.key_down()
+            terminal.windows[WinID.Main].clist.move_selection_down()
+            terminal.windows[WinID.Main].redraw()
+            terminal.redraw()
+        elif input_char == KeyCombo.CTRL_PG_UP:
+            terminal.windows[WinID.Main].clist.scroll_page_up()
+            terminal.windows[WinID.Main].redraw()
+            terminal.redraw()
+        elif input_char == KeyCombo.CTRL_PG_DOWN:
+            terminal.windows[WinID.Main].clist.scroll_page_down()
             terminal.windows[WinID.Main].redraw()
             terminal.redraw()
         # suggestion surfing, changing date & time ------------------------------------

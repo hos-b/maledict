@@ -173,16 +173,16 @@ class MainWindow(CursesWindow):
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char
             if input_char == curses.KEY_UP:
-                self.clist.key_up()
+                self.clist.move_selection_up()
                 self.redraw()
             elif input_char == curses.KEY_DOWN:
-                self.clist.key_down()
+                self.clist.move_selection_down()
                 self.redraw()
             elif input_char == curses.KEY_PPAGE:
-                self.clist.key_pgup()
+                self.clist.scroll_page_up()
                 self.redraw()
             elif input_char == curses.KEY_NPAGE:
-                self.clist.key_pgdn()
+                self.clist.scroll_page_down()
                 self.redraw()
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 # actions are disabled in query mode

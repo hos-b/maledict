@@ -53,10 +53,10 @@ class ActionWindow(CursesWindow):
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char
             if input_char == curses.KEY_UP:
-                self.clist.key_up()
+                self.clist.move_selection_up()
                 self.redraw()
             elif input_char == curses.KEY_DOWN:
-                self.clist.key_down()
+                self.clist.move_selection_down()
                 self.redraw()
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 opt_idx, _ = self.clist.get_selected_item()

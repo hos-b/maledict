@@ -85,26 +85,26 @@ class CursesList:
             cwindow.addstr(self.y + self.l_height, self.x + self.l_width - len(span_str) - 15, \
                                             span_str, curses_attr | curses.A_ITALIC)
 
-    def key_up(self):
+    def move_selection_up(self):
         if self.index == 0:
             self.scroll = max(0, self.scroll - 1)
         else:
             self.index -= 1
 
-    def key_down(self):
+    def move_selection_down(self):
         max_scroll = len(self.items) - self.l_height
         if self.index == self.l_height - 1 and max_scroll > 0:
             self.scroll = min(self.scroll + 1, max_scroll)
         else:
             self.index = min(self.index + 1, len(self.items) - 1)
 
-    def key_pgup(self):
+    def scroll_page_up(self):
         if self.index != 0:
             self.index = 0
         else:
             self.scroll = max(0, self.scroll - self.l_height)
 
-    def key_pgdn(self):
+    def scroll_page_down(self):
         if self.index < self.l_height - 1:
             self.index = min(self.l_height - 1, len(self.items) - 1)
         else:
