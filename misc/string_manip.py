@@ -35,16 +35,3 @@ def parse_date(date_str: str) -> date:
             return None
     else:
         return None
-
-# string checks ----------------------------------------------------------------------------
-def variadic_contains_or(name: str, *args):
-    for arg in args:
-        if arg in name:
-            return True, arg
-    return False, ''
-
-def variadic_equals_or(first: str, *argv):
-    for arg in argv:
-        if first == arg:
-            return True
-    return False

@@ -5,7 +5,6 @@ from calendar import monthrange
 from enum import IntEnum
 
 from data.record import Record
-from misc.string_manip import variadic_contains_or
 from data.account import Account
 from datetime import timedelta
 
@@ -32,13 +31,9 @@ def check_input(input_str: str, state: int) -> str:
             return '0.0 is not a valid value'
         return ''
     elif state == 1 or state == 2:
-        forbidden, ch = variadic_contains_or(input_str, '/', '\\', '\'', '\"',
-                                             '!', '?', '+', '=', '%', '*', ';',
-                                             '^', '@', '#', '$', '~', '|', '`',
-                                             '[', ']', '(', ')', '[', ']'
-                                             '<', '>', '{', '}', '_')
-        if forbidden:
-            return f'string cannot contain {ch}'
+        match = re.match(r'.*(\W).*', input_str)
+        if match:
+            return f'string cannot contain {match.group(1)}'
         else:
             # category & subcategory in one string
             if state == 2 and input_str.count(':') > 1:

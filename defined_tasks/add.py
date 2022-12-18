@@ -1,10 +1,11 @@
+import re
 import curses
 
 from datetime import datetime
 from sqlite3 import OperationalError as SQLiteOperationalError
 from sqlite3 import Error as SQLiteError
 
-from misc.utils import variadic_contains_or, check_input
+from misc.utils import check_input
 from misc.utils import predict_business, predict_category
 from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element 
@@ -20,19 +21,10 @@ def account(database: SQLiteProxy, name: str, initial_balance: str, currency_typ
         initial_balance = currency_type.from_str(initial_balance)
     except:
         return [f'{initial_balance} is not a float value']
-    # should stop basic sql injections
-    if ';' in name:
-        return ['sneaky but no']
-    # this shouldn't be possible anyway but meh
-    if ' ' in name:
-        return ['account name cannot contain spaces']
-    # other stuff
-    forbidden, frch = variadic_contains_or(name, '/', '\\','\'', '\"', '!', '?',\
-                                                 '+', '=', '%', '*', '&', '^',\
-                                                 '@', '#', '$', '~', '.', '`',\
-                                                 '[', ']', '(', ')', '[', ']')
-    if forbidden:
-        return [f'account name cannot contain {frch}']
+    # prevent non alpha-numeric characters from landing in sqlite db, especially ;
+    match = re.match(r'.*(\W).*', name)
+    if match:
+        return [f'account name cannot contain {match.group(1)}']
     if initial_balance < 0:
         return [
             'initial account balance cannot be negative. are you really that poor?'
