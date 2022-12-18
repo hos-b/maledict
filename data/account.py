@@ -17,7 +17,7 @@ class Account:
         if conf['currency']['type'] == 'Euro':
             self.currency_type = Euro
         else:
-            raise ValueError(f'unknown currency {conf["currency"]["type"]}')
+            raise ValueError(f"unknown currency {conf['currency']['type']}")
         self.balance: Currency = self.currency_type(0, 0)
         self.records = []
         self.categories = {}
@@ -60,7 +60,7 @@ class Account:
             if update_balance:
                 self.balance += amount
             self.records.append(
-                Record(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"), amount,
+                Record(datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S'), amount,
                        category, subcategory, business, note, t_id))
 
     def add_transaction(self, record: Record):

@@ -13,9 +13,9 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     """
     # exception handling
     if terminal.windows[WinID.Main].account == None:
-        return ["current account not set"]
+        return ['current account not set']
     if stdscr is None:
-        return ["cannot parse mkcsv in warmup mode"]
+        return ['cannot parse mkcsv in warmup mode']
 
     # tanslate categories ?
     translate_mode = False
@@ -25,7 +25,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     elif translate_categories in ['0', 'n', 'false', 'no', 'f', 'ff']:
         translate_mode = False
     else:
-        return [f"expected boolean, got {translate_categories}"]
+        return [f'expected boolean, got {translate_categories}']
 
     # start parsing
     parser = MKParser()
@@ -40,22 +40,22 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
                     continue
                 success, msg = parser.parse_row(row)
                 if not success:
-                    msg_list.append(f"line {line_number}: {msg}")
+                    msg_list.append(f'line {line_number}: {msg}')
     except FileNotFoundError:
-        return [f"could not find {file_path}"]
+        return [f'could not find {file_path}']
     except:
-        return [f"error while reading {file_path}"]
-    msg_list.append(f"parsed {len(parser.records)} records, skipped {len(msg_list)}")
+        return [f'error while reading {file_path}']
+    msg_list.append(f'parsed {len(parser.records)} records, skipped {len(msg_list)}')
 
     if len(parser.categories) == 0:
-        return ["the .csv file has no categories to translate"]
+        return ['the .csv file has no categories to translate']
     if len(parser.subcategories) == 0:
-        return ["the .csv file has no subcategories to translate"]
+        return ['the .csv file has no subcategories to translate']
 
     if translate_mode:
         cats = list(parser.categories.keys())
         subcats = list(parser.subcategories.keys())
-        terminal.terminal_history.append(f"enter replacement for category {cats[0]}:")
+        terminal.terminal_history.append(f'enter replacement for category {cats[0]}:')
         terminal.cursor_x = 0
         terminal.command = ''
         terminal.redraw()
@@ -81,28 +81,28 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
         # execute ---------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == '\n':
             if terminal.command != '':
-                terminal.terminal_history.append(">>> " + terminal.command)
+                terminal.terminal_history.append('>>> ' + terminal.command)
                 if len(cats) > 0:
                     if ';' in terminal.command > 0:
-                        terminal.terminal_history.append("nope")
+                        terminal.terminal_history.append('nope')
                     else:
                         parser.categories[cats[0]] = terminal.command
                         cats.pop(0)
                     if len(cats) > 0:
-                        terminal.terminal_history.append(f"enter replacement "
-                                                         f"for category {cats[0]}:")
+                        terminal.terminal_history.append(f'enter replacement '
+                                                         f'for category {cats[0]}:')
                     else:
-                        terminal.terminal_history.append(f"enter replacement "
-                                                         f"for subcategory {subcats[0]}:")
+                        terminal.terminal_history.append(f'enter replacement '
+                                                         f'for subcategory {subcats[0]}:')
                 elif len(cats) == 0 and len(subcats) > 0:
                     if ';' in terminal.command > 0:
-                        terminal.terminal_history.append("nope")
+                        terminal.terminal_history.append('nope')
                     else:
                         parser.subcategories[subcats[0]] = terminal.command
                         subcats.pop(0)
                     if len(subcats) > 0:
-                        terminal.terminal_history.append(f"enter replacement "
-                                                         f"for subcategory {subcats[0]}:")
+                        terminal.terminal_history.append(f'enter replacement '
+                                                         f'for subcategory {subcats[0]}:')
                     else:
                         read_input = False
             terminal.command = ''
@@ -163,9 +163,9 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
     """
     # exception handling
     if terminal.windows[WinID.Main].account == None:
-        return ["current account not set"]
+        return ['current account not set']
     if stdscr is None:
-        return ["cannot parse mkcsv in warmup mode"]
+        return ['cannot parse mkcsv in warmup mode']
 
     # tanslate categories ?
     translate_mode = False
@@ -175,7 +175,7 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
     elif translate_categories in ['0', 'n', 'false', 'no', 'f', 'ff']:
         translate_mode = False
     else:
-        return [f"expected boolean, got {translate_categories}"]
+        return [f'expected boolean, got {translate_categories}']
 
     # start parsing
     parser = MaledictParser()
@@ -188,22 +188,22 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
                 line_number += 1
                 success, msg = parser.parse_row(row)
                 if not success:
-                    msg_list.append(f"line {line_number}: {msg}")
+                    msg_list.append(f'line {line_number}: {msg}')
     except FileNotFoundError:
-        return [f"could not find {file_path}"]
+        return [f'could not find {file_path}']
     except:
-        return [f"error while reading {file_path}"]
-    msg_list.append(f"parsed {len(parser.records)} records, skipped {len(msg_list)}")
+        return [f'error while reading {file_path}']
+    msg_list.append(f'parsed {len(parser.records)} records, skipped {len(msg_list)}')
 
     if len(parser.categories) == 0:
-        return ["the .csv file has no categories to translate"]
+        return ['the .csv file has no categories to translate']
     if len(parser.subcategories) == 0:
-        return ["the .csv file has no subcategories to translate"]
+        return ['the .csv file has no subcategories to translate']
 
     if translate_mode:
         cats = list(parser.categories.keys())
         subcats = list(parser.subcategories.keys())
-        terminal.terminal_history.append(f"enter replacement for category {cats[0]}:")
+        terminal.terminal_history.append(f'enter replacement for category {cats[0]}:')
         terminal.cursor_x = 0
         terminal.command = ''
         terminal.redraw()
@@ -229,28 +229,28 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
         # execute ---------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == '\n':
             if terminal.command != '':
-                terminal.terminal_history.append(">>> " + terminal.command)
+                terminal.terminal_history.append('>>> ' + terminal.command)
                 if len(cats) > 0:
                     if ';' in terminal.command > 0:
-                        terminal.terminal_history.append("nope")
+                        terminal.terminal_history.append('nope')
                     else:
                         parser.categories[cats[0]] = terminal.command
                         cats.pop(0)
                     if len(cats) > 0:
-                        terminal.terminal_history.append(f"enter replacement "
-                                                         f"for category {cats[0]}:")
+                        terminal.terminal_history.append(f'enter replacement '
+                                                         f'for category {cats[0]}:')
                     else:
-                        terminal.terminal_history.append(f"enter replacement "
-                                                         f"for subcategory {subcats[0]}:")
+                        terminal.terminal_history.append(f'enter replacement '
+                                                         f'for subcategory {subcats[0]}:')
                 elif len(cats) == 0 and len(subcats) > 0:
                     if ';' in terminal.command > 0:
-                        terminal.terminal_history.append("nope")
+                        terminal.terminal_history.append('nope')
                     else:
                         parser.subcategories[subcats[0]] = terminal.command
                         subcats.pop(0)
                     if len(subcats) > 0:
-                        terminal.terminal_history.append(f"enter replacement "
-                                                         f"for subcategory {subcats[0]}:")
+                        terminal.terminal_history.append(f'enter replacement '
+                                                         f'for subcategory {subcats[0]}:')
                     else:
                         read_input = False
             terminal.command = ''

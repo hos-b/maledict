@@ -26,12 +26,12 @@ class MaledictParser(ParserBase):
             record_datetime = datetime.strptime(t_datetime,
                                                 '%Y-%m-%d %H:%M:%S')
         except ValueError:
-            return None, f"got wrong datetime format: {t_datetime}"
+            return None, f'got wrong datetime format: {t_datetime}'
         # TODO: remove Euro presumption
         record_amount = Euro(int(amount_primary), int(amount_secondary))
         return Record(record_datetime, record_amount, cat.strip(),
                       subcat.strip(), business.strip(),
-                      note.strip()), "success"
+                      note.strip()), 'success'
 
     def parse_row(self, row: list) -> Tuple[bool, str]:
         """

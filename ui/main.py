@@ -58,16 +58,16 @@ class MainWindow(CursesWindow):
 
     def redraw(self):
         """
-        redraws the actions menu
+        redraws the main window
         """
         self.cwindow.erase()
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
         account_str = self.account.name if self.account else 'not set'
-        balance_str = self.account.balance.as_str(True) if self.account else "0.0"
+        balance_str = self.account.balance.as_str(True) if self.account else '0.0'
         income_str = self.table_income.as_str(True)
         expense_str = self.table_expense.as_str(True)
         numlen = max(len(income_str), len(expense_str))
-        date_str = datetime.now().strftime("%d.%m.%Y")
+        date_str = datetime.now().strftime('%d.%m.%Y')
         self.cwindow.addstr(1, 2, f'account: {account_str}', curses_attr)
         self.cwindow.addstr(2, 2, f'date: {date_str}', curses_attr)
         self.cwindow.addstr(3, 2, f'balance: {balance_str}', curses_attr)

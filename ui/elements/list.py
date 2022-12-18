@@ -76,7 +76,7 @@ class CursesList:
                 cwindow.addstr(self.y + i, self.x, opt_str, curses_attr)
             # drawing scrollbar
             if drawing_scrollbar and sb_begin <= i <= sb_end:
-                cwindow.addstr(self.y + i, self.x + len(opt_str) , " ▒", curses_attr)
+                cwindow.addstr(self.y + i, self.x + len(opt_str) , ' ▒', curses_attr)
 
         # draw lower border if we're showing columns
         if self.static_line:

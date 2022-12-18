@@ -19,31 +19,31 @@ def account(database: SQLiteProxy, name: str, initial_balance: str, currency_typ
     try:
         initial_balance = currency_type.from_str(initial_balance)
     except:
-        return [f"{initial_balance} is not a float value"]
+        return [f'{initial_balance} is not a float value']
     # should stop basic sql injections
     if ';' in name:
-        return ["sneaky but no"]
+        return ['sneaky but no']
     # this shouldn't be possible anyway but meh
     if ' ' in name:
-        return ["account name cannot contain spaces"]
+        return ['account name cannot contain spaces']
     # other stuff
     forbidden, frch = variadic_contains_or(name, '/', '\\','\'', '\"', '!', '?',\
                                                  '+', '=', '%', '*', '&', '^',\
                                                  '@', '#', '$', '~', '.', '`',\
                                                  '[', ']', '(', ')', '[', ']')
     if forbidden:
-        return [f"account name cannot contain {frch}"]
+        return [f'account name cannot contain {frch}']
     if initial_balance < 0:
         return [
-            "initial account balance cannot be negative. are you really that poor?"
+            'initial account balance cannot be negative. are you really that poor?'
         ]
 
     try:
         database.create_table(name)
     except SQLiteOperationalError:
-        return [f"account {name} already exists"]
+        return [f'account {name} already exists']
     except SQLiteError as e:
-        return [f"[sqlite error] {e}"]
+        return [f'[sqlite error] {e}']
 
     # adding the initial balance
     # the account object doesn't get created until we use set account, therefor
@@ -56,17 +56,17 @@ def account(database: SQLiteProxy, name: str, initial_balance: str, currency_typ
         database.add_record(name, intial_record)
         database.connection.commit()
 
-    return [f"successfully added {name} with {initial_balance} initial balance"]
+    return [f'successfully added {name} with {initial_balance} initial balance']
 
 def expense(terminal, stdscr):
     # exception handling
     if terminal.windows[WinID.Main].account == None:
-        return ["current account not set"]
+        return ['current account not set']
     if stdscr is None:
-        return ["cannot add expenses in warmup mode"]
+        return ['cannot add expenses in warmup mode']
 
     expense_mode = True
-    terminal.append_to_history("expense mode activated")
+    terminal.append_to_history('expense mode activated')
     terminal.reset_input_field()
     curses.curs_set(1)
     tr_date = datetime.now()
@@ -89,7 +89,7 @@ def expense(terminal, stdscr):
         return False
 
     def get_hint() -> str:
-        return '=' * (element_start[state] + 3) + f" {element_hint[state]}:"
+        return '=' * (element_start[state] + 3) + f' {element_hint[state]}:'
 
     def update_predictions(force_update: bool, predicted_record: Record):
         # global predicted_record
@@ -317,4 +317,4 @@ def expense(terminal, stdscr):
     terminal.windows[WinID.Main].account.flush_transactions()
     terminal.shadow_string = ''
     terminal.shadow_index = 0
-    return ["expense mode deactivated"]
+    return ['expense mode deactivated']

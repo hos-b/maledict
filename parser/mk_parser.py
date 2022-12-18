@@ -21,20 +21,20 @@ class MKParser(ParserBase):
         # parsing date
         date_lst = t_date.split('/')
         if len(date_lst) != 3:
-            return None, f"wrong date format: got {t_date}, expected MM/DD/YYYY"
+            return None, f'wrong date format: got {t_date}, expected MM/DD/YYYY'
         # parsing time
         time_lst = t_time.split(':')
         if len(time_lst) != 2:
-            return None, f"wrong time format: got {t_time}, expected HH:MM"
+            return None, f'wrong time format: got {t_time}, expected HH:MM'
         record_datetime = datetime(int(date_lst[2]), int(date_lst[0]), int(date_lst[1]),\
                                    int(time_lst[0]), int(time_lst[1]))
         # parsing amount
         if amount.count('.') > 1:
-            return None, f"wrong amount format: got {amount}, expected EUR.CENT"
+            return None, f'wrong amount format: got {amount}, expected EUR.CENT'
         # TODO: remove Euro presumption
         record_amount = Euro.from_float(float(amount))
         return Record(record_datetime, record_amount, cat.strip(), \
-                      subcat.strip(), business.strip(), note.strip()), "success"
+                      subcat.strip(), business.strip(), note.strip()), 'success'
 
     def parse_row(self, row: list) -> bool:
         """

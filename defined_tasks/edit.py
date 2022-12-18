@@ -13,13 +13,13 @@ from misc.statics import WinID, KeyCombo
 def expense(terminal, stdscr, index: str):
     # exception handling
     if terminal.windows[WinID.Main].account == None:
-        return ["current account not set"]
+        return ['current account not set']
     if stdscr is None:
-        return ["cannot edit expenses in warmup mode"]
+        return ['cannot edit expenses in warmup mode']
     try:
         transaction_id = int(index, 16)
     except ValueError:
-        return [f"expected hex value, got {index}"]
+        return [f'expected hex value, got {index}']
 
     list_index = -1
     for idx, record in enumerate(
@@ -28,7 +28,7 @@ def expense(terminal, stdscr, index: str):
             list_index = idx
             break
     if list_index == -1:
-        return [f"given transaction id does not exist"]
+        return [f'given transaction id does not exist']
     # predictions
     org_record: Record = terminal.windows[
         WinID.Main].account.records[list_index].copy()
@@ -61,7 +61,7 @@ def expense(terminal, stdscr, index: str):
         return False
 
     def get_hint() -> str:
-        return '=' * (element_start[state] + 3) + f" {element_hint[state]}:"
+        return '=' * (element_start[state] + 3) + f' {element_hint[state]}:'
 
     def update_predictions(predicted_record: Record, force_update: bool):
         if state == ExpState.AMOUNT and pre_amount_str.startswith(terminal.command):
@@ -288,4 +288,4 @@ def expense(terminal, stdscr, index: str):
     # in case the edit was cancelled half way
     terminal.shadow_string = ''
     terminal.shadow_index = 0
-    return ["edit mode deactivated"]
+    return ['edit mode deactivated']

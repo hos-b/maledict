@@ -33,10 +33,10 @@ class Currency(ABC):
     def as_str(self, zero_pad: bool = False):
         if self._secondary == 0:
             if zero_pad:
-                return f'{self._primary}{self._seperator}{"0" * self._max_secondary_width}'
+                return f"{self._primary}{self._seperator}{'0' * self._max_secondary_width}"
             return str(self._primary)
         else:
-            return f'{self._primary}{self._seperator}{str(abs(self._secondary)).rjust(self._max_secondary_width, "0")}'
+            return f"{self._primary}{self._seperator}{str(abs(self._secondary)).rjust(self._max_secondary_width, '0')}"
 
     def is_expense(self) -> bool:
         if self._primary == 0:

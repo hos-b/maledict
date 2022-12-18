@@ -10,5 +10,5 @@ def account(terminal, name: str) -> list:
         # terminal.terminal_history.append(str(blst))
         # terminal.terminal_history.append(str(clst))
         # terminal.terminal_history.append('')
-        return [f"current account set to {name}"]
-    return [f"could not find account {name}"]
+        return [f'current account set to {name}']
+    return [f'could not find account {name}']

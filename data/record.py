@@ -36,7 +36,7 @@ class Record:
             amount_str = '+' + amount_str
         return [
             hex(self.transaction_id)[2:].zfill(index_l),
-            "{}.{}.{}, {}:{}".format(
+            '{}.{}.{}, {}:{}'.format(
                 str(self.t_datetime.day).zfill(2),
                 str(self.t_datetime.month).zfill(2),
                 str(self.t_datetime.year).zfill(4),
@@ -61,10 +61,10 @@ class Record:
         returns the columns names, center-adjusted with the given ints
         """
         return [
-            "tr. id".center(index_l), "date and time".center(17),
-            "amount".center(amount_l), "category".center(cat_l),
-            "subcategory".center(subcat_l), "payee".center(bus_l),
-            "note".center(note_l)
+            'tr. id'.center(index_l), 'date and time'.center(17),
+            'amount'.center(amount_l), 'category'.center(cat_l),
+            'subcategory'.center(subcat_l), 'payee'.center(bus_l),
+            'note'.center(note_l)
         ]
 
     def copy(self):

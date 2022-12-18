@@ -44,7 +44,7 @@ class SQLiteProxy:
     def drop_table(self, name: str):
         if self.connection is None:
             return
-        sql_table_dlt = f"drop table {name};"
+        sql_table_dlt = f'drop table {name};'
         cursor = self.connection.cursor()
         cursor.execute(sql_table_dlt)
         self.connection.commit()

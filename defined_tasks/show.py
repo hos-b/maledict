@@ -5,7 +5,7 @@ from misc.string_manip import parse_date
 
 def records(task_id: int, sql_query: str, args: list,  main_window: MainWindow):
     if main_window.account is None:
-        return ["current account not set"]
+        return ['current account not set']
     table_name = main_window.account.name
     label = ''
     # show all records
@@ -15,14 +15,14 @@ def records(task_id: int, sql_query: str, args: list,  main_window: MainWindow):
     # show monthly records
     elif task_id == 602:
         if args[0].count('.') != 1:
-            return ["use format month.year for monthly queries"]
+            return ['use format month.year for monthly queries']
         m_str, y_str = args[0].split('.')
         try:
             month, year = int(m_str), int(y_str)
             dt_start = date(year=year, month=month, day=1)
             dt_end = date(year=year, month=month, day=monthrange(year, month)[1])
         except ValueError:
-            return [f"invalid date {args[0]}, use correct month.year"]
+            return [f'invalid date {args[0]}, use correct month.year']
         sql_query = sql_query.format(table_name, dt_start.isoformat(), dt_end.isoformat())
         label = f'transactions from {dt_start.month}'
     # show yearly records
@@ -32,7 +32,7 @@ def records(task_id: int, sql_query: str, args: list,  main_window: MainWindow):
             dt_start = date(year=year, month=1, day=1)
             dt_end = date(year=year, month=12, day=31)
         except ValueError:
-            return [f"invalid year {args[0]}"]
+            return [f'invalid year {args[0]}']
         sql_query = sql_query.format(table_name, dt_start.isoformat(), dt_end.isoformat())
         label = f'transactions from {dt_start.year}'
     # show expenses between two dates
@@ -52,8 +52,8 @@ def records(task_id: int, sql_query: str, args: list,  main_window: MainWindow):
         if len(errors) > 0:
             return errors
         sql_query = sql_query.format(table_name, dt_start.isoformat(), dt_end.isoformat())
-        label = f"transactions from {dt_start.day}.{dt_start.month}.{dt_start.year} to " \
-                f"{dt_end.day}.{dt_end.month}.{dt_end.year}"
+        label = f'transactions from {dt_start.day}.{dt_start.month}.{dt_start.year} to ' \
+                f'{dt_end.day}.{dt_end.month}.{dt_end.year}'
     # show expenses from last week
     elif task_id == 605:
         sql_query = sql_query.format(table_name)

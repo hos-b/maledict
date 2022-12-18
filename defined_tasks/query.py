@@ -13,9 +13,9 @@ from datetime import datetime
 def sqlite(terminal, stdscr):
     # exception handling
     if terminal.windows[WinID.Main].account == None:
-        return ["current account not set"]
+        return ['current account not set']
     if stdscr is None:
-        return ["cannot query in warmup mode"]
+        return ['cannot query in warmup mode']
 
     account: Account = terminal.windows[WinID.Main].account
     db_connection = account.database.connection
@@ -32,20 +32,20 @@ def sqlite(terminal, stdscr):
     terminal.history_surf_index = 0
     terminal.cmd_history_buffer = ''
 
-    terminal.append_to_history("query mode activated")
-    terminal.append_to_history("> column names: {}", ', '.join(table_cols))
+    terminal.append_to_history('query mode activated')
+    terminal.append_to_history('> column names: {}', ', '.join(table_cols))
     terminal.append_to_history(
-        "> tables: {}", ', '.join(account.database.list_tables()))
+        '> tables: {}', ', '.join(account.database.list_tables()))
     terminal.append_to_history(
-        ">> action menu is disabled: deleting & updating has to be done via terminal"
+        '>> action menu is disabled: deleting & updating has to be done via terminal'
     )
     terminal.append_to_history(
-        ">> listed records only update on valid select queries")
+        '>> listed records only update on valid select queries')
     terminal.append_to_history(
-        ">> ctrl + (up|down|pgup|pgdown) can be used to scroll up & down the table"
+        '>> ctrl + (up|down|pgup|pgdown) can be used to scroll up & down the table'
     )
     terminal.append_to_history(
-        ">> sample query: SELECT * FROM <table> ORDER BY datetime(datetime) DESC;"
+        '>> sample query: SELECT * FROM <table> ORDER BY datetime(datetime) DESC;'
     )
     terminal.reset_input_field()
     terminal.redraw()
@@ -104,7 +104,7 @@ def sqlite(terminal, stdscr):
                                 Record(
                                     datetime.strptime(
                                         dt_str,
-                                        "%Y-%m-%d %H:%M:%S"
+                                        '%Y-%m-%d %H:%M:%S'
                                     ),
                                     account.currency_type(
                                         amount_primary,
@@ -143,7 +143,7 @@ def sqlite(terminal, stdscr):
                                 custom_records.append(
                                     Record(
                                         datetime.strptime(
-                                            record[1], "%Y-%m-%d %H:%M:%S"),
+                                            record[1], '%Y-%m-%d %H:%M:%S'),
                                         account.currency_type(record[2], record[3]),
                                         record[4], record[5], record[6],
                                         record[7], record[0]
@@ -222,4 +222,4 @@ def sqlite(terminal, stdscr):
     terminal.command_history = org_terminal_ch
     terminal.history_surf_index = org_terminal_hsi
     terminal.cmd_history_buffer = org_terminal_chb
-    return ["query mode deactivated"]
+    return ['query mode deactivated']
