@@ -1,15 +1,16 @@
+import re
 import os
 import yaml
+import time
 import curses
-from typing import Tuple, Union
+
+from typing import Tuple, Union, List
 
 import defined_tasks
+
+from data.sqlite_proxy import SQLiteProxy
 from misc.statics import WinID, KeyCombo
 from ui.base import CursesWindow
-from data.sqlite_proxy import SQLiteProxy
-from misc.string_manip import variadic_equals_or
-import time
-#pylint: disable=E1101
 
 class TerminalWindow(CursesWindow):
     def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
@@ -17,7 +18,7 @@ class TerminalWindow(CursesWindow):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
 
         # good stuff
-        self.scroll = 0
+        self.vscroll = 0
         self.cursor_x = 0
         self.windows = windows
         self.database = database
@@ -34,6 +35,7 @@ class TerminalWindow(CursesWindow):
 
         # history stuff
         self.command = ''
+        self.cmd_regex = re.compile('\w+')
         self.print_history = []
         self.command_history = []
         self.history_surf_index = 0
@@ -56,7 +58,7 @@ class TerminalWindow(CursesWindow):
             for line in f:
                 self.command_history.append(line.strip())
         except FileNotFoundError:
-            self.append_to_history("could not open command history file")
+            self.append_to_history('could not open command history file')
         if self.conf['warm-up']:
             self.warmup()
         self.redraw()
@@ -68,14 +70,14 @@ class TerminalWindow(CursesWindow):
         self.cwindow.erase()
         # not using first or last line, 1 reserved for current command
         visible_history = min(len(self.print_history), self.w_height - 3)
-        visible_history += self.scroll
+        visible_history += self.vscroll
         # disable cursor if scrolling
-        curses.curs_set(int(self.scroll == 0 and self.focused and 
+        curses.curs_set(int(self.vscroll == 0 and self.focused and 
             not self.reverse_text_enable))
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
         for i in range (self.w_height - 2):
             if visible_history == 0:
-                self.cwindow.addstr(i + 1, 2, ">>> ", curses_attr)
+                self.cwindow.addstr(i + 1, 2, '>>> ', curses_attr)
                 if self.shadow_string != '':
                     self.cwindow.addstr(i + 1, 6 + self.shadow_index, 
                         self.shadow_string, curses.A_DIM)
@@ -98,69 +100,67 @@ class TerminalWindow(CursesWindow):
         self.cwindow.box()
         self.cwindow.refresh()
 
-    def parse_and_execute(self, stdscr) -> list:
+    def parse_and_execute(self, stdscr) -> List[str]:
         """
         parses and executes the task currently written in the terminal.
         it returns a string per terminal output line (list of str). all
         exception handling regarding the correctly entered commands are
         to be done inside their individual files, not here.
         """
-        cmd_parts = self.command.strip().split(' ')
+        # start with full command & retain only the final args
+        cmd_args = self.cmd_regex.findall(self.command)
         parsed = ''
         current_lvl = self.command_dict
         task_id = -1
         # looking for all commands?
-        if len(cmd_parts) == 1 and \
-            variadic_equals_or(cmd_parts[0], 'help', '?'):
+        if len(cmd_args) == 1 and re.match(r'(help|\?)', cmd_args[0]):
             return ['available commands: ' + ', '.join(self.command_dict.keys())]
         # parsing the command
-        while len(cmd_parts) != 0:
-            parsed += cmd_parts[0] + ' '
-            if cmd_parts[0] not in current_lvl:
-                return [f"unknown command: {parsed}"]
+        while len(cmd_args) != 0:
+            parsed += cmd_args[0] + ' '
+            if cmd_args[0] not in current_lvl:
+                return [f'unknown command: {parsed}']
             # go one level deeper
-            current_lvl = current_lvl[cmd_parts[0]]
-            cmd_parts.pop(0)
+            current_lvl = current_lvl[cmd_args[0]]
+            cmd_args.pop(0)
             # if at leaf node
             if 'task-id' in current_lvl:
                 task_id = current_lvl['task-id']
                 break
             # offer help at current level
-            elif len(cmd_parts) == 0 or \
-                variadic_equals_or(cmd_parts[0], 'help', '?'):
+            elif len(cmd_args) == 0 or re.match(r'^(help|\?)$', cmd_args[0]):
                 return ['available commands: ' + ', '.join(current_lvl.keys())]
 
         # looking for help at last level?
-        if len(cmd_parts) == 1 and \
-            variadic_equals_or(cmd_parts[0], 'help', '-h', '--help', '?'):
+        if len(cmd_args) == 1 and re.match(r'^(help|\?|--help|-h)$', cmd_args[0]):
             return [current_lvl['desc'] + f", args: {current_lvl['args']}"]
         # wrong number of args
-        elif len(cmd_parts) != len(current_lvl['args']):
-            args = args = [f'[{key}: {value}]' for key, value in current_lvl['args'].items()]
+        elif len(cmd_args) != len(current_lvl['args']):
+            args = [f'[{key}: {value}]' for key, value in current_lvl['args'].items()]
             return [f"invalid number of args: {', '.join(args)}"]
         # actually doing the task
         if task_id == 101:
-            return defined_tasks.add.account(self.database, cmd_parts[0], cmd_parts[1])
+            return defined_tasks.add.account(self.database, *cmd_args)
         elif task_id == 102:
             return defined_tasks.add.expense(self, stdscr)
         elif task_id == 201:
             return defined_tasks.list.accounts(self.database)
         elif task_id == 301:
-            return defined_tasks.set.account(self, cmd_parts[0])
+            return defined_tasks.set.account(self, *cmd_args)
         elif task_id == 401:
-            return defined_tasks.parse.mkcsv(self, stdscr, cmd_parts[0], cmd_parts[1])
+            return defined_tasks.parse.mkcsv(self, stdscr, *cmd_args)
         elif task_id == 402:
-            return defined_tasks.parse.maledict(self, stdscr, cmd_parts[0], cmd_parts[1])
+            return defined_tasks.parse.maledict(self, stdscr, *cmd_args)
         elif task_id == 501:
-            return defined_tasks.delete.account(self, cmd_parts[0])
+            return defined_tasks.delete.account(self, *cmd_args)
         elif task_id == 502:
-            return defined_tasks.delete.expense(self.windows[WinID.Main], cmd_parts[0])
+            return defined_tasks.delete.expense(self.windows[WinID.Main], *cmd_args)
         elif 600 <= task_id < 700:
-            return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_parts, self.windows[WinID.Main])
+            return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_args, self.windows[WinID.Main])
         elif task_id == 701:
-            return defined_tasks.export.csv(self.windows[0].account, cmd_parts[0])
+            return defined_tasks.export.csv(self.windows[WinID.Main].account, *cmd_args)
         elif task_id == 801:
-            return defined_tasks.edit.expense(self, stdscr, cmd_parts[0])
+            return defined_tasks.edit.expense(self, stdscr, *cmd_args)
         elif task_id == 901:
             return defined_tasks.query.sqlite(self, stdscr)
         elif task_id == 100001:
@@ -170,7 +170,7 @@ class TerminalWindow(CursesWindow):
             exit()
         elif task_id == 100002:
             self.print_history.clear()
-            self.scroll = 0
+            self.vscroll = 0
             return []
         else:
             return ["don't know how to do this task yet"]
@@ -190,10 +190,9 @@ class TerminalWindow(CursesWindow):
             except KeyboardInterrupt:
                 if kb_interrupt or self.command == '':
                     return curses.KEY_F50
-                self.command = ''
-                self.cursor_x = 0
+                self.reset_input_field()
                 self.history_surf_index = 0
-                self.scroll = 0
+                self.vscroll = 0
                 kb_interrupt = True
                 self.append_to_history('press ctrl-c again to exit maledict')
                 self.redraw()
@@ -214,10 +213,10 @@ class TerminalWindow(CursesWindow):
                     self.command_history.append(self.command)
                     self.command_history = self.command_history \
                                          [-self.conf['command_history_buffer_length']:]
-                    self.append_to_history(">>> {}", self.command)
+                    self.append_to_history('>>> {}', self.command)
                     self.append_to_history(self.parse_and_execute(stdscr))
                 self.history_surf_index = 0
-                self.scroll = 0
+                self.vscroll = 0
                 self.reset_input_field()
                 self.redraw()
             # scrolling -------------------------------------------------------------------
@@ -245,24 +244,19 @@ class TerminalWindow(CursesWindow):
                 self.command_history_down()
             # do predictions --------------------------------------------------------------
             elif input_char == '\t':
-                p_candidates, p_insert_index, i_str = self.get_command_predictions()
+                p_candidates, p_offset = self.get_command_predictions()
                 # nothing to predict
                 if len(p_candidates) == 0:
                     continue
                 # complete the command at the current level
                 if len(p_candidates) == 1:
-                    pre_str = self.command[:p_insert_index]
-                    post_str = self.command[p_insert_index + len(i_str):]
-                    post_str = ' ' if (post_str == '' and 
-                                       not p_candidates[0].endswith(' ')) \
-                                   else post_str
-                    self.command = pre_str + p_candidates[0] + post_str
-                    self.cursor_x = min(p_insert_index + len(p_candidates[0]) + 1, \
-                                        len(self.command))
+                    self.command += p_candidates[0] if p_candidates[0] == ' ' \
+                        else p_candidates[0][p_offset:] + ' '
+                    self.cursor_x = len(self.command)
                     self.redraw()
                 # check double tab
                 elif (time.time() - self.last_tab_press) < 0.3:
-                    self.append_to_history(">>> {}", self.command)
+                    self.append_to_history('>>> {}', self.command)
                     self.append_to_history(' | '.join(p_candidates))
                     self.redraw()
                 self.last_tab_press = time.time()
@@ -270,45 +264,41 @@ class TerminalWindow(CursesWindow):
             else:
                 self.insert_char(input_char)
 
-    def get_command_predictions(self, state = None) -> Tuple[list, int]:
+    def get_command_predictions(self) -> List[str]:
         """
         provides a list of predictions based on the current command
         and the index at which the prediction should be inserted.
         the state indicates the stage in expense mode.
         """
-        # two spaces are not allowed
-        if self.command.count('  ') > 0:
-            return [], 0, None
-        incomplete_str = None
         current_cmd = self.command[:self.cursor_x]
-        cmd_parts = current_cmd.split(' ')
-        pred_insertion_idx = 0
-        for i in reversed(range(len(current_cmd))):
-            if self.command[i] == ' ':
-                pred_insertion_idx = i + 1
-                break
+        cmd_args = self.cmd_regex.findall(current_cmd)
         pred_candidates = []
         current_lvl = self.command_dict
+        pred_offset = 0
         # parsing the command
-        while len(cmd_parts) != 0:
+        while len(cmd_args) != 0:
             # go one level deeper, if the segment is complete and correct
-            if cmd_parts[0] in current_lvl:
+            if cmd_args[0] in current_lvl:
                 # too deep, no predictions
-                if 'task-id' in current_lvl[cmd_parts[0]]:
+                if 'task-id' in current_lvl[cmd_args[0]]:
                     break
-                current_lvl = current_lvl[cmd_parts[0]]
-                # no space after segment? add it
-                if len(cmd_parts) == 1:
-                    return [cmd_parts[0] + ' '], pred_insertion_idx, cmd_parts[0]
-                cmd_parts.pop(0)
+                current_lvl = current_lvl[cmd_args[0]]
+                if len(cmd_args) == 1:
+                    # predict space if missing
+                    if not current_cmd.endswith(' '):
+                        pred_candidates.append(' ')
+                    # predict possible continuations
+                    else:
+                        pred_candidates += list(current_lvl.keys())
+                cmd_args.pop(0)
             else:
-                incomplete_str = cmd_parts[0]
+                pred_offset = len(cmd_args[0])
                 for candidate in current_lvl.keys():
-                    if candidate.startswith(cmd_parts[0]):
+                    if candidate.startswith(cmd_args[0]):
                         pred_candidates.append(candidate)
                 break
         pred_candidates.sort(key=len)
-        return pred_candidates, pred_insertion_idx, incomplete_str
+        return pred_candidates, pred_offset
 
     def write_command_history(self, count = 20):
         """
@@ -320,7 +310,7 @@ class TerminalWindow(CursesWindow):
                                         '../database/.command_history')
         with open(cmd_history_path, 'w') as f:
             for i in range(begin, end):
-                f.write(f"{self.command_history[i]}\n")
+                f.write(f'{self.command_history[i]}\n')
 
     def warmup(self):
         """
@@ -338,9 +328,9 @@ class TerminalWindow(CursesWindow):
                     self.append_to_history(self.parse_and_execute(None))
                     self.command = ''
         except FileNotFoundError:
-            self.append_to_history("could not find warmup file")
+            self.append_to_history('could not find warmup file')
         except Exception:
-            self.append_to_history("could not open warmup file")
+            self.append_to_history('could not open warmup file')
 
     def submit_pending_command(self, stdscr) -> bool:
         """
@@ -350,18 +340,22 @@ class TerminalWindow(CursesWindow):
         """
         if self.pending_action:
             # edit action
-            if self.pending_action == 0:
+            if self.pending_action == 'EDIT':
                 self.append_to_history(
                     defined_tasks.edit.expense(self, stdscr,
                                                hex(self.pending_tr_id)))
             # delete action
-            elif self.pending_action == 1:
+            elif self.pending_action == 'DELETE':
+                self.append_to_history(
+                    defined_tasks.delete.expense(self.windows[WinID.Main],
+                                                 hex(self.pending_tr_id)))
+            elif self.pending_action == 'FIND SIMILAR':
                 self.append_to_history(
                     defined_tasks.delete.expense(self.windows[WinID.Main],
                                                  hex(self.pending_tr_id)))
             # reset
             self.history_surf_index = 0
-            self.scroll = 0
+            self.vscroll = 0
             self.pending_action = None
             self.pending_tr_id = None
             self.redraw()
@@ -395,9 +389,9 @@ class TerminalWindow(CursesWindow):
             max_scroll = len(self.print_history) + \
                 reserved_lines - self.w_height
             if max_scroll > 0:
-                self.scroll = min(self.scroll + 1, max_scroll)
+                self.vscroll = min(self.vscroll + 1, max_scroll)
         elif up_down == -1:
-            self.scroll = max(self.scroll - 1, 0)
+            self.vscroll = max(self.vscroll - 1, 0)
         else:
             raise NotImplementedError('nah')
         self.redraw()
@@ -410,14 +404,14 @@ class TerminalWindow(CursesWindow):
         max_scroll = len(self.print_history) + \
             reserved_lines - self.w_height
         if max_scroll > 0:
-            self.scroll = min(self.scroll + 1, max_scroll)
+            self.vscroll = min(self.vscroll + 1, max_scroll)
         self.redraw()
 
     def scroll_page_down(self):
         """
         goes one page down in the print history
         """
-        self.scroll = max(self.scroll - 1, 0)
+        self.vscroll = max(self.vscroll - 1, 0)
         self.redraw()
 
     def cursor_move_left(self, start_offset: int = 0):
@@ -484,7 +478,7 @@ class TerminalWindow(CursesWindow):
         """
         if len(self.command_history) == 0:
             return
-        self.scroll = 0
+        self.vscroll = 0
         # if we weren't surfing, save the current command in buffer
         if self.history_surf_index == 0:
             self.cmd_history_buffer = self.command
@@ -500,7 +494,7 @@ class TerminalWindow(CursesWindow):
         """
         if self.history_surf_index == 0:
             return
-        self.scroll = 0
+        self.vscroll = 0
         self.history_surf_index -= 1
         if self.history_surf_index == 0:
             self.command = self.cmd_history_buffer
@@ -554,6 +548,6 @@ class TerminalWindow(CursesWindow):
                             self.command[self.cursor_x:]
         self.cursor_x += 1
         self.history_surf_index = 0
-        self.scroll = 0
+        self.vscroll = 0
         if redraw:
             self.redraw()
