@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from data.currency import Currency, Euro
+from data.currency import Currency, supported_currencies
 from data.sqlite_proxy import SQLiteProxy
 from data.record import Record
 from parser.base import ParserBase
@@ -14,10 +14,7 @@ class Account:
     def __init__(self, name: str, database: SQLiteProxy, conf: dict):
         self.name = name
         self.database = database
-        if conf['currency']['type'] == 'Euro':
-            self.currency_type = Euro
-        else:
-            raise ValueError(f"unknown currency {conf['currency']['type']}")
+        self.currency_type = supported_currencies[database.get_account_currency(name)]
         self.balance: Currency = self.currency_type(0, 0)
         self.records = []
         self.categories = {}
@@ -29,6 +26,7 @@ class Account:
         self.recurring_biz = {}
         self.full_query = f'SELECT * FROM {self.name} ORDER BY datetime(datetime) DESC;'
         self.query_transactions(self.full_query, True)
+
 
         # if not empty, find recurring transactions
         if len(self.records) > 0:

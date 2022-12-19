@@ -9,7 +9,7 @@ def main():
         all_records = sqlp.query(f'SELECT * FROM {table} ORDER BY transaction_id ASC;')
         sqlp.query(f'ALTER TABLE {table} RENAME TO _{table}_deprecated;')
         print(f'renamed {table} to _{table}_deprecated;')
-        sqlp.create_table(table)
+        sqlp.create_account(table, 'Euro')
         sql_insert = f"""INSERT INTO {table} (datetime,
                                               amount_primary,
                                               amount_secondary,

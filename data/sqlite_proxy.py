@@ -1,7 +1,7 @@
 import sqlite3
+
 from typing import List, Tuple
 from data.record import Record
-
 
 class SQLiteProxy:
     table_map = {
@@ -22,8 +22,9 @@ class SQLiteProxy:
         """
         self.connection = None
         self.db_open(db_file)
+        self.__create_currency_table()
 
-    def create_table(self, name: str):
+    def create_account(self, name: str, currency: str):
         if self.connection is None:
             return
         sql_table_crt = f"""CREATE TABLE {name} (
@@ -36,17 +37,24 @@ class SQLiteProxy:
                                 business text,
                                 note text
                             );"""
+        sql_table_insert = f"""INSERT INTO currencies (account_name, currency)
+                             values(?, ?);"""
+        insert_tuple = (name, currency)
 
         cursor = self.connection.cursor()
         cursor.execute(sql_table_crt)
+        cursor.execute(sql_table_insert, insert_tuple)
         self.connection.commit()
 
-    def drop_table(self, name: str):
+    def delete_account(self, name: str):
         if self.connection is None:
             return
-        sql_table_dlt = f'drop table {name};'
+        sql_table_dlt = f'DROP TABLE {name};'
+        sql_curr_rmv = f'DELETE FROM currencies WHERE account_name = ?;'
+
         cursor = self.connection.cursor()
         cursor.execute(sql_table_dlt)
+        cursor.execute(sql_curr_rmv, (name, ))
         self.connection.commit()
 
     def add_record(self, table: str, record: Record):
@@ -92,7 +100,7 @@ class SQLiteProxy:
         self.connection.commit()
 
     def delete_record(self, table: str, transaction_id: int):
-        sql_remove = f'DELETE FROM {table} WHERE transaction_id = ?'
+        sql_remove = f'DELETE FROM {table} WHERE transaction_id = ?;'
         cursor = self.connection.cursor()
         cursor.execute(sql_remove, (transaction_id, ))
         self.connection.commit()
@@ -103,6 +111,15 @@ class SQLiteProxy:
         cursor = self.connection.cursor()
         cursor.execute(query)
         return cursor.fetchall()
+
+    def get_account_currency(self, name: str) -> str:
+        sql_table_query = "SELECT currency FROM currencies WHERE account_name = ?;"
+        cursor = self.connection.cursor()
+        cursor.execute(sql_table_query, (name, ))
+        all_items = cursor.fetchall()
+        assert len(all_items) == 1, \
+            'expected a single entry for table `{}`, got {}'.format(name, len(all_items))
+        return all_items[0][0]
 
     def db_close(self):
         self.connection.close()
@@ -117,3 +134,13 @@ class SQLiteProxy:
 
     def db_flush(self):
         self.connection.commit()
+
+    def __create_currency_table(self):
+        if 'currencies' not in self.list_tables():
+            sql_table_crt = f"""CREATE TABLE currencies (
+                                account_name text PRIMARY KEY,
+                                currency text NOT NULL
+                            );"""
+            cursor = self.connection.cursor()
+            cursor.execute(sql_table_crt)
+            self.connection.commit()

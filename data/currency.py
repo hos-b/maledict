@@ -251,3 +251,6 @@ class Euro(Currency):
         if sc != sp and sc * sp != 0:
             raise ValueError('cents\' sign must match euros')
         self._secondary = value
+
+
+supported_currencies = {'Euro': Euro}

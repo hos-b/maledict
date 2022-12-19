@@ -1,10 +1,12 @@
 import csv
 import curses
+
+from data.currency import supported_currencies
 from parser.mk_parser import MKParser
 from parser.maledict_parser import MaledictParser
 from misc.statics import WinID
 
-def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
+def mkcsv(terminal, stdscr, file_path: str, translate_categories: str, currency_name: str) -> list:
     """
     parses the given file and tranlsate the categories if requested.
     not that for the translation, the function takes control of the
@@ -16,11 +18,14 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
         return ['current account not set']
     if stdscr is None:
         return ['cannot parse mkcsv in warmup mode']
-
+    try:
+        currency_type = supported_currencies[currency_name]
+    except KeyError:
+        return [f"maledict currently only supports {', '.join(supported_currencies.keys())}"]
     # tanslate categories ?
     translate_mode = False
     translate_categories = translate_categories.lower()
-    if translate_categories in ['1', 'y', 'true', 'yes', 'ye', 't', 'yy', 'fuck']:
+    if translate_categories in ['1', 'y', 'true', 'yes', 'ye', 't', 'yy']:
         translate_mode = True
     elif translate_categories in ['0', 'n', 'false', 'no', 'f', 'ff']:
         translate_mode = False
@@ -38,7 +43,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
                 line_number += 1
                 if line_number < 12:
                     continue
-                success, msg = parser.parse_row(row)
+                success, msg = parser.parse_row(row, currency_type)
                 if not success:
                     msg_list.append(f'line {line_number}: {msg}')
     except FileNotFoundError:
@@ -154,7 +159,7 @@ def mkcsv(terminal, stdscr, file_path: str, translate_categories: str) -> list:
     terminal.windows[WinID.Main].refresh_table_records('all')
     return msg_list
 
-def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> list:
+def maledict(terminal, stdscr, file_path: str, translate_categories: str, currency_name: str) -> list:
     """
     parses the given file and tranlsate the categories if requested.
     not that for the translation, the function takes control of the
@@ -166,7 +171,10 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
         return ['current account not set']
     if stdscr is None:
         return ['cannot parse mkcsv in warmup mode']
-
+    try:
+        currency_type = supported_currencies[currency_name]
+    except KeyError:
+        return [f"maledict currently only supports {', '.join(supported_currencies.keys())}"]
     # tanslate categories ?
     translate_mode = False
     translate_categories = translate_categories.lower()
@@ -186,7 +194,7 @@ def maledict(terminal, stdscr, file_path: str, translate_categories: str) -> lis
             line_number = 0
             for row in datareader:
                 line_number += 1
-                success, msg = parser.parse_row(row)
+                success, msg = parser.parse_row(row, currency_type)
                 if not success:
                     msg_list.append(f'line {line_number}: {msg}')
     except FileNotFoundError:

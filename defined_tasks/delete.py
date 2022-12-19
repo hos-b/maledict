@@ -4,7 +4,7 @@ from sqlite3 import OperationalError as SQLiteOperationalError
 
 def account(terminal, name: str) -> str:
     try:
-        terminal.database.drop_table(name)
+        terminal.database.delete_account(name)
     except SQLiteOperationalError:
         return [f"account {name} doesn't exist"]
     except:

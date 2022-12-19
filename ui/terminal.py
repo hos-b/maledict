@@ -35,7 +35,8 @@ class TerminalWindow(CursesWindow):
 
         # history stuff
         self.command = ''
-        self.cmd_regex = re.compile('\w+')
+        # alphanumeric + dot
+        self.cmd_regex = re.compile('[\w\.]+')
         self.print_history = []
         self.command_history = []
         self.history_surf_index = 0
@@ -137,7 +138,7 @@ class TerminalWindow(CursesWindow):
         # wrong number of args
         elif len(cmd_args) != len(current_lvl['args']):
             args = [f'[{key}: {value}]' for key, value in current_lvl['args'].items()]
-            return [f"invalid number of args: {', '.join(args)}"]
+            return [f"invalid number of args ({len(cmd_args)}): {', '.join(args)}"]
         # actually doing the task
         if task_id == 101:
             return defined_tasks.add.account(self.database, *cmd_args)
@@ -317,6 +318,7 @@ class TerminalWindow(CursesWindow):
         loads a text file in ./database/.maledictrc and executes all
         the commands inside.
         """
+        commands_to_run = []
         try:
             warmup_path = os.path.join(os.path.dirname(__file__),
                                        '../database/.maledictrc')
@@ -324,13 +326,21 @@ class TerminalWindow(CursesWindow):
             for line in f:
                 line = line.strip()
                 if line != '':
-                    self.command = line
-                    self.append_to_history(self.parse_and_execute(None))
-                    self.command = ''
+                    commands_to_run.append(line)
         except FileNotFoundError:
             self.append_to_history('could not find warmup file')
         except Exception:
             self.append_to_history('could not open warmup file')
+
+        for cmd in commands_to_run:
+            try:
+                self.command = cmd
+                self.append_to_history(self.parse_and_execute(None))
+                self.command = ''
+            except Exception as e:
+                self.append_to_history(f'could not run warmup commands `{cmd}`: {e}')
+                self.command = ''
+                break
 
     def submit_pending_command(self, stdscr) -> bool:
         """

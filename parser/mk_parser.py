@@ -1,6 +1,7 @@
 """
 Parser for MISA MoneyKeeper exported CSV (from xlsx)
 """
+from ast import ExceptHandler
 from data.currency import Euro
 from data.record import Record
 from datetime import datetime
@@ -13,8 +14,9 @@ class MKParser(ParserBase):
     def __init__(self):
         super().__init__()
 
-    def convert_to_record(self, t_date: str, t_time: str, amount: str, \
-                          cat: str, subcat: str, business: str, note: str) -> Record:
+    def convert_to_record(self, t_date: str, t_time: str, amount: str,
+                          cat: str, subcat: str, business: str, note: str,
+                          currency_type) -> Record:
         """
         parses >>rectified<< strings into a Record
         """
@@ -26,17 +28,17 @@ class MKParser(ParserBase):
         time_lst = t_time.split(':')
         if len(time_lst) != 2:
             return None, f'wrong time format: got {t_time}, expected HH:MM'
-        record_datetime = datetime(int(date_lst[2]), int(date_lst[0]), int(date_lst[1]),\
+        record_datetime = datetime(int(date_lst[2]), int(date_lst[0]), int(date_lst[1]),
                                    int(time_lst[0]), int(time_lst[1]))
         # parsing amount
-        if amount.count('.') > 1:
-            return None, f'wrong amount format: got {amount}, expected EUR.CENT'
-        # TODO: remove Euro presumption
-        record_amount = Euro.from_float(float(amount))
-        return Record(record_datetime, record_amount, cat.strip(), \
+        try:
+            record_amount = currency_type.from_str(float(amount))
+        except Exception as e:
+            return None, f'{e}'
+        return Record(record_datetime, record_amount, cat.strip(),
                       subcat.strip(), business.strip(), note.strip()), 'success'
 
-    def parse_row(self, row: list) -> bool:
+    def parse_row(self, row: list, currency_type) -> bool:
         """
         rectifies and parses a row read directly from the CSV file. the parsed element is then stored
         each row has
@@ -56,7 +58,8 @@ class MKParser(ParserBase):
         subcategory = row[7].strip()
         business = row[8].strip()
         note = row[10].strip()
-        record, msg = self.convert_to_record(t_date, t_time, amount, category, subcategory, business, note)
+        record, msg = self.convert_to_record(
+            t_date, t_time, amount, category, subcategory, business, note, currency_type)
         if record:
             self.records.append(record)
             # adding categories, subcategories, businesses

@@ -1,8 +1,8 @@
 # add commands
 add:
   account:
-    args: {'name': 'str', 'initial_balance':'float'}
-    desc: 'add an account and its corresponding database table'
+    args: {'name': 'str', 'initial_balance': 'float', 'currency': 'str'}
+    desc: 'add an account with a supported currency and an initial balance'
     task-id: 101
   expense:
     args: {}
@@ -19,19 +19,19 @@ list:
 # set commands
 set:
   account:
-    args: {'name':'str'}
+    args: {'name': 'str'}
     desc: 'set the current account'
     task-id: 301
 
 # parse commands
 parse:
   mkcsv:
-    args: {'file_path': 'str', 'translate_categories': 'bool'}
-    desc: 'parse a .csv file & add it to current database'
+    args: {'file_path': 'str', 'translate_categories': 'bool', 'currency': 'str'}
+    desc: 'parse a .csv file & add its records to the current account'
     task-id: 401
   maledict:
-    args: {'file_path': 'str', 'translate_categories': 'bool'}
-    desc: 'parse a .csv file & add it to current database'
+    args: {'file_path': 'str', 'translate_categories': 'bool', 'currency': 'str'}
+    desc: 'parse a .csv file & add its records to the current account'
     task-id: 402
 
 # delete commands 
@@ -58,12 +58,12 @@ show:
     task-id: 602
     sql-query: "SELECT * FROM {} WHERE date(substr(datetime, 1, 10)) >= '{}' AND date(substr(datetime, 1, 10)) <= '{}' ORDER BY datetime(datetime) DESC;"
   yearly:
-    args: {'year':'int'}
+    args: {'year': 'int'}
     desc: 'show yearly expenses'
     task-id: 603
     sql-query: "SELECT * FROM {} WHERE date(substr(datetime, 1, 10)) >= '{}' AND date(substr(datetime, 1, 10)) <= '{}' ORDER BY datetime(datetime) DESC;"
   between:
-    args: {'start_date':'str', 'end_date':'str'}
+    args: {'start_date': 'str', 'end_date': 'str'}
     desc: "show expenses between two dates. 'now' is a valid date"
     task-id: 604
     sql-query: "SELECT * FROM {} WHERE date(substr(datetime, 1, 10)) >= '{}' AND date(substr(datetime, 1, 10)) <= '{}' ORDER BY datetime(datetime) DESC;"
@@ -94,7 +94,7 @@ export:
 # edit commands
 edit:
   expense:
-    args: {'transaction-id':'int'}
+    args: {'transaction-id': 'int'}
     desc: 'edit a transaction given its hex transaction id'
     task-id: 801
 

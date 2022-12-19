@@ -4,8 +4,8 @@ table:
   amount_length: 10
   category_length: 20
   subcategory_length: 20
-  payee_length: 21
-  note_length: 46
+  payee_length: 24
+  note_length: 88
   scrollbar-enable: true
 
 # recurring transaction settings
@@ -35,10 +35,6 @@ terminal:
   y_offset: 1 # w.r.t. main window
   width_offset: -5
   height_percentage: 0.2
-
-currency:
-  seperator: '.'
-  type: 'Euro'
 
 # terminal settings
 command_history_buffer_length: 50

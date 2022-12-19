@@ -11,12 +11,18 @@ from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element 
 from misc.utils import parse_expense, ExpState
 from data.record import Record
-from data.currency import Euro
+from data.currency import supported_currencies
 from data.sqlite_proxy import SQLiteProxy
 from misc.statics import WinID, KeyCombo
 
-def account(database: SQLiteProxy, name: str, initial_balance: str, currency_type = Euro) -> str:
-    
+def account(database: SQLiteProxy, name: str, initial_balance: str, currency_name: str) -> str:
+    if name == 'currencies':
+        return [f'`currencies` is reserved. choose another name.']
+    # check whether the currency is implemented
+    try:
+        currency_type = supported_currencies[currency_name]
+    except KeyError:
+        return [f"maledict currently only supports {', '.join(supported_currencies.keys())}"]
     try:
         initial_balance = currency_type.from_str(initial_balance)
     except:
@@ -31,7 +37,7 @@ def account(database: SQLiteProxy, name: str, initial_balance: str, currency_typ
         ]
 
     try:
-        database.create_table(name)
+        database.create_account(name, currency_name)
     except SQLiteOperationalError:
         return [f'account {name} already exists']
     except SQLiteError as e:
