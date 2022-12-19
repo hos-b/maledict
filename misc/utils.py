@@ -31,9 +31,9 @@ def check_input(input_str: str, state: int) -> str:
             return '0.0 is not a valid value'
         return ''
     elif state == 1 or state == 2:
-        match = re.match(r'.*(\W).*', input_str)
+        match = re.match(r'.*([^a-zA-Z0-9_ \.&]).*', input_str)
         if match:
-            return f'string cannot contain {match.group(1)}'
+            return f'string cannot contain `{match.group(1)}`'
         else:
             # category & subcategory in one string
             if state == 2 and input_str.count(':') > 1:

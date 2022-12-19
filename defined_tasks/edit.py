@@ -288,4 +288,5 @@ def expense(terminal, stdscr, index: str):
     # in case the edit was cancelled half way
     terminal.shadow_string = ''
     terminal.shadow_index = 0
+    terminal.reset_input_field()
     return ['edit mode deactivated']

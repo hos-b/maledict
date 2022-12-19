@@ -4,7 +4,7 @@ import yaml
 import time
 import curses
 
-from typing import Tuple, Union, List
+from typing import Union, List
 
 import defined_tasks
 
@@ -359,10 +359,22 @@ class TerminalWindow(CursesWindow):
                 self.append_to_history(
                     defined_tasks.delete.expense(self.windows[WinID.Main],
                                                  hex(self.pending_tr_id)))
-            elif self.pending_action == 'FIND SIMILAR':
+            elif self.pending_action.startswith('FIND SIMILAR'):
+                query_pre = 'SELECT g2.* FROM {} g1, {} g2 WHERE g1.transaction_id = {}'
+                query_cond = ''
+                query_post = 'ORDER BY datetime(g2.datetime) DESC;'
+                if self.pending_action.endswith('(AMOUNT)'):
+                    query_cond = ' AND g2.amount_primary = g1.amount_primary' \
+                                 ' AND g2.amount_secondary = g1.amount_secondary '
+                elif self.pending_action.endswith('(BUSINESS)'):
+                    query_cond = ' AND g2.business = g1.business '
+                elif self.pending_action.endswith('(CATEGORY)'):
+                    query_cond = ' AND g2.category = g1.category' \
+                                 ' AND g2.subcategory = g1.subcategory '
+                sql_query = query_pre + query_cond + query_post
                 self.append_to_history(
-                    defined_tasks.delete.expense(self.windows[WinID.Main],
-                                                 hex(self.pending_tr_id)))
+                    defined_tasks.show.records(666, sql_query, [self.pending_tr_id],
+                                               self.windows[WinID.Main]))
             # reset
             self.history_surf_index = 0
             self.vscroll = 0

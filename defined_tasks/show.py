@@ -66,7 +66,10 @@ def records(task_id: int, sql_query: str, args: list,  main_window: MainWindow):
     elif task_id == 607:
         sql_query = sql_query.format(table_name)
         label = f'transactions from last year'
-
+    # show expenses related to another expense, only possible through action window
+    elif task_id == 666:
+        sql_query = sql_query.format(table_name, table_name, args[0])
+        label = f'transactions similar to {hex(args[0])}'
     main_window.account.query_transactions(sql_query, False)
     main_window.refresh_table_records(label)
     return []

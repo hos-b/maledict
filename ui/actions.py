@@ -10,8 +10,12 @@ class ActionWindow(CursesWindow):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         self.index = 0
         self.w_width = w_width
-        self.options = ['EDIT', 'DELETE', 'CANCEL', 'PLACEHOLDER #1',
-                        'PLACEHOLDER #3','PLACEHOLDER #4','PLACEHOLDER #5',]
+        self.options = ['EDIT',
+                        'DELETE',
+                        'FIND SIMILAR (AMOUNT)',
+                        'FIND SIMILAR (BUSINESS)',
+                        'FIND SIMILAR (CATEGORY)',
+                        'CANCEL']
         # padding on the sides
         list_width = int(w_width - 4)
         list_height = int(w_height - 3)
@@ -19,7 +23,7 @@ class ActionWindow(CursesWindow):
         # curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
         self.windows = windows
         # index of the list element that enabled the window
-        self.transaction_id = -1
+        self.transaction_id = None
         self.redraw()
 
     def focus(self, enable: bool):
@@ -60,14 +64,13 @@ class ActionWindow(CursesWindow):
                 self.redraw()
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 opt_idx, _ = self.clist.get_selected_item()
-                if 0 <= opt_idx <= 2:
-                    # if cancel, return focus to main window
-                    if opt_idx == 2:
-                        self.clist.index = 0
-                        return curses.KEY_F1
-                    # edit
-                    self.windows[WinID.Terminal].pending_action = opt_idx
-                    self.windows[WinID.Terminal].pending_tr_id = self.transaction_id
+                # if cancel, return focus to main window
+                if opt_idx == len(self.options) - 1:
                     self.clist.index = 0
-                    # switch to terminal to take care of pending tasks
-                    return curses.KEY_F2
+                    return curses.KEY_F1
+                # edit
+                self.windows[WinID.Terminal].pending_action = self.options[opt_idx]
+                self.windows[WinID.Terminal].pending_tr_id = self.transaction_id
+                self.clist.index = 0
+                # switch to terminal to take care of pending tasks
+                return curses.KEY_F2
