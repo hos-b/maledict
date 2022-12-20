@@ -75,7 +75,7 @@ def expense(terminal, stdscr):
     element_start = [0, 0, 0, 0, 0, 0]
     element_end = [0, 0, 0, 0, 0, 0]
     elements = ['', '', '', '', '', '']
-    state = 0
+    state = ExpState.AMOUNT
     sub_state = 0
     # predictions
     predicted_record = None
@@ -92,17 +92,21 @@ def expense(terminal, stdscr):
     def update_predictions(force_update: bool, predicted_record: Record):
         # global predicted_record
         if state == ExpState.BUSINESS:
-            terminal.shadow_string, predicted_record = predict_business(elements[0], \
-                terminal.command[element_start[1]:], terminal.windows[WinID.Main].account)
-            terminal.shadow_index = element_start[1]
+            terminal.shadow_string, predicted_record = predict_business(
+                elements[ExpState.BUSINESS],
+                terminal.command[element_start[ExpState.BUSINESS]:],
+                terminal.windows[WinID.Main].account)
+            terminal.shadow_index = element_start[ExpState.BUSINESS]
         elif state == ExpState.CATEGORY:
             if not force_update and predicted_record is not None:
                 terminal.shadow_string = predicted_record.subcategory
                 terminal.shadow_index = element_start[2]
                 return
-            terminal.shadow_string, predicted_record = predict_category(elements[1], \
-                terminal.command[element_start[2]:], terminal.windows[WinID.Main].account)
-            terminal.shadow_index = element_start[2]
+            terminal.shadow_string, predicted_record = predict_category(
+                elements[ExpState.CATEGORY],
+                terminal.command[element_start[ExpState.CATEGORY]:],
+                terminal.windows[WinID.Main].account)
+            terminal.shadow_index = element_start[ExpState.CATEGORY]
         else:
             terminal.shadow_string = ''
             terminal.shadow_index = 0
@@ -124,8 +128,7 @@ def expense(terminal, stdscr):
             state = sub_state = 0
             terminal.shadow_string = ''
             terminal.shadow_index = 0
-            terminal.print_history[
-                -1] = 'press ctrl + c again to exit expense mode'
+            terminal.print_history[-1] = 'press ctrl + c again to exit expense mode'
             terminal.append_to_history(get_hint())
             terminal.redraw()
             continue
@@ -157,8 +160,7 @@ def expense(terminal, stdscr):
                     parsed_record)
                 terminal.windows[WinID.Main].account.query_transactions(
                     terminal.windows[WinID.Main].account.full_query, False)
-                terminal.windows[WinID.Main].refresh_table_records(
-                    'all transactions')
+                terminal.windows[WinID.Main].refresh_table_records('all transactions')
                 terminal.print_history[-1] = str(elements)
                 elements = ['', '', '', '', '', '']
                 terminal.reset_input_field()
@@ -302,7 +304,7 @@ def expense(terminal, stdscr):
                 terminal.command = terminal.command[:element_start[state]] + \
                                    terminal.shadow_string
                 terminal.cursor_x = len(terminal.command)
-                terminal.scroll = 0
+                terminal.vscroll = 0
                 terminal.shadow_string = ''
                 terminal.shadow_index = 0
                 terminal.redraw()

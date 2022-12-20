@@ -50,7 +50,7 @@ def expense(terminal, stdscr, index: str):
     element_start = [0, 0, 0, 0, 0, 0]
     element_end = [0, 0, 0, 0, 0, 0]
     elements = ['', '', '', '', '', '']
-    state = 0
+    state = ExpState.AMOUNT
     sub_state = 0
 
     # some functions ------------------------------------------------------------------
@@ -275,7 +275,7 @@ def expense(terminal, stdscr, index: str):
                 terminal.command = terminal.command[:element_start[state]] + \
                                    terminal.shadow_string
                 terminal.cursor_x = len(terminal.command)
-                terminal.scroll = 0
+                terminal.vscroll = 0
                 terminal.shadow_string = ''
                 terminal.shadow_index = 0
                 terminal.redraw()
