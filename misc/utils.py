@@ -22,7 +22,7 @@ def check_input(input_str: str, state: int) -> str:
     """
     checks whether the input at state x in expense mode is correct
     """
-    if state == 0:
+    if state == ExpState.AMOUNT:
         try:
             value = float(input_str)
         except:
@@ -30,7 +30,7 @@ def check_input(input_str: str, state: int) -> str:
         if value == 0.0:
             return '0.0 is not a valid value'
         return ''
-    elif state == 1 or state == 2:
+    elif state == ExpState.BUSINESS or state == ExpState.CATEGORY:
         # cannot use [^\w] because it excludes unicode chars
         match = re.match(
             r'.*([/\\\'\"!\?\+=%\*;\^@#\$~\|`\[\]\(\)\{\}\<\>\_]).*',
@@ -39,24 +39,24 @@ def check_input(input_str: str, state: int) -> str:
             return f'string cannot contain `{match.group(1)}`'
         else:
             # category & subcategory in one string
-            if state == 2 and input_str.count(':') > 1:
+            if state == ExpState.CATEGORY and input_str.count(':') > 1:
                 return 'use cat:subcat for new categories'
             return ''
-    elif state == 3:
+    elif state == ExpState.DATE:
         year, month, day = input_str.split('.')
         try:
             date(int(year), int(month), int(day))
         except ValueError:
             return 'invalid date'
         return ''
-    elif state == 4:
+    elif state == ExpState.TIME:
         hour, minute = input_str.split(':')
         try:
             time(int(hour), int(minute))
         except ValueError:
             return 'invalid time'
         return ''
-    elif state == 5:
+    elif state == ExpState.NOTE:
         # no rules for notes
         return ''
 
@@ -138,7 +138,7 @@ def predict_category(business: str, cat_temp: str, account: Account):
 
 
 def rectify_element(element: str, state: ExpState, account: Account) -> str:
-    if state == 0:
+    if state == ExpState.AMOUNT:
         # if there's no sign, it's an expense
         return '-' + element if element[0].isnumeric() else element
     # rectify business:
