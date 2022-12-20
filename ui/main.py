@@ -102,8 +102,8 @@ class MainWindow(CursesWindow):
         updates the table at the given index. called after editing a
         record on the account object using update_transaction()
         """
-        self.clist.items[index] = '   '.join(self.account.records[index] \
-                                       .to_str(self.icol, self.acol, self.ccol, \
+        self.clist.items[index] = '   '.join(self.account.records[index]
+                                       .to_str(self.icol, self.acol, self.ccol,
                                                self.sccol, self.pcol, self.ncol))
 
     def delete_table_row(self, index: int):

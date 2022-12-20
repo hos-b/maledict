@@ -42,17 +42,18 @@ def main(stdscr):
     conf = yaml.load(conf_file, Loader=yaml.FullLoader)
 
     # get overview window
-    windows.append(MainWindow(stdscr, conf['main']['x'], conf['main']['y'], \
-                   conf['main']['width_percentage'] * screen_width, \
+    windows.append(MainWindow(stdscr, conf['main']['x'], conf['main']['y'],
+                   conf['main']['width_percentage'] * screen_width,
                    conf['main']['height_percentage'] * screen_height, windows, conf))
-    windows.append(ActionWindow(stdscr, windows[WinID.Main].max_x + conf['action']['x_offset'], \
-                                conf['action']['y'], conf['action']['width_percentage'] * \
-                                screen_width , conf['action']['height_percentage'] * \
+    windows.append(ActionWindow(stdscr, windows[WinID.Main].max_x + conf['action']['x_offset'],
+                                conf['action']['y'], conf['action']['width_percentage'] *
+                                screen_width , conf['action']['height_percentage'] *
                                 screen_height, windows))
-    windows.append(TerminalWindow(stdscr, conf['terminal']['x'], windows[WinID.Main].max_y + \
-                                  conf['terminal']['y_offset'], windows[WinID.Action].max_x + \
-                                  conf['terminal']['width_offset'], conf['terminal']['height_percentage'] * \
-                                  screen_height, windows, database, conf))
+    windows.append(TerminalWindow(stdscr, conf['terminal']['x'], windows[WinID.Main].max_y +
+                                  conf['terminal']['y_offset'], windows[WinID.Action].max_x +
+                                  conf['terminal']['width_offset'],
+                                  conf['terminal']['height_percentage'] * screen_height,
+                                  windows, database, conf))
 
     # initially disable cursor
     curses.curs_set(False)

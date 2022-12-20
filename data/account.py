@@ -27,7 +27,6 @@ class Account:
         self.full_query = f'SELECT * FROM {self.name} ORDER BY datetime(datetime) DESC;'
         self.query_transactions(self.full_query, True)
 
-
         # if not empty, find recurring transactions
         if len(self.records) > 0:
             self.find_recurring(conf['recurring']['months'],
