@@ -221,6 +221,10 @@ class TerminalWindow(CursesWindow):
                 self.reset_input_field()
                 self.redraw()
             # scrolling -------------------------------------------------------------------
+            elif input_char == KeyCombo.CTRL_UP:
+                self.scroll(+1)
+            elif input_char == KeyCombo.CTRL_DOWN:
+                self.scroll(-1)
             elif input_char == curses.KEY_PPAGE:
                 self.scroll_page_up()
             elif input_char == curses.KEY_NPAGE:
