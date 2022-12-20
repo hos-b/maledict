@@ -89,7 +89,7 @@ def expense(terminal, stdscr):
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f' {element_hint[state]}:'
 
-    def update_predictions(force_update: bool, predicted_record: Record):
+    def update_predictions(predicted_record: Record, force_update: bool):
         # global predicted_record
         if state == ExpState.BUSINESS:
             terminal.shadow_string, predicted_record = predict_business(
@@ -138,22 +138,22 @@ def expense(terminal, stdscr):
         if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if input_allowed():
                 terminal.delete_previous_char(element_start[state], False)
-                update_predictions(True, predicted_record)
+                update_predictions(predicted_record, True)
                 terminal.redraw()
         elif input_char == curses.KEY_DC:
             if input_allowed():
                 terminal.delete_next_char(False)
-                update_predictions(True, predicted_record)
+                update_predictions(predicted_record, True)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == '\n':
             element_end[state] = len(terminal.command) - 1
-            elements[state] = terminal.command[element_start[state]: \
+            elements[state] = terminal.command[element_start[state]:
                                                element_end[state] + 1].strip()
             terminal.redraw()
             # adding the expense
             if state == ExpState.NOTE:
-                parsed_record = parse_expense(elements, tr_date, \
+                parsed_record = parse_expense(elements, tr_date,
                                               terminal.windows[WinID.Main].account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
                 terminal.windows[WinID.Main].account.add_transaction(
@@ -161,7 +161,7 @@ def expense(terminal, stdscr):
                 terminal.windows[WinID.Main].account.query_transactions(
                     terminal.windows[WinID.Main].account.full_query, False)
                 terminal.windows[WinID.Main].refresh_table_records('all transactions')
-                terminal.print_history[-1] = str(elements)
+                terminal.print_history[-1] = str(parsed_record)
                 elements = ['', '', '', '', '', '']
                 terminal.reset_input_field()
                 terminal.append_to_history(get_hint())
@@ -173,9 +173,9 @@ def expense(terminal, stdscr):
             # nothing written?
             elif elements[state] == '':
                 continue
-            errors = check_input(elements[state], state)
+            error = check_input(elements[state], state)
             # accept & rectify the element, prepare next element
-            if len(errors) == 0:
+            if not error:
                 terminal.command += ' | '
                 elements[state] = rectify_element(
                     elements[state], state,
@@ -204,12 +204,12 @@ def expense(terminal, stdscr):
                     terminal.reverse_text_enable = False
                     terminal.cursor_x = len(terminal.command)
                 terminal.print_history[-1] = get_hint()
-                update_predictions(False, predicted_record)
+                update_predictions(predicted_record, False)
             # reject & reset input
             else:
                 elements[state] = ''
                 element_end[state] = 0
-                terminal.print_history[-1] = errors
+                terminal.print_history[-1] = error
                 terminal.append_to_history(get_hint())
                 terminal.command = terminal.command[:element_start[state]]
                 terminal.cursor_x = len(terminal.command)
@@ -238,7 +238,6 @@ def expense(terminal, stdscr):
             terminal.redraw()
         # suggestion surfing, changing date & time ------------------------------------
         elif input_char == curses.KEY_UP:
-            # TODO add suggestion surfing
             if input_allowed():
                 continue
             else:
@@ -280,10 +279,12 @@ def expense(terminal, stdscr):
                 terminal.rtext_end = terminal.rtext_start + \
                                      sub_element_length[state][sub_state]
                 terminal.redraw()
-        elif input_char == KeyCombo.CTRL_LEFT and input_allowed():
-            terminal.cursor_jump_left(element_start[state])
-        elif input_char == KeyCombo.CTRL_RIGHT and input_allowed():
-            terminal.cursor_jump_right()
+        elif input_char == KeyCombo.CTRL_LEFT:
+            if input_allowed():
+                terminal.cursor_jump_left(element_start[state])
+        elif input_char == KeyCombo.CTRL_RIGHT:
+            if input_allowed():
+                terminal.cursor_jump_right()
         elif input_char == curses.KEY_HOME:
             if input_allowed():
                 terminal.cursor_jump_start(element_start[state])
@@ -311,7 +312,7 @@ def expense(terminal, stdscr):
         # normal input ----------------------------------------------------------------
         else:
             terminal.insert_char(input_char, False)
-            update_predictions(True, predicted_record)
+            update_predictions(predicted_record, True)
             terminal.redraw()
 
     terminal.windows[WinID.Main].account.flush_transactions()

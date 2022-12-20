@@ -111,8 +111,7 @@ def expense(terminal, stdscr, index: str):
             terminal.shadow_index = 0
             kb_interrupt = True
             elements = ['', '', '', '', '', '']
-            terminal.command = ''
-            terminal.cursor_x = 0
+            terminal.reset_input_field()
             state = sub_state = 0
             terminal.print_history[
                 -1] = 'press ctrl + c again to exit edit mode'
@@ -125,18 +124,11 @@ def expense(terminal, stdscr, index: str):
         if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if input_allowed():
                 terminal.delete_previous_char(element_start[state], False)
-                update_predictions(True, org_record)
+                update_predictions(org_record, True)
                 terminal.redraw()
         elif input_char == curses.KEY_DC:
             if input_allowed():
                 terminal.delete_next_char(False)
-                update_predictions(True, org_record)
-                terminal.redraw()
-        elif input_char == curses.KEY_DC:
-            if input_allowed() and len(terminal.command) != 0 and \
-               terminal.cursor_x < len(terminal.command):
-                terminal.command = terminal.command[:terminal.cursor_x] + \
-                                terminal.command[terminal.cursor_x + 1:]
                 update_predictions(org_record, True)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
@@ -155,8 +147,8 @@ def expense(terminal, stdscr, index: str):
                     org_record.amount, parsed_record.amount)
                 terminal.windows[WinID.Main].redraw()
                 terminal.command = ''
-                terminal.shadow_index = 0
                 terminal.shadow_string = ''
+                terminal.shadow_index = 0
                 terminal.redraw()
                 break
             # nothing written?
@@ -164,7 +156,7 @@ def expense(terminal, stdscr, index: str):
                 continue
             error = check_input(elements[state], state)
             # accept & rectify the element, prepare next element
-            if len(error) == 0:
+            if not error:
                 terminal.command += ' | '
                 elements[state] = rectify_element(
                     elements[state], state,
@@ -191,8 +183,8 @@ def expense(terminal, stdscr, index: str):
                 else:
                     terminal.reverse_text_enable = False
                     terminal.cursor_x = len(terminal.command)
-                update_predictions(org_record, False)
                 terminal.print_history[-1] = get_hint()
+                update_predictions(org_record, False)
             # reject & reset input
             else:
                 elements[state] = ''
@@ -208,7 +200,6 @@ def expense(terminal, stdscr, index: str):
         elif input_char == curses.KEY_NPAGE:
             terminal.scroll_page_down()
         # suggestion surfing, changing date & time ------------------------------------
-        # TODO: add suggestion surfing, actually fix suggestions
         elif input_char == curses.KEY_UP:
             if input_allowed():
                 continue
@@ -251,10 +242,12 @@ def expense(terminal, stdscr, index: str):
                 terminal.rtext_end = terminal.rtext_start + \
                                      sub_element_length[state][sub_state]
                 terminal.redraw()
-        elif input_char == KeyCombo.CTRL_LEFT and input_allowed():
-            terminal.cursor_jump_left(element_start[state])
+        elif input_char == KeyCombo.CTRL_LEFT:
+            if input_allowed():
+                terminal.cursor_jump_left(element_start[state])
         elif input_char == KeyCombo.CTRL_RIGHT:
-            terminal.cursor_jump_right()
+            if input_allowed():
+                terminal.cursor_jump_right()
         elif input_char == curses.KEY_HOME:
             if input_allowed():
                terminal.cursor_jump_start(element_start[state])
@@ -282,7 +275,7 @@ def expense(terminal, stdscr, index: str):
         # normal input ----------------------------------------------------------------
         else:
             terminal.insert_char(input_char, False)
-            update_predictions(True, org_record)
+            update_predictions(org_record, True)
             terminal.redraw()
 
     # in case the edit was cancelled half way

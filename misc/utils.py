@@ -20,7 +20,8 @@ class ExpState(IntEnum):
 
 def check_input(input_str: str, state: int) -> str:
     """
-    checks whether the input at state x in expense mode is correct
+    checks whether the input at state x in expense mode is correct,
+    returns None if there were no errors
     """
     if state == ExpState.AMOUNT:
         try:
@@ -29,7 +30,7 @@ def check_input(input_str: str, state: int) -> str:
             return 'incorrect format for amount. use EUR.CENT'
         if value == 0.0:
             return '0.0 is not a valid value'
-        return ''
+        return None
     elif state == ExpState.BUSINESS or state == ExpState.CATEGORY:
         # cannot use [^\w] because it excludes unicode chars
         match = re.match(
@@ -41,24 +42,24 @@ def check_input(input_str: str, state: int) -> str:
             # category & subcategory in one string
             if state == ExpState.CATEGORY and input_str.count(':') > 1:
                 return 'use cat:subcat for new categories'
-            return ''
+            return None
     elif state == ExpState.DATE:
         year, month, day = input_str.split('.')
         try:
             date(int(year), int(month), int(day))
         except ValueError:
             return 'invalid date'
-        return ''
+        return None
     elif state == ExpState.TIME:
         hour, minute = input_str.split(':')
         try:
             time(int(hour), int(minute))
         except ValueError:
             return 'invalid time'
-        return ''
+        return None
     elif state == ExpState.NOTE:
         # no rules for notes
-        return ''
+        return None
 
 
 # add expense utils ------------------------------------------------------------------------
