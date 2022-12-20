@@ -31,7 +31,10 @@ def check_input(input_str: str, state: int) -> str:
             return '0.0 is not a valid value'
         return ''
     elif state == 1 or state == 2:
-        match = re.match(r'.*([^a-zA-Z0-9_ \.&]).*', input_str)
+        # cannot use [^\w] because it excludes unicode chars
+        match = re.match(
+            r'.*([/\\\'\"!\?\+=%\*;\^@#\$~\|`\[\]\(\)\{\}\<\>\_]).*',
+            input_str, re.UNICODE)
         if match:
             return f'string cannot contain `{match.group(1)}`'
         else:
@@ -62,7 +65,7 @@ def check_input(input_str: str, state: int) -> str:
 def change_datetime(dt: datetime, state: int, substate: int,
                     change: int) -> datetime:
     # changing date
-    if state == 3:
+    if state == ExpState.DATE:
         if substate == 0: return dt.replace(year=max(0, dt.year + change))
         elif substate == 1:
             max_day = monthrange(dt.year, min(max(dt.month + change, 1),
@@ -77,7 +80,7 @@ def change_datetime(dt: datetime, state: int, substate: int,
                 return dt.replace(day=min(dt.day + change,
                                           monthrange(dt.year, dt.month)[1]))
     # changing time
-    elif state == 4:
+    elif state == ExpState.TIME:
         if substate == 0:
             if change < 0: return dt.replace(hour=max(dt.hour + change, 0))
             elif change > 0: return dt.replace(hour=min(dt.hour + change, 23))
@@ -86,7 +89,7 @@ def change_datetime(dt: datetime, state: int, substate: int,
             elif change > 0:
                 return dt.replace(minute=min(dt.minute + change, 59))
     # increasing or decreasing minute by one to force chronological sort from sqlite
-    elif state == 5:
+    elif state == ExpState.NOTE:
         if change < 0: return dt - timedelta(minutes=-change)
         elif change > 0: return dt + timedelta(minutes=change)
     return dt
@@ -97,13 +100,13 @@ def predict_business(amount: str, biz_temp: str, account: Account):
     if '.' not in amount:
         amount += '.0'
     if amount in account.recurring_amounts and \
-       bool(re.match(biz_temp, account.recurring_amounts[amount].business, re.I)):
+       biz_temp.casefold() == account.recurring_amounts[amount].business.casefold():
         return account.recurring_amounts[amount].business, \
                account.recurring_amounts[amount]
     elif biz_temp != '':
         predictions = []
         for key in account.businesses:
-            if bool(re.match(biz_temp, key, re.I)):
+            if biz_temp.casefold() == key.casefold():
                 predictions.append(key)
         if len(predictions) != 0:
             predictions.sort(key=len)
@@ -115,16 +118,16 @@ def predict_business(amount: str, biz_temp: str, account: Account):
 
 def predict_category(business: str, cat_temp: str, account: Account):
     if business in account.recurring_biz and \
-       bool(re.match(cat_temp, account.recurring_biz[business].subcategory, re.I)):
+       cat_temp.casefold() == account.recurring_biz[business].subcategory.casefold():
         return account.recurring_biz[business].subcategory, \
                account.recurring_biz[business]
     elif cat_temp != '':
         predictions = []
         for key in account.categories:
-            if bool(re.match(cat_temp, key, re.I)):
+            if cat_temp.casefold() == key.casefold():
                 predictions.append(key)
         for key in account.subcategories:
-            if bool(re.match(cat_temp, key, re.I)):
+            if cat_temp.casefold() == key.casefold():
                 predictions.append(key)
         if len(predictions) != 0:
             predictions.sort(key=len)
@@ -134,23 +137,23 @@ def predict_category(business: str, cat_temp: str, account: Account):
         return '', None
 
 
-def rectify_element(element: str, state: int, account: Account) -> str:
+def rectify_element(element: str, state: ExpState, account: Account) -> str:
     if state == 0:
         # if there's no sign, it's an expense
         return '-' + element if element[0].isnumeric() else element
     # rectify business:
-    elif state == 1:
+    elif state == ExpState.BUSINESS:
         for key in account.businesses:
-            if key.lower() == element.lower():
+            if key.casefold() == element.casefold():
                 return key
         return element
     # rectify category/subcategory:
-    elif state == 2:
+    elif state == ExpState.CATEGORY:
         for key in account.categories:
-            if key.lower() == element.lower():
+            if key.casefold() == element.casefold():
                 return key
         for key in account.subcategories:
-            if key.lower() == element.lower():
+            if key.casefold() == element.casefold():
                 return key
         return element
     else:
@@ -167,16 +170,17 @@ def parse_expense(elements: list, dt: datetime, account: Account) -> Record:
     TIME = 4
     NOTE = 5
     """
-    cat = elements[2]
+    cat = elements[ExpState.CATEGORY]
     subcat = ''
-    if ':' in elements[2]:
-        cat, subcat = elements[2].split(':')
-    elif elements[2] in account.subcategories:
-        cat = account.subcategories[elements[2]]
-        subcat = elements[2]
-    amount = account.currency_type.from_str(elements[0])
-    return Record(dt.replace(microsecond=0), amount, cat, subcat, elements[1],
-                  elements[5])
+    if ':' in elements[ExpState.CATEGORY]:
+        cat, subcat = elements[ExpState.CATEGORY].split(':')
+    elif elements[ExpState.CATEGORY] in account.subcategories:
+        cat = account.subcategories[elements[ExpState.CATEGORY]]
+        subcat = elements[ExpState.CATEGORY]
+    amount = account.currency_type.from_str(elements[ExpState.AMOUNT])
+    return Record(dt.replace(microsecond=0), amount,
+        cat, subcat, elements[ExpState.BUSINESS],
+        elements[ExpState.NOTE])
 
 
 def sign(num):
