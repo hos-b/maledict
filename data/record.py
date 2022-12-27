@@ -50,10 +50,18 @@ class Record:
         ]
 
     def __str__(self):
-        return self.as_str(True)
-
-    def __repr__(self) -> str:
-        return self.as_str(True)
+        datetimestr = '{}.{}.{}, {}:{}'.format(
+            str(self.t_datetime.day).zfill(2),
+            str(self.t_datetime.month).zfill(2),
+            str(self.t_datetime.year).zfill(4),
+            str(self.t_datetime.hour).zfill(2),
+            str(self.t_datetime.minute).zfill(2))
+        if self.amount.is_income():
+            return '{} on {} under `{}`. notes: {}'.format(self.amount,
+                datetimestr, self.category, self.note)
+        else:
+            return '{} to {} on {} under `{}`. notes: {}'.format(self.amount,
+                self.business, datetimestr, self.category, self.note)
 
     @staticmethod
     def columns(index_l, amount_l, cat_l, subcat_l, bus_l, note_l) -> list:
