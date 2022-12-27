@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+import data.config as cfg
+
 from data.currency import Currency, supported_currencies
 from data.sqlite_proxy import SQLiteProxy
 from data.record import Record
@@ -11,7 +13,7 @@ class Account:
     Account class, handles reading to & writing from transaction database
     """
 
-    def __init__(self, name: str, database: SQLiteProxy, conf: dict):
+    def __init__(self, name: str, database: SQLiteProxy):
         self.name = name
         self.database = database
         self.currency_type = supported_currencies[database.get_account_currency(name)]
@@ -29,10 +31,10 @@ class Account:
 
         # if not empty, find recurring transactions
         if len(self.records) > 0:
-            self.find_recurring(conf['recurring']['months'],
-                                conf['recurring']['significance_ratio'],
-                                conf['recurring']['discard_limit'],
-                                conf['recurring']['min_occurance'])
+            self.find_recurring(cfg.recurring.months,
+                                cfg.recurring.significance_ratio,
+                                cfg.recurring.discard_limit,
+                                cfg.recurring.min_occurance)
 
     def query_transactions(self, query: str, update_dicts: bool):
         """

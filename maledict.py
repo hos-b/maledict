@@ -1,6 +1,7 @@
 import os
-import yaml
 import curses
+
+import data.config as cfg
 
 from ui.main import MainWindow
 from ui.actions import ActionWindow
@@ -12,11 +13,11 @@ database = None
 windows = []
 
 
-def wrap_up(conf: dict):
+def wrap_up():
     database.connection.commit()
     database.db_close()
     windows[WinID.Terminal].write_command_history(
-        conf['command_history_file_length'])
+        cfg.application.command_history_file_length)
 
 
 def main(stdscr):
@@ -36,24 +37,25 @@ def main(stdscr):
     database = SQLiteProxy(db_path)
 
     # reading config yaml
-    config_path = os.path.join(os.path.dirname(__file__),
-                               'config/settings.yaml')
-    conf_file = open(config_path)
-    conf = yaml.load(conf_file, Loader=yaml.FullLoader)
+    cfg.update_config(os.path.join(
+        os.path.dirname(__file__), 'config/settings.yaml'))
 
     # get overview window
-    windows.append(MainWindow(stdscr, conf['main']['x'], conf['main']['y'],
-                   conf['main']['width_percentage'] * screen_width,
-                   conf['main']['height_percentage'] * screen_height, windows, conf))
-    windows.append(ActionWindow(stdscr, windows[WinID.Main].max_x + conf['action']['x_offset'],
-                                conf['action']['y'], conf['action']['width_percentage'] *
-                                screen_width , conf['action']['height_percentage'] *
-                                screen_height, windows))
-    windows.append(TerminalWindow(stdscr, conf['terminal']['x'], windows[WinID.Main].max_y +
-                                  conf['terminal']['y_offset'], windows[WinID.Action].max_x +
-                                  conf['terminal']['width_offset'],
-                                  conf['terminal']['height_percentage'] * screen_height,
-                                  windows, database, conf))
+    windows.append(MainWindow(
+        stdscr, cfg.main.x, cfg.main.y,
+        cfg.main.width_percentage * screen_width,
+        cfg.main.height_percentage * screen_height, windows))
+    windows.append(ActionWindow(
+        stdscr, windows[WinID.Main].max_x + cfg.action.x_offset,
+        cfg.action.y, cfg.action.width_percentage *
+        screen_width , cfg.action.height_percentage *
+        screen_height, windows))
+    windows.append(TerminalWindow(
+        stdscr, cfg.terminal.x, windows[WinID.Main].max_y +
+        cfg.terminal.y_offset, windows[WinID.Action].max_x +
+        cfg.terminal.width_offset,
+        cfg.terminal.height_percentage * screen_height,
+        windows, database))
 
     # initially disable cursor
     curses.curs_set(False)
@@ -76,7 +78,7 @@ def main(stdscr):
             # focus window 1 (actions)
             active_window = 1
         elif break_char == curses.KEY_F50:
-            wrap_up(conf)
+            wrap_up()
             break
 
 

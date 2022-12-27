@@ -7,14 +7,15 @@ import curses
 from typing import Union, List
 
 import defined_tasks
+import data.config as cfg
 
 from data.sqlite_proxy import SQLiteProxy
 from misc.statics import WinID, KeyCombo
 from ui.base import CursesWindow
 
 class TerminalWindow(CursesWindow):
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height, \
-                 windows: list, database: SQLiteProxy, conf: dict):
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height,
+                 windows: list, database: SQLiteProxy):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
 
         # good stuff
@@ -22,7 +23,6 @@ class TerminalWindow(CursesWindow):
         self.cursor_x = 0
         self.windows = windows
         self.database = database
-        self.conf = conf
 
         # prediction stuff
         self.shadow_string = ''
@@ -60,7 +60,7 @@ class TerminalWindow(CursesWindow):
                 self.command_history.append(line.strip())
         except FileNotFoundError:
             self.append_to_history('could not open command history file')
-        if self.conf['warm-up']:
+        if cfg.application.warm_up:
             self.warmup()
         self.redraw()
 
@@ -167,7 +167,7 @@ class TerminalWindow(CursesWindow):
         elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()
-            self.write_command_history(self.conf['command_history_file_length'])
+            self.write_command_history(cfg.application.command_history_file_length)
             exit()
         elif task_id == 100002:
             self.print_history.clear()
@@ -213,7 +213,7 @@ class TerminalWindow(CursesWindow):
                 if self.command != '':
                     self.command_history.append(self.command)
                     self.command_history = self.command_history \
-                                         [-self.conf['command_history_buffer_length']:]
+                                         [-cfg.terminal.command_history_buffer_length:]
                     self.append_to_history('>>> {}', self.command)
                     self.append_to_history(self.parse_and_execute(stdscr))
                 self.history_surf_index = 0

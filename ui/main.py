@@ -1,20 +1,21 @@
 import curses
+
+from datetime import datetime
 from typing import List
-from data.currency import Currency, Euro
+
+import data.config as cfg
 
 from misc.statics import WinID
 from ui.base import CursesWindow
 from ui.elements.list import CursesList
-
 from data.account import Account
 from data.record import Record
-from datetime import datetime
+from data.currency import Currency, Euro
 
 
 class MainWindow(CursesWindow):
 
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: List[CursesWindow],
-                 conf: dict):
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: List[CursesWindow]):
         """
         initializes the main window. the main window holds the
         current account, which acts as a proxy between the ui
@@ -22,12 +23,12 @@ class MainWindow(CursesWindow):
         """
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
         # reading column sizes
-        self.icol = conf['table']['index_length']
-        self.acol = conf['table']['amount_length']
-        self.ccol = conf['table']['category_length']
-        self.sccol = conf['table']['subcategory_length']
-        self.pcol = conf['table']['payee_length']
-        self.ncol = conf['table']['note_length']
+        self.icol = cfg.table.index_length
+        self.acol = cfg.table.amount_length
+        self.ccol = cfg.table.category_length
+        self.sccol = cfg.table.subcategory_length
+        self.pcol = cfg.table.payee_length
+        self.ncol = cfg.table.note_length
         # other stuff
         self.disable_actions = False
         self.account = None
@@ -37,11 +38,12 @@ class MainWindow(CursesWindow):
         self.list_width = int(w_width - 2)
         self.list_height = int((3 / 4) * self.w_height)
         self.clist = CursesList(
-            conf['main']['list_x_offset'], conf['main']['list_y_offset'],
+            cfg.main.list_x_offset, cfg.main.list_y_offset,
             self.list_width, self.list_height, [],
-            conf['table']['scrollbar-enable'], ' | '.join(
-                Record.columns(self.icol, self.acol, self.ccol, self.sccol,
-                               self.pcol, self.ncol)))
+            cfg.table.scrollbar_enable, ' | '.join(
+                Record.columns(
+                    self.icol, self.acol, self.ccol,
+                    self.sccol, self.pcol, self.ncol)))
         # shown income, expense
         self.table_income = Euro(0, 0)
         self.table_expense = Euro(0, 0)

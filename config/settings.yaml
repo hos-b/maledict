@@ -1,43 +1,43 @@
 # transaction table column sizes
 table:
-  index_length: 7
-  amount_length: 10
-  category_length: 20
-  subcategory_length: 20
-  payee_length: 24
-  note_length: 88
+  index-length: 7
+  amount-length: 10
+  category-length: 20
+  subcategory-length: 20
+  payee-length: 24
+  note-length: 88
   scrollbar-enable: true
 
 # recurring transaction settings
 recurring:
   months: 6
-  significance_ratio: 0.7
-  discard_limit: 3
-  min_occurance: 5
+  significance-ratio: 0.7
+  discard-limit: 3
+  min-occurance: 5
 
 # window sizes
 main:
   x: 5 # w.r.t. screen
   y: 3 # w.r.t. screen
-  list_x_offset: 2 # w.r.t. main window
-  list_y_offset: 5 # w.r.t. main window
-  width_percentage: 0.80
-  height_percentage: 0.75
+  list-x-offset: 2 # w.r.t. main window
+  list-y-offset: 5 # w.r.t. main window
+  width-percentage: 0.80
+  height-percentage: 0.75
 
 action:
-  x_offset: 2 # w.r.t. main window
+  x-offset: 2 # w.r.t. main window
   y: 3 # w.r.t. screen
-  width_percentage: 0.15
-  height_percentage: 0.75
+  width-percentage: 0.15
+  height-percentage: 0.75
 
 terminal:
   x: 5 # w.r.t. screen
-  y_offset: 1 # w.r.t. main window
-  width_offset: -5
-  height_percentage: 0.2
+  y-offset: 1 # w.r.t. main window
+  width-offset: -5
+  height-percentage: 0.2
+  command-history-buffer-length: 50
 
-# terminal settings
-command_history_buffer_length: 50
-command_history_file_length: 20
-warm-up: true
-
+application:
+  warm-up: true
+  use-jdate: false
+  command-history-file-length: 20
