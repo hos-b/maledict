@@ -5,6 +5,8 @@ from datetime import date, time, datetime, timedelta
 from calendar import monthrange
 from enum import IntEnum
 
+import data.config as cfg
+
 from data.record import Record
 from data.account import Account
 
@@ -69,13 +71,22 @@ def change_datetime(dt: datetime, state: int, substate: int,
     if state == ExpState.DATE:
         # year
         if substate == 0:
+            if cfg.application.use_jdate:
+                jdt = jdatetime.datetime.fromgregorian(datetime=dt)
+                return jdt.replace(year=max(0, jdt.year + change)).togregorian()
             return dt.replace(year=max(0, dt.year + change))
         # month
         elif substate == 1:
-            new_month = 1 + ((-1 + dt.month + change + 12) % 12)
+            if cfg.application.use_jdate:
+                jdt = jdatetime.datetime.fromgregorian(datetime=dt)
+                new_jmonth = max(1, min(jdt.month + change, 12))
+                max_jday = 31 - int(new_jmonth > 6) - \
+                    int(new_jmonth == 12 and not jdt.isleap())
+                return jdt.replace(month=new_jmonth, 
+                    day=min(jdt.day, max_jday)).togregorian()
+            new_month = max(1, min(dt.month + change, 12))
             max_day = monthrange(dt.year, new_month)[1]
-            return dt.replace(month=new_month,
-                                day=min(dt.day, max_day))
+            return dt.replace(month=new_month, day=min(dt.day, max_day))
         # day
         elif substate == 2:
             return dt + timedelta(hours=24 * change)

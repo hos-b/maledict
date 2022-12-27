@@ -4,9 +4,10 @@ ncurses-based expense tracker
 ## requirements
 - python
 - pyyaml
+- jdatetime (for persian calendar conversion)
 
 ## bugs
-won't fit perfectly in all [small] windows because `window.getmaxyx()` always returns larger dimensions than the actual screen size, at least on i3. won't fix.
+won't fit perfectly in all "small" windows because `window.getmaxyx()` always returns larger dimensions than the actual screen size, at least on i3. won't fix.
 resizing doesn't work for the same reason
 
 ## adding new commands

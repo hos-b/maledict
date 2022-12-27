@@ -1,3 +1,4 @@
+import jdatetime
 from datetime import datetime, date
 
 def fit_string(input_str: str, length: int) -> str:
@@ -9,7 +10,11 @@ def fit_string(input_str: str, length: int) -> str:
     return input_str[:length - 3] + '...' \
            if len(input_str) > length else input_str
 
-def format_date(dt: datetime) -> str:
+def format_date(dt: datetime, convert_to_jdate: bool) -> str:
+    # jdate is only used superficially for convenience
+    if convert_to_jdate:
+        dt = jdatetime.date.fromgregorian(
+            day=dt.day, month=dt.month, year=dt.year)
     return str(dt.year).zfill(4) + '.' + \
            str(dt.month).zfill(2) + '.' + \
            str(dt.day).zfill(2)

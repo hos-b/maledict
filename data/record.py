@@ -1,22 +1,27 @@
 """
 Record class for transactions
 """
+import jdatetime
+
 from datetime import datetime
+from copy import deepcopy
+
+import data.config as cfg
+
 from data.currency import Currency
 from misc.string_manip import fit_string
-from copy import deepcopy
 
 class Record:
 
     def __init__(self,
-                 t_dateteim: datetime,
+                 t_datetime: datetime,
                  amount: Currency,
                  cat: str,
                  subcat: str,
                  business: str,
                  note: str,
                  transaction_id=-1):
-        self.t_datetime = t_dateteim
+        self.t_datetime = t_datetime
         self.amount = amount
         self.category = cat
         self.subcategory = subcat
@@ -34,14 +39,17 @@ class Record:
         amount_str = str(self.amount)
         if self.amount.is_income():
             amount_str = '+' + amount_str
+        dt = self.t_datetime
+        if cfg.application.use_jdate:
+            dt = jdatetime.datetime.fromgregorian(datetime=self.t_datetime)
         return [
             hex(self.transaction_id)[2:].zfill(index_l),
             '{}.{}.{}, {}:{}'.format(
-                str(self.t_datetime.day).zfill(2),
-                str(self.t_datetime.month).zfill(2),
-                str(self.t_datetime.year).zfill(4),
-                str(self.t_datetime.hour).zfill(2),
-                str(self.t_datetime.minute).zfill(2)),
+                str(dt.day).zfill(2),
+                str(dt.month).zfill(2),
+                str(dt.year).zfill(4),
+                str(dt.hour).zfill(2),
+                str(dt.minute).zfill(2)),
             amount_str.ljust(amount_l),
             fit_string(self.category, cat_l).ljust(cat_l),
             fit_string(self.subcategory, subcat_l).ljust(subcat_l),
