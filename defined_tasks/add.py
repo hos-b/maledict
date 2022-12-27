@@ -194,7 +194,8 @@ def expense(terminal, stdscr):
             error = check_input(elements[state], state)
             # accept & rectify the element, prepare next element
             if not error:
-                terminal.command += ' | '
+                # greek letter to enforce RTL/LTR consistency
+                terminal.command += ' ǁ '
                 elements[state] = rectify_element(
                     elements[state], state,
                     terminal.windows[WinID.Main].account)
@@ -330,7 +331,7 @@ def expense(terminal, stdscr):
                 terminal.shadow_index = 0
                 terminal.redraw()
         # normal input ----------------------------------------------------------------
-        else:
+        elif input_allowed():
             terminal.insert_char(input_char, False)
             update_predictions(predicted_record, True)
             terminal.redraw()
