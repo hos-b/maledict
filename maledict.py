@@ -9,22 +9,8 @@ from ui.terminal import TerminalWindow
 from misc.statics import WinID
 from data.sqlite_proxy import SQLiteProxy
 
-database = None
-windows = []
-
-
-def wrap_up():
-    database.connection.commit()
-    database.db_close()
-    windows[WinID.Terminal].write_command_history(
-        cfg.application.command_history_file_length)
-
 
 def main(stdscr):
-    # global debugstr
-    global database
-    global windows
-
     # getting screen data
     stdscr.addstr(0, 1, 'Maledict [version: 1.0.2]')
     stdscr.keypad(True)
@@ -40,6 +26,7 @@ def main(stdscr):
     cfg.update_config(os.path.join(
         os.path.dirname(__file__), 'config/settings.yaml'))
 
+    windows = []
     # get overview window
     windows.append(MainWindow(
         stdscr, cfg.main.x, cfg.main.y,
@@ -78,8 +65,12 @@ def main(stdscr):
             # focus window 1 (actions)
             active_window = 1
         elif break_char == curses.KEY_F50:
-            wrap_up()
+            database.connection.commit()
+            database.db_close()
+            windows[WinID.Terminal].write_command_history(
+                cfg.application.command_history_file_length)
             break
 
-
+# disable ESC delay. must be called before curses takes over
+os.environ.setdefault('ESCDELAY', '0')
 curses.wrapper(main)

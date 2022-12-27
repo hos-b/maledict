@@ -184,17 +184,19 @@ class TerminalWindow(CursesWindow):
         if self.submit_pending_command(stdscr):
             return curses.KEY_F1
         kb_interrupt = False
+        ec_interrupt = False
         while True:
             try:
                 input_char = stdscr.get_wch()
                 kb_interrupt = False
+                ec_interrupt = False
             except KeyboardInterrupt:
                 if kb_interrupt or self.command == '':
                     return curses.KEY_F50
-                self.reset_input_field()
-                self.history_surf_index = 0
-                self.vscroll = 0
                 kb_interrupt = True
+                self.vscroll = 0
+                self.history_surf_index = 0
+                self.reset_input_field()
                 self.append_to_history('press ctrl-c again to exit maledict')
                 self.redraw()
                 continue
@@ -203,6 +205,17 @@ class TerminalWindow(CursesWindow):
             # if should switch window
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char
+            # escape = interrupt ----------------------------------------------------------
+            if input_char == '\x1b':
+                if ec_interrupt or self.command == '':
+                    return curses.KEY_F50
+                ec_interrupt = True
+                self.vscroll = 0
+                self.history_surf_index = 0
+                self.reset_input_field()
+                self.append_to_history('press escape again to exit maledict')
+                self.redraw()
+                continue
             # backspace, del --------------------------------------------------------------
             elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
                 self.delete_previous_char()

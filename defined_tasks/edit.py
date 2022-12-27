@@ -100,28 +100,43 @@ def expense(terminal, stdscr, index: str):
     terminal.append_to_history(get_hint())
     terminal.redraw()
     kb_interrupt = False
+    ec_interrupt = False
     while edit_mode:
         try:
             input_char = stdscr.get_wch()
             kb_interrupt = False
+            ec_interrupt = False
         except KeyboardInterrupt:
             if kb_interrupt or terminal.command == '':
                 break
+            kb_interrupt = True
+            state = sub_state = 0
+            elements = ['', '', '', '', '', '']
             terminal.shadow_string = ''
             terminal.shadow_index = 0
-            kb_interrupt = True
-            elements = ['', '', '', '', '', '']
             terminal.reset_input_field()
-            state = sub_state = 0
-            terminal.print_history[
-                -1] = 'press ctrl + c again to exit edit mode'
+            terminal.print_history[-1] = 'press ctrl + c again to exit edit mode'
             terminal.append_to_history(get_hint())
             terminal.redraw()
             continue
         except:
             continue
+        # escape = interrupt ----------------------------------------------------------
+        if input_char == '\x1b':
+            if ec_interrupt or terminal.command == '':
+                break
+            ec_interrupt = True
+            state = sub_state = 0
+            elements = ['', '', '', '', '', '']
+            terminal.reset_input_field()
+            terminal.shadow_string = ''
+            terminal.shadow_index = 0
+            terminal.print_history[-1] = 'press escape again to exit expense mode'
+            terminal.append_to_history(get_hint())
+            terminal.redraw()
+            continue
         # backspace, del --------------------------------------------------------------
-        if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
+        elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if input_allowed():
                 terminal.delete_previous_char(element_start[state], False)
                 update_predictions(org_record, True)
