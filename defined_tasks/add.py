@@ -12,6 +12,7 @@ from misc.utils import predict_business, predict_category
 from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element 
 from misc.utils import parse_expense, ExpState
+from data.account import Account
 from data.record import Record
 from data.currency import supported_currencies
 from data.sqlite_proxy import SQLiteProxy
@@ -59,13 +60,12 @@ def account(database: SQLiteProxy, name: str, initial_balance: str, currency_nam
     return [f'successfully added {name} with {initial_balance} initial balance']
 
 def expense(terminal, stdscr):
+    account: Account = terminal.windows[WinID.Main].account
     # exception handling
-    if terminal.windows[WinID.Main].account == None:
+    if account == None:
         return ['current account not set']
     if stdscr is None:
         return ['cannot add expenses in warmup mode']
-
-    expense_mode = True
     terminal.append_to_history('expense mode activated')
     terminal.reset_input_field()
     curses.curs_set(1)
@@ -91,13 +91,12 @@ def expense(terminal, stdscr):
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f' {element_hint[state]}:'
 
-    def update_predictions(pr, force_update: bool):
-        global predicted_record
+    def update_predictions(predicted_record: Record, force_update: bool):
         if state == ExpState.BUSINESS:
             terminal.shadow_string, predicted_record = predict_business(
                 elements[ExpState.AMOUNT],
                 terminal.command[element_start[ExpState.BUSINESS]:],
-                terminal.windows[WinID.Main].account)
+                account)
             terminal.shadow_index = element_start[ExpState.BUSINESS]
         elif state == ExpState.CATEGORY:
             if not force_update and predicted_record is not None:
@@ -107,7 +106,7 @@ def expense(terminal, stdscr):
             terminal.shadow_string, predicted_record = predict_category(
                 elements[ExpState.BUSINESS],
                 terminal.command[element_start[ExpState.CATEGORY]:],
-                terminal.windows[WinID.Main].account)
+                account)
             terminal.shadow_index = element_start[ExpState.CATEGORY]
         else:
             terminal.shadow_string = ''
@@ -118,7 +117,7 @@ def expense(terminal, stdscr):
     terminal.redraw()
     kb_interrupt = False
     ec_interrupt = False
-    while expense_mode:
+    while True:
         try:
             input_char = stdscr.get_wch()
             kb_interrupt = False
@@ -171,13 +170,10 @@ def expense(terminal, stdscr):
             terminal.redraw()
             # adding the expense
             if state == ExpState.NOTE:
-                parsed_record = parse_expense(elements, tr_date,
-                                              terminal.windows[WinID.Main].account)
+                parsed_record = parse_expense(elements, tr_date, account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
-                terminal.windows[WinID.Main].account.add_transaction(
-                    parsed_record)
-                terminal.windows[WinID.Main].account.query_transactions(
-                    terminal.windows[WinID.Main].account.full_query, False)
+                account.add_transaction(parsed_record)
+                account.query_transactions(account.full_query, False)
                 terminal.windows[WinID.Main].refresh_table_records('all transactions')
                 terminal.print_history[-1] = str(parsed_record)
                 elements = ['', '', '', '', '', '']
@@ -191,14 +187,12 @@ def expense(terminal, stdscr):
             # nothing written?
             elif elements[state] == '':
                 continue
-            error = check_input(elements[state], state)
+            error = check_input(elements[state], state, account.currency_type)
             # accept & rectify the element, prepare next element
-            if not error:
+            if error is None:
                 # greek letter to enforce RTL/LTR consistency
                 terminal.command += ' ǁ '
-                elements[state] = rectify_element(
-                    elements[state], state,
-                    terminal.windows[WinID.Main].account)
+                elements[state] = rectify_element(elements[state], state, account)
                 # skip payee for income
                 if state == ExpState.AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4
@@ -336,7 +330,7 @@ def expense(terminal, stdscr):
             update_predictions(predicted_record, True)
             terminal.redraw()
 
-    terminal.windows[WinID.Main].account.flush_transactions()
+    account.flush_transactions()
     terminal.shadow_string = ''
     terminal.shadow_index = 0
     return ['expense mode deactivated']

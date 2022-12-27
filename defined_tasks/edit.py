@@ -1,6 +1,6 @@
-import re
 import curses
 
+from data.account import Account
 from data.record import Record
 from misc.utils import change_datetime, rectify_element, parse_expense
 from misc.utils import check_input, predict_business, predict_category
@@ -11,8 +11,9 @@ from misc.statics import WinID, KeyCombo
 
 
 def expense(terminal, stdscr, index: str):
+    account: Account = terminal.windows[WinID.Main].account
     # exception handling
-    if terminal.windows[WinID.Main].account == None:
+    if account is None:
         return ['current account not set']
     if stdscr is None:
         return ['cannot edit expenses in warmup mode']
@@ -22,22 +23,17 @@ def expense(terminal, stdscr, index: str):
         return [f'expected hex value, got {index}']
 
     list_index = -1
-    for idx, record in enumerate(
-            terminal.windows[WinID.Main].account.records):
+    for idx, record in enumerate(account.records):
         if record.transaction_id == transaction_id:
             list_index = idx
             break
     if list_index == -1:
         return [f'given transaction id does not exist']
     # predictions
-    org_record: Record = terminal.windows[
-        WinID.Main].account.records[list_index].copy()
-    pre_amount_str = '+' + str(
-        org_record.amount) if org_record.amount.float_value > 0 else str(
-            org_record.amount)
+    org_record: Record = account.records[list_index].copy()
+    pre_amount_str = org_record.amount.as_str(use_plus_sign=True)
     tr_date = org_record.t_datetime
     # basic intialization
-    edit_mode = True
     terminal.append_to_history(
         f"editing record 0x{hex(transaction_id)[2:].zfill(6)}:"
         f"{pre_amount_str} on {tr_date.isoformat(' ')} to {org_record.business}"
@@ -72,9 +68,8 @@ def expense(terminal, stdscr, index: str):
                 terminal.shadow_string = predicted_record.business
                 terminal.shadow_index = element_start[ExpState.BUSINESS]
                 return
-            terminal.shadow_string, predicted_record = predict_business(elements[0], \
-                    terminal.command[element_start[ExpState.BUSINESS]:], \
-                    terminal.windows[WinID.Main].account)
+            terminal.shadow_string, predicted_record = predict_business(elements[0],
+                    terminal.command[element_start[ExpState.BUSINESS]:], account)
             terminal.shadow_index = element_start[ExpState.BUSINESS]
         elif state == ExpState.CATEGORY:
             if not force_update and predicted_record is not None:
@@ -83,12 +78,13 @@ def expense(terminal, stdscr, index: str):
                     else predicted_record.category
                 terminal.shadow_index = element_start[ExpState.CATEGORY]
                 return
-            terminal.shadow_string, predicted_record = predict_category(elements[1], \
-                    terminal.command[element_start[ExpState.CATEGORY]:], \
-                    terminal.windows[WinID.Main].account)
+            terminal.shadow_string, predicted_record = predict_category(
+                elements[ExpState.BUSINESS], 
+                terminal.command[element_start[ExpState.CATEGORY]:],
+                account)
             terminal.shadow_index = element_start[ExpState.CATEGORY]
-        elif state == ExpState.NOTE and bool(re.match(terminal.command[element_start[5]:], \
-                                      org_record.note, re.I)):
+        elif state == ExpState.NOTE and org_record.note.casefold().\
+            startswith(terminal.command[element_start[5]:].casefold()):
             terminal.shadow_string = org_record.note
             terminal.shadow_index = element_start[ExpState.NOTE]
         else:
@@ -101,7 +97,7 @@ def expense(terminal, stdscr, index: str):
     terminal.redraw()
     kb_interrupt = False
     ec_interrupt = False
-    while edit_mode:
+    while True:
         try:
             input_char = stdscr.get_wch()
             kb_interrupt = False
@@ -153,10 +149,8 @@ def expense(terminal, stdscr, index: str):
                 element_start[state]:element_end[state] + 1].strip()
             # done with editing
             if state == ExpState.NOTE:
-                parsed_record = parse_expense(
-                    elements, tr_date, terminal.windows[WinID.Main].account)
-                terminal.windows[WinID.Main].account.update_transaction(
-                    transaction_id, parsed_record)
+                parsed_record = parse_expense(elements, tr_date, account)
+                account.update_transaction(transaction_id, parsed_record)
                 terminal.windows[WinID.Main].update_table_row(list_index)
                 terminal.windows[WinID.Main].update_table_statistics(
                     org_record.amount, parsed_record.amount)
@@ -169,13 +163,11 @@ def expense(terminal, stdscr, index: str):
             # nothing written?
             elif elements[state] == '':
                 continue
-            error = check_input(elements[state], state)
+            error = check_input(elements[state], state, account.currency_type)
             # accept & rectify the element, prepare next element
-            if not error:
+            if error is None:
                 terminal.command += ' ǁ '
-                elements[state] = rectify_element(
-                    elements[state], state,
-                    terminal.windows[WinID.Main].account)
+                elements[state] = rectify_element(elements[state], state, account)
                 # skip payee for income
                 if state == ExpState.AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4
