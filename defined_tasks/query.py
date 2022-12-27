@@ -11,13 +11,13 @@ from datetime import datetime
 
 
 def sqlite(terminal, stdscr):
+    account: Account = terminal.windows[WinID.Main].account
     # exception handling
-    if terminal.windows[WinID.Main].account == None:
+    if account == None:
         return ['current account not set']
     if stdscr is None:
         return ['cannot query in warmup mode']
 
-    account: Account = terminal.windows[WinID.Main].account
     db_connection = account.database.connection
     table_map: Dict[str, int] = account.database.table_map
     table_cols = [i[0] for i in sorted(table_map.items(), key = lambda x: x[1])]
@@ -51,6 +51,7 @@ def sqlite(terminal, stdscr):
     terminal.redraw()
     # start accepting input -----------------------------------------------------------
     kb_interrupt = False
+    ec_interrupt = False
     while True:
         try:
             input_char = stdscr.get_wch()
@@ -65,8 +66,17 @@ def sqlite(terminal, stdscr):
             continue
         except:
             continue
+        # escape = interrupt ----------------------------------------------------------
+        if input_char == '\x1b':
+            if ec_interrupt or terminal.command == '':
+                break
+            ec_interrupt = True
+            terminal.reset_input_field()
+            terminal.append_to_history('press escape again to exit query mode')
+            terminal.redraw()
+            continue
         # backspace, del --------------------------------------------------------------
-        if input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
+        elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             terminal.delete_previous_char()
         elif input_char == curses.KEY_DC:
             terminal.delete_next_char()
