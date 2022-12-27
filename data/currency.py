@@ -253,5 +253,41 @@ class Euro(Currency):
             raise ValueError('cents\' sign must match euros')
         self._secondary = value
 
+class Toman(Currency):
 
-supported_currencies = {'Euro': Euro}
+    _secondary_limit: int = 10
+    _max_secondary_width: int = 1
+
+    def __init__(self, euro, cent) -> None:
+        super().__init__(euro, cent)
+
+    @property
+    def toman(self):
+        return self._primary
+
+    @toman.setter
+    def toman(self, value):
+        if not isinstance(value, int):
+            raise ValueError('expected integer value for toman')
+        self._primary = value
+        if sign(self._secondary) != sign(value):
+            self._secondary *= sign(value)
+
+    @property
+    def rial(self):
+        return self._secondary
+
+    @rial.setter
+    def rial(self, value):
+        if not isinstance(value, int):
+            raise ValueError('expected integer value for rial')
+        if value >= 100:
+            raise ValueError('rials must be smaller than 10')
+        sc = sign(value)
+        sp = sign(self._primary)
+        if sc != sp and sc * sp != 0:
+            raise ValueError('rials\' sign must match toman')
+        self._secondary = value
+
+
+supported_currencies = {'Euro': Euro, 'Toman': Toman}
