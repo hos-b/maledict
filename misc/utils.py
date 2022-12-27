@@ -1,12 +1,12 @@
 import re
+import jdatetime
 
-from datetime import date, time, datetime
+from datetime import date, time, datetime, timedelta
 from calendar import monthrange
 from enum import IntEnum
 
 from data.record import Record
 from data.account import Account
-from datetime import timedelta
 
 
 class ExpState(IntEnum):
@@ -67,47 +67,57 @@ def change_datetime(dt: datetime, state: int, substate: int,
                     change: int) -> datetime:
     # changing date
     if state == ExpState.DATE:
-        if substate == 0: return dt.replace(year=max(0, dt.year + change))
+        # year
+        if substate == 0:
+            return dt.replace(year=max(0, dt.year + change))
+        # month
         elif substate == 1:
-            max_day = monthrange(dt.year, min(max(dt.month + change, 1),
-                                              12))[1]
-            if change < 0:                return dt.replace(month = max(dt.month + change, 1), \
-                                  day=min(dt.day, max_day))
-            elif change > 0:                return dt.replace(month = min(dt.month + change, 12), \
-                                  day=min(dt.day, max_day))
+            new_month = 1 + ((-1 + dt.month + change + 12) % 12)
+            max_day = monthrange(dt.year, new_month)[1]
+            return dt.replace(month=new_month,
+                                day=min(dt.day, max_day))
+        # day
         elif substate == 2:
-            if change < 0: return dt.replace(day=max(dt.day + change, 1))
-            elif change > 0:
-                return dt.replace(day=min(dt.day + change,
-                                          monthrange(dt.year, dt.month)[1]))
+            return dt + timedelta(hours=24 * change)
     # changing time
     elif state == ExpState.TIME:
         if substate == 0:
-            if change < 0: return dt.replace(hour=max(dt.hour + change, 0))
-            elif change > 0: return dt.replace(hour=min(dt.hour + change, 23))
+            if change < 0:
+                return dt.replace(hour=max(dt.hour + change, 0))
+            elif change > 0:
+                return dt.replace(hour=min(dt.hour + change, 23))
         elif substate == 1:
-            if change < 0: return dt.replace(minute=max(dt.minute + change, 0))
+            if change < 0:
+                return dt.replace(minute=max(dt.minute + change, 0))
             elif change > 0:
                 return dt.replace(minute=min(dt.minute + change, 59))
     # increasing or decreasing minute by one to force chronological sort from sqlite
     elif state == ExpState.NOTE:
-        if change < 0: return dt - timedelta(minutes=-change)
-        elif change > 0: return dt + timedelta(minutes=change)
+        if change < 0:
+            return dt - timedelta(minutes=-change)
+        elif change > 0:
+            return dt + timedelta(minutes=change)
     return dt
 
 
 def predict_business(amount: str, biz_temp: str, account: Account):
     # making sure the key is correct
     if '.' not in amount:
-        amount += '.0'
+        amount += '.' + '0' * account.currency_type._max_secondary_width
+    else:
+        amount += '0' * (account.currency_type._max_secondary_width -
+            len(amount.split('.')[1]))
+    if not (amount.startswith('+') or amount.startswith('-')):
+        amount = '-' + amount
     if amount in account.recurring_amounts and \
-       biz_temp.casefold() == account.recurring_amounts[amount].business.casefold():
+       account.recurring_amounts[amount].business.\
+       casefold().startswith(biz_temp.casefold()):
         return account.recurring_amounts[amount].business, \
                account.recurring_amounts[amount]
     elif biz_temp != '':
         predictions = []
         for key in account.businesses:
-            if biz_temp.casefold() == key.casefold():
+            if key.casefold().startswith(biz_temp.casefold()):
                 predictions.append(key)
         if len(predictions) != 0:
             predictions.sort(key=len)
@@ -125,10 +135,10 @@ def predict_category(business: str, cat_temp: str, account: Account):
     elif cat_temp != '':
         predictions = []
         for key in account.categories:
-            if cat_temp.casefold() == key.casefold():
+            if key.casefold().startswith(cat_temp.casefold()):
                 predictions.append(key)
         for key in account.subcategories:
-            if cat_temp.casefold() == key.casefold():
+            if key.casefold().startswith(cat_temp.casefold()):
                 predictions.append(key)
         if len(predictions) != 0:
             predictions.sort(key=len)

@@ -5,6 +5,8 @@ from datetime import datetime
 from sqlite3 import OperationalError as SQLiteOperationalError
 from sqlite3 import Error as SQLiteError
 
+import data.config as cfg
+
 from misc.utils import check_input
 from misc.utils import predict_business, predict_category
 from misc.string_manip import format_date, format_time
@@ -89,21 +91,21 @@ def expense(terminal, stdscr):
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f' {element_hint[state]}:'
 
-    def update_predictions(predicted_record: Record, force_update: bool):
-        # global predicted_record
+    def update_predictions(pr, force_update: bool):
+        global predicted_record
         if state == ExpState.BUSINESS:
             terminal.shadow_string, predicted_record = predict_business(
-                elements[ExpState.BUSINESS],
+                elements[ExpState.AMOUNT],
                 terminal.command[element_start[ExpState.BUSINESS]:],
                 terminal.windows[WinID.Main].account)
             terminal.shadow_index = element_start[ExpState.BUSINESS]
         elif state == ExpState.CATEGORY:
             if not force_update and predicted_record is not None:
                 terminal.shadow_string = predicted_record.subcategory
-                terminal.shadow_index = element_start[2]
+                terminal.shadow_index = element_start[ExpState.CATEGORY]
                 return
             terminal.shadow_string, predicted_record = predict_category(
-                elements[ExpState.CATEGORY],
+                elements[ExpState.BUSINESS],
                 terminal.command[element_start[ExpState.CATEGORY]:],
                 terminal.windows[WinID.Main].account)
             terminal.shadow_index = element_start[ExpState.CATEGORY]
@@ -205,7 +207,7 @@ def expense(terminal, stdscr):
                     state += 1
                 # handle date & time input
                 if state == ExpState.DATE or state == ExpState.TIME:
-                    terminal.command += format_date(tr_date) \
+                    terminal.command += format_date(tr_date, cfg.application.use_jdate) \
                                         if state == ExpState.DATE else \
                                         format_time(tr_date)
                     # prefer day|minute over other fields
@@ -259,7 +261,8 @@ def expense(terminal, stdscr):
             else:
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
                 terminal.command = terminal.command[:element_start[state]] + \
-                                   format_date(tr_date) if state == ExpState.DATE \
+                                   format_date(tr_date, cfg.application.use_jdate) \
+                                   if state == ExpState.DATE \
                                    else terminal.command[:element_start[state]] + \
                                    format_time(tr_date)
                 terminal.redraw()
@@ -269,7 +272,8 @@ def expense(terminal, stdscr):
             else:
                 tr_date = change_datetime(tr_date, state, sub_state, -1)
                 terminal.command = terminal.command[:element_start[state]] + \
-                                   format_date(tr_date) if state == ExpState.DATE \
+                                   format_date(tr_date, cfg.application.use_jdate) \
+                                   if state == ExpState.DATE \
                                    else terminal.command[:element_start[state]] + \
                                    format_time(tr_date)
                 terminal.redraw()
