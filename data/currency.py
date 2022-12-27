@@ -30,13 +30,14 @@ class Currency(ABC):
         self._primary: int = prim
         self._secondary: int = sec
 
-    def as_str(self, zero_pad: bool = False):
+    def as_str(self, zero_pad: bool = False, use_plus_sign: bool = False):
+        sign = '-' if self.is_expense() else '+' * int(use_plus_sign)
         if self._secondary == 0:
             if zero_pad:
-                return f"{self._primary}{self._seperator}{'0' * self._max_secondary_width}"
-            return str(self._primary)
+                return f"{sign}{abs(self._primary)}{self._seperator}{'0' * self._max_secondary_width}"
+            return f'{sign}{abs(self._primary)}'
         else:
-            return f"{self._primary}{self._seperator}{str(abs(self._secondary)).rjust(self._max_secondary_width, '0')}"
+            return f"{sign}{abs(self._primary)}{self._seperator}{str(abs(self._secondary)).rjust(self._max_secondary_width, '0')}"
 
     def is_expense(self) -> bool:
         if self._primary == 0:
@@ -136,8 +137,8 @@ class Currency(ABC):
         other = self.__convert_operand(other)
         if abs(self._primary) < abs(other._primary):
             return True
-        if abs(self._primary) == abs(other._primary) and abs(
-                self._secondary) < abs(other._secondary):
+        if abs(self._primary) == abs(other._primary) and \
+                abs(self._secondary) < abs(other._secondary):
             return True
         return False
 
@@ -146,22 +147,22 @@ class Currency(ABC):
         other = self.__convert_operand(other)
         if abs(self._primary) > abs(other._primary):
             return True
-        if abs(self._primary) == abs(other._primary) and abs(
-                self._secondary) > abs(other._secondary):
+        if abs(self._primary) == abs(other._primary) and \
+                abs(self._secondary) > abs(other._secondary):
             return True
         return False
 
     def __eq__(self, other: Currency):
         self.__verify_type('==', other)
         other = self.__convert_operand(other)
-        return abs(self._primary) == abs(other._primary) and abs(
-            self._secondary) == abs(other._secondary)
+        return abs(self._primary) == abs(other._primary) and \
+            abs(self._secondary) == abs(other._secondary)
 
     def __ne__(self, other: Currency):
         self.__verify_type('!=', other)
         other = self.__convert_operand(other)
-        return abs(self._primary) != abs(other._primary) or abs(
-            self._secondary) != abs(other._secondary)
+        return abs(self._primary) != abs(other._primary) or \
+            abs(self._secondary) != abs(other._secondary)
 
     def __le__(self, other: Currency):
         return self < other or self == other
