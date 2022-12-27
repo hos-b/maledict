@@ -10,7 +10,7 @@ from ui.base import CursesWindow
 from ui.elements.list import CursesList
 from data.account import Account
 from data.record import Record
-from data.currency import Currency, Euro
+from data.currency import Currency
 
 
 class MainWindow(CursesWindow):
@@ -45,8 +45,8 @@ class MainWindow(CursesWindow):
                     self.icol, self.acol, self.ccol,
                     self.sccol, self.pcol, self.ncol)))
         # shown income, expense
-        self.table_income = Euro(0, 0)
-        self.table_expense = Euro(0, 0)
+        self.table_income: Currency = None
+        self.table_expense: Currency = None
 
         self.redraw()
 
@@ -66,16 +66,16 @@ class MainWindow(CursesWindow):
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
         account_str = self.account.name if self.account else 'not set'
         balance_str = self.account.balance.as_str(True) if self.account else '0.0'
-        income_str = self.table_income.as_str(True)
-        expense_str = self.table_expense.as_str(True)
+        income_str = self.table_income.as_str(True) if self.table_income else '0.0'
+        expense_str = self.table_expense.as_str(True) if self.table_expense else '0.0'
         numlen = max(len(income_str), len(expense_str))
         date_str = datetime.now().strftime('%d.%m.%Y')
         self.cwindow.addstr(1, 2, f'account: {account_str}', curses_attr)
         self.cwindow.addstr(2, 2, f'date: {date_str}', curses_attr)
         self.cwindow.addstr(3, 2, f'balance: {balance_str}', curses_attr)
-        self.cwindow.addstr(2, self.max_x - numlen - 25, \
+        self.cwindow.addstr(2, self.max_x - numlen - 25,
                             f'period income:  {income_str.rjust(numlen)}', curses_attr)
-        self.cwindow.addstr(3, self.max_x - numlen - 25, \
+        self.cwindow.addstr(3, self.max_x - numlen - 25,
                             f'period expense: {expense_str.rjust(numlen)}', curses_attr)
         self.clist.redraw(self.cwindow, curses_attr)
         self.cwindow.addstr(8 + self.list_height, 3,
@@ -92,8 +92,8 @@ class MainWindow(CursesWindow):
         if self.account is None:
             self.clist.change_items([])
             self.table_label = 'nothing'
-            self.table_income.float_value = 0.0
-            self.table_expense.float_value = 0.0
+            self.table_income = account.currency_type(0, 0)
+            self.table_expense = account.currency_type(0, 0)
         else:
             self.refresh_table_records('all transactions')
 

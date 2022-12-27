@@ -1,8 +1,6 @@
 """
 Parser for MISA MoneyKeeper exported CSV (from xlsx)
 """
-from ast import ExceptHandler
-from data.currency import Euro
 from data.record import Record
 from datetime import datetime
 from parser.base import ParserBase

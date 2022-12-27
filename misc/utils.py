@@ -20,18 +20,18 @@ class ExpState(IntEnum):
     NOTE = 5
 
 
-def check_input(input_str: str, state: int) -> str:
+def check_input(input_str: str, state: int, currency_type) -> str:
     """
     checks whether the input at state x in expense mode is correct,
     returns None if there were no errors
     """
     if state == ExpState.AMOUNT:
         try:
-            value = float(input_str)
-        except:
-            return 'incorrect format for amount. use EUR.CENT'
+            value = currency_type.from_str(input_str)
+        except ValueError as e:
+            return f'{e}'
         if value == 0.0:
-            return '0.0 is not a valid value'
+            return '0.0 is not a valid amount'
         return None
     elif state == ExpState.BUSINESS or state == ExpState.CATEGORY:
         # cannot use [^\w] because it excludes unicode chars
