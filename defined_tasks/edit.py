@@ -1,5 +1,7 @@
 import curses
 
+import data.config as cfg
+
 from data.account import Account
 from data.record import Record
 from misc.utils import change_datetime, rectify_element, parse_expense
@@ -151,7 +153,6 @@ def expense(terminal, stdscr, index: str):
             if state == ExpState.NOTE:
                 parsed_record = parse_expense(elements, tr_date, account)
                 account.update_transaction(transaction_id, parsed_record)
-                terminal.windows[WinID.Main].update_table_row(list_index)
                 terminal.windows[WinID.Main].update_table_statistics(
                     org_record.amount, parsed_record.amount)
                 terminal.windows[WinID.Main].redraw()
@@ -177,7 +178,7 @@ def expense(terminal, stdscr, index: str):
                     state += 1
                 # handle date & time input
                 if state == ExpState.DATE or state == ExpState.TIME:
-                    terminal.command += format_date(tr_date) \
+                    terminal.command += format_date(tr_date, cfg.application.use_jdate) \
                                         if state == ExpState.DATE else \
                                         format_time(tr_date)
                     sub_state = 2 if state == ExpState.DATE else 1
@@ -213,7 +214,8 @@ def expense(terminal, stdscr, index: str):
             else:
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
                 terminal.command = terminal.command[:element_start[state]] + \
-                                   format_date(tr_date) if state == ExpState.DATE \
+                                   format_date(tr_date, cfg.application.use_jdate) \
+                                   if state == ExpState.DATE \
                                    else terminal.command[:element_start[state]] + \
                                    format_time(tr_date)
                 terminal.redraw()
@@ -223,7 +225,8 @@ def expense(terminal, stdscr, index: str):
             else:
                 tr_date = change_datetime(tr_date, state, sub_state, -1)
                 terminal.command = terminal.command[:element_start[state]] + \
-                                   format_date(tr_date) if state == ExpState.DATE \
+                                   format_date(tr_date, cfg.application.use_jdate) \
+                                   if state == ExpState.DATE \
                                    else terminal.command[:element_start[state]] + \
                                    format_time(tr_date)
                 terminal.redraw()
