@@ -9,6 +9,8 @@ class table:
     subcategory_length: int = None
     payee_length: int = None
     note_length: int = None
+    # special case: always static
+    datetime_length: int = len('1970.01.01, 00:00')
     scrollbar_enable: bool = None
 
 class recurring:

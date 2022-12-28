@@ -153,6 +153,7 @@ def expense(terminal, stdscr, index: str):
             if state == ExpState.NOTE:
                 parsed_record = parse_expense(elements, tr_date, account)
                 account.update_transaction(transaction_id, parsed_record)
+                terminal.windows[WinID.Main].update_table_row(list_index)
                 terminal.windows[WinID.Main].update_table_statistics(
                     org_record.amount, parsed_record.amount)
                 terminal.windows[WinID.Main].redraw()

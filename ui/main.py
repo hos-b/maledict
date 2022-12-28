@@ -22,13 +22,6 @@ class MainWindow(CursesWindow):
         and the database.
         """
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
-        # reading column sizes
-        self.icol = cfg.table.index_length
-        self.acol = cfg.table.amount_length
-        self.ccol = cfg.table.category_length
-        self.sccol = cfg.table.subcategory_length
-        self.pcol = cfg.table.payee_length
-        self.ncol = cfg.table.note_length
         # other stuff
         self.disable_actions = False
         self.account = None
@@ -41,9 +34,7 @@ class MainWindow(CursesWindow):
             cfg.main.list_x_offset, cfg.main.list_y_offset,
             self.list_width, self.list_height, [],
             cfg.table.scrollbar_enable, ' | '.join(
-                Record.columns(
-                    self.icol, self.acol, self.ccol,
-                    self.sccol, self.pcol, self.ncol)))
+                Record.columns()))
         # shown income, expense
         self.table_income: Currency = None
         self.table_expense: Currency = None
@@ -140,7 +131,8 @@ class MainWindow(CursesWindow):
         """
         refreshes the transaction table to show the latest changes from the
         the database. if custom records are provided, they will be displayed
-        instead.
+        instead. transactions are converted to strings and cached so that a
+        redraw() can be performed without having to recalculate each line.
         """
         str_records = []
         self.table_expense = self.account.currency_type(0, 0)
@@ -149,16 +141,13 @@ class MainWindow(CursesWindow):
         if custom_records is None:
             custom_records = self.account.records
         for record in custom_records:
-            str_records.append('   '.join(
-                record.to_str(self.icol, self.acol, self.ccol, self.sccol,
-                              self.pcol, self.ncol)))
+            # fake LTR whitespace to enforce BiDi consistency
+            str_records.append('\u2066   \u202c'.join(record.to_str_list()))
             if record.amount.is_income():
                 self.table_income += record.amount
             else:
                 self.table_expense += abs(record.amount)
         self.clist.change_items(str_records)
-        self.clist.index = 0
-        self.clist.scroll = 0
         self.table_label = label
         self.redraw()
 

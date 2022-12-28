@@ -143,8 +143,8 @@ class Account:
         """
         last_date = None
         try:
-            last_date = self.records[0].t_datetime - timedelta(days=31 *
-                                                               months)
+            last_date = self.records[0].t_datetime - \
+                timedelta(days=31 * months)
         except OverflowError:
             last_date = self.records[-1].t_datetime
 

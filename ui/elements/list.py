@@ -1,7 +1,6 @@
 import curses
-from typing import Tuple
-from data.record import Record
-from misc.string_manip import fit_string
+
+from typing import Tuple, List
 
 class CursesList:
     def __init__(self, x:int, y:int, l_width: int, l_height: int, items: list, \
@@ -17,7 +16,7 @@ class CursesList:
         self.l_height = l_height
         self.focused = False
         self.index = 0
-        self.items = items
+        self.items: List[str] = items
         self.static_line = static_line
         self.sl_length = len(self.static_line) if static_line else 0
 
@@ -32,6 +31,7 @@ class CursesList:
         the scrollbar size
         """
         self.index = 0
+        self.scroll = 0
         self.items = new_items
         self.__calculate_scrollbar_size()
 
