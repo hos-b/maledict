@@ -13,14 +13,15 @@ def sign(num):
 
 
 class Currency(ABC):
-    _secondary_limit: int = 0
-    _max_secondary_width: int = 0
-    _seperator = '.'
+    secondary_limit: int = 0
+    max_secondary_width: int = 0
+    seperator = '.'
+    symbol: str = ''
 
     def __init__(self, prim, sec) -> None:
-        if sec >= self._secondary_limit:
+        if sec >= self.secondary_limit:
             raise ValueError(
-                f'{self.__class__.__name__} must have a decimal part smaller than {self._secondary_limit}'
+                f'{self.__class__.__name__} must have a decimal part smaller than {self.secondary_limit}'
             )
         sp = sign(prim)
         ss = sign(sec)
@@ -34,10 +35,10 @@ class Currency(ABC):
         sign = '-' if self.is_expense() else '+' * int(use_plus_sign)
         if self._secondary == 0:
             if zero_pad:
-                return f"{sign}{abs(self._primary)}{self._seperator}{'0' * self._max_secondary_width}"
+                return f"{sign}{abs(self._primary)}{self.seperator}{'0' * self.max_secondary_width}"
             return f'{sign}{abs(self._primary)}'
         else:
-            return f"{sign}{abs(self._primary)}{self._seperator}{str(abs(self._secondary)).rjust(self._max_secondary_width, '0')}"
+            return f"{sign}{abs(self._primary)}{self.seperator}{str(abs(self._secondary)).rjust(self.max_secondary_width, '0')}"
 
     def is_expense(self) -> bool:
         if self._primary == 0:
@@ -72,64 +73,64 @@ class Currency(ABC):
         return self.as_str(True)
 
     def __neg__(self):
-        sls = self._primary * self._secondary_limit + self._secondary
+        sls = self._primary * self.secondary_limit + self._secondary
         sls = -sls
         new_obj = copy(self)
-        new_obj._primary = int(sls / self._secondary_limit)
-        new_obj._secondary = (abs(sls) % self._secondary_limit) * sign(sls)
+        new_obj._primary = int(sls / self.secondary_limit)
+        new_obj._secondary = (abs(sls) % self.secondary_limit) * sign(sls)
         return new_obj
 
     def __abs__(self):
-        sls = abs(self._primary * self._secondary_limit + self._secondary)
+        sls = abs(self._primary * self.secondary_limit + self._secondary)
         new_obj = copy(self)
-        new_obj._primary = int(sls / self._secondary_limit)
-        new_obj._secondary = (abs(sls) % self._secondary_limit) * sign(sls)
+        new_obj._primary = int(sls / self.secondary_limit)
+        new_obj._secondary = (abs(sls) % self.secondary_limit) * sign(sls)
         return new_obj
 
     def __add__(self, other: Currency):
         self.__verify_type('+', other)
         other = self.__convert_operand(other)
-        sls = self._primary * self._secondary_limit + self._secondary
-        ots = other._primary * other._secondary_limit + other._secondary
+        sls = self._primary * self.secondary_limit + self._secondary
+        ots = other._primary * other.secondary_limit + other._secondary
         sum_sec = sls + ots
         new_obj = copy(other)
-        new_obj._primary = int(sum_sec / self._secondary_limit)
+        new_obj._primary = int(sum_sec / self.secondary_limit)
         new_obj._secondary = (abs(sum_sec) %
-                              self._secondary_limit) * sign(sum_sec)
+                              self.secondary_limit) * sign(sum_sec)
         return new_obj
 
     def __iadd__(self, other: Currency):
         self.__verify_type('+', other)
         other = self.__convert_operand(other)
-        sls = self._primary * self._secondary_limit + self._secondary
-        ots = other._primary * other._secondary_limit + other._secondary
+        sls = self._primary * self.secondary_limit + self._secondary
+        ots = other._primary * other.secondary_limit + other._secondary
         sum_sec = sls + ots
-        self._primary = int(sum_sec / self._secondary_limit)
+        self._primary = int(sum_sec / self.secondary_limit)
         self._secondary = (abs(sum_sec) %
-                           self._secondary_limit) * sign(sum_sec)
+                           self.secondary_limit) * sign(sum_sec)
         return self
 
     def __sub__(self, other: Currency):
         self.__verify_type('-', other)
         other = self.__convert_operand(other)
-        sls = self._primary * self._secondary_limit + self._secondary
-        ots = -(other._primary * other._secondary_limit + other._secondary)
+        sls = self._primary * self.secondary_limit + self._secondary
+        ots = -(other._primary * other.secondary_limit + other._secondary)
         sum_sec = sls + ots
         new_obj = copy(other)
-        new_obj._primary = int(sum_sec / self._secondary_limit)
+        new_obj._primary = int(sum_sec / self.secondary_limit)
         new_obj._secondary = (abs(sum_sec) %
-                              self._secondary_limit) * sign(sum_sec)
+                              self.secondary_limit) * sign(sum_sec)
         return new_obj
 
     def __isub__(self, other: Currency):
         self.__verify_type('-', other)
         other = self.__convert_operand(other)
-        sls = self._primary * self._secondary_limit + self._secondary
-        ots = -(other._primary * other._secondary_limit + other._secondary)
+        sls = self._primary * self.secondary_limit + self._secondary
+        ots = -(other._primary * other.secondary_limit + other._secondary)
         sum_sec = sls + ots
-        self._primary = int(sum_sec / self._secondary_limit)
+        self._primary = int(sum_sec / self.secondary_limit)
         self._secondary = (abs(sum_sec) %
-                           self._secondary_limit) * sign(sum_sec)
+                           self.secondary_limit) * sign(sum_sec)
         return self
 
     def __lt__(self, other: Currency):
@@ -175,7 +176,7 @@ class Currency(ABC):
         sgn = sign(value)
         value = abs(value)
         prm = int(value)
-        sec = int(round((value - prm) * cls._secondary_limit))
+        sec = int(round((value - prm) * cls.secondary_limit))
         return cls(prm * sgn, sec * sgn)
 
     @classmethod
@@ -185,16 +186,16 @@ class Currency(ABC):
         except:
             raise ValueError(
                 f'{cu_string} is not a valid value for {cls.__name__}')
-        parts = cu_string.split(cls._seperator)
+        parts = cu_string.split(cls.seperator)
         if len(parts) == 1:
             parts.append('0')
         elif len(parts) == 2:
-            if len(parts[1]) > cls._max_secondary_width:
+            if len(parts[1]) > cls.max_secondary_width:
                 raise ValueError(
                     f'{cu_string} is not a valid value for {cls.__name__}')
             # add missing trailing zeros, if any
             if not parts[1].startswith('0'):
-                parts[1] = parts[1] + '0' * (cls._max_secondary_width -
+                parts[1] = parts[1] + '0' * (cls.max_secondary_width -
                                              len(parts[1]))
         else:
             raise ValueError(
@@ -203,8 +204,8 @@ class Currency(ABC):
 
     @property
     def float_value(self):
-        return round(self._primary + self._secondary / self._secondary_limit,
-                     self._max_secondary_width)
+        return round(self._primary + self._secondary / self.secondary_limit,
+                     self.max_secondary_width)
 
     @float_value.setter
     def float_value(self, value):
@@ -212,15 +213,16 @@ class Currency(ABC):
         value = abs(value)
         self._primary = int(value)
         self._secondary = int(
-            round((value - self._primary) * self._secondary_limit))
+            round((value - self._primary) * self.secondary_limit))
         self._primary *= sgn
         self._secondary *= sgn
 
 
 class Euro(Currency):
 
-    _secondary_limit: int = 100
-    _max_secondary_width: int = 2
+    secondary_limit: int = 100
+    max_secondary_width: int = 2
+    symbol: str = '€'
 
     def __init__(self, euro, cent) -> None:
         super().__init__(euro, cent)
@@ -255,8 +257,9 @@ class Euro(Currency):
 
 class Toman(Currency):
 
-    _secondary_limit: int = 10
-    _max_secondary_width: int = 1
+    secondary_limit: int = 10
+    max_secondary_width: int = 1
+    symbol: str = '﷼'
 
     def __init__(self, euro, cent) -> None:
         super().__init__(euro, cent)
