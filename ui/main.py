@@ -143,9 +143,11 @@ class MainWindow(CursesWindow):
         # if not a custom query, just use the account records
         if custom_records is None:
             custom_records = self.account.records
+        whitespace = '\u2066   \u202c' if cfg.application.enable_utf8_support \
+            else '   '
         for record in custom_records:
             # fake LTR whitespace to enforce BiDi consistency
-            str_records.append('\u2066   \u202c'.join(record.to_str_list()))
+            str_records.append(whitespace.join(record.to_str_list()))
             if record.amount.is_income():
                 self.table_income += record.amount
             else:
