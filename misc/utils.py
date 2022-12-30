@@ -114,9 +114,9 @@ def change_datetime(dt: datetime, state: int, substate: int,
 def predict_business(amount: str, biz_temp: str, account: Account):
     # making sure the key is correct
     if '.' not in amount:
-        amount += '.' + '0' * account.currency_type._max_secondary_width
+        amount += '.' + '0' * account.currency_type.max_secondary_width
     else:
-        amount += '0' * (account.currency_type._max_secondary_width -
+        amount += '0' * (account.currency_type.max_secondary_width -
             len(amount.split('.')[1]))
     if not (amount.startswith('+') or amount.startswith('-')):
         amount = '-' + amount
