@@ -191,7 +191,7 @@ def expense(terminal, stdscr):
             # accept & rectify the element, prepare next element
             if error is None:
                 # greek letter to enforce RTL/LTR consistency
-                terminal.command += ' ǁ '
+                terminal.command += ' ǁ ' if cfg.application.enable_utf8_support else ' | '
                 elements[state] = rectify_element(elements[state], state, account)
                 # skip payee for income
                 if state == ExpState.AMOUNT and elements[state][0] == '+':
