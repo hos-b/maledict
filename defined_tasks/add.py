@@ -178,8 +178,9 @@ def expense(terminal, stdscr):
                 terminal.print_history[-1] = str(parsed_record)
                 elements = ['', '', '', '', '', '']
                 terminal.reset_input_field()
-                terminal.append_to_history(get_hint())
                 state = sub_state = 0
+                # state needs to be reset before the hint is displayed
+                terminal.append_to_history(get_hint())
                 terminal.shadow_string = ''
                 terminal.shadow_index = 0
                 terminal.redraw()
