@@ -2,6 +2,8 @@
 # values populated from settings.yaml
 import yaml
 
+__config_path = None
+
 class table:
     index_length: int = None
     amount_length: int = None
@@ -43,17 +45,14 @@ class terminal:
 class application:
     warm_up: bool = None
     use_jdate: bool = None # not the website
+    enable_utf8_support: bool = None
     command_history_file_length: int = None
 
 def update_config(config_path: str):
+    global __config_path
+    __config_path = config_path
     conf_file = open(config_path)
     conf = yaml.load(conf_file, Loader=yaml.FullLoader)
-    table.index_length = conf['table']['index-length']
-    table.amount_length = conf['table']['amount-length']
-    table.category_length = conf['table']['category-length']
-    table.subcategory_length = conf['table']['subcategory-length']
-    table.payee_length = conf['table']['payee-length']
-    table.note_length = conf['table']['note-length']
     table.scrollbar_enable = conf['table']['scrollbar-enable']
     recurring.months = conf['recurring']['months']
     recurring.significance_ratio = conf['recurring']['significance-ratio']
@@ -76,4 +75,25 @@ def update_config(config_path: str):
     terminal.command_history_buffer_length = conf['terminal']['command-history-buffer-length']
     application.warm_up = conf['application']['warm-up']
     application.use_jdate = conf['application']['use-jdate']
+    application.enable_utf8_support = conf['application']['enable-utf8-support']
     application.command_history_file_length = conf['application']['command-history-file-length']
+
+def update_table_sizes(list_width: int):
+    conf_file = open(__config_path)
+    conf = yaml.load(conf_file, Loader=yaml.FullLoader)
+    weight_sum = conf['table']['index-length-percentage'] + \
+                 conf['table']['amount-length-percentage'] + \
+                 conf['table']['category-length-percentage'] + \
+                 conf['table']['subcategory-length-percentage'] + \
+                 conf['table']['payee-length-percentage'] + \
+                 conf['table']['note-length-percentage']
+
+    assert weight_sum <= 100, 'total sum of column percentages exceeds 100'
+
+    total_weight = 100
+    table.index_length = int(list_width * conf['table']['index-length-percentage'] / total_weight)
+    table.amount_length = int(list_width * conf['table']['amount-length-percentage'] / total_weight)
+    table.category_length = int(list_width * conf['table']['category-length-percentage'] / total_weight)
+    table.subcategory_length = int(list_width * conf['table']['subcategory-length-percentage'] / total_weight)
+    table.payee_length = int(list_width * conf['table']['payee-length-percentage'] / total_weight)
+    table.note_length = int(list_width * conf['table']['note-length-percentage'] / total_weight)

@@ -1,11 +1,11 @@
 # transaction table column sizes
 table:
-  index-length: 7
-  amount-length: 10
-  category-length: 20
-  subcategory-length: 20
-  payee-length: 24
-  note-length: 88
+  index-length-percentage: 5
+  amount-length-percentage: 10
+  category-length-percentage: 12
+  subcategory-length-percentage: 12
+  payee-length-percentage: 10
+  note-length-percentage: 30
   scrollbar-enable: true
 
 # recurring transaction settings
@@ -40,4 +40,5 @@ terminal:
 application:
   warm-up: true
   use-jdate: false
+  enable-utf8-support: false
   command-history-file-length: 20

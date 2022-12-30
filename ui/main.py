@@ -30,6 +30,7 @@ class MainWindow(CursesWindow):
         # padding on the sides
         self.list_width = int(w_width - 2)
         self.list_height = int((3 / 4) * self.w_height)
+        cfg.update_table_sizes(self.list_width)
         self.clist = CursesList(
             cfg.main.list_x_offset, cfg.main.list_y_offset,
             self.list_width, self.list_height, [],
