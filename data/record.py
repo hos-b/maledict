@@ -66,11 +66,13 @@ class Record:
             str(self.t_datetime.hour).zfill(2),
             str(self.t_datetime.minute).zfill(2))
         if self.amount.is_income():
-            return '{} on {} under `{}`. notes: {}'.format(self.amount,
-                datetimestr, self.category, self.note)
+            return '{} on {} under `{}`'.format(self.amount,
+                datetimestr, self.category) + f'. notes: `{self.note}`' \
+                    if self.note else ''
         else:
-            return '{} to {} on {} under `{}`. notes: {}'.format(self.amount,
-                self.business, datetimestr, self.category, self.note)
+            return '{} to {} on {} under `{}`'.format(self.amount,
+                self.business, datetimestr, self.category) + \
+                    f'. notes: `{self.note}`' if self.note else ''
     
     @staticmethod
     def columns() -> List[str]:
