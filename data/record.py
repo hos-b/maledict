@@ -65,14 +65,14 @@ class Record:
             str(self.t_datetime.year).zfill(4),
             str(self.t_datetime.hour).zfill(2),
             str(self.t_datetime.minute).zfill(2))
+        record_notes = f'. notes: `{self.note}`' if self.note else ''
         if self.amount.is_income():
             return '{} on {} under `{}`'.format(self.amount,
-                datetimestr, self.category) + f'. notes: `{self.note}`' \
-                    if self.note else ''
+                datetimestr, self.category) + record_notes
         else:
             return '{} to {} on {} under `{}`'.format(self.amount,
                 self.business, datetimestr, self.category) + \
-                    f'. notes: `{self.note}`' if self.note else ''
+                    record_notes
     
     @staticmethod
     def columns() -> List[str]:
