@@ -120,7 +120,7 @@ class TerminalWindow(CursesWindow):
         while len(cmd_args) != 0:
             parsed += cmd_args[0] + ' '
             if cmd_args[0] not in current_lvl:
-                return [f'unknown command: {parsed}']
+                return [f'{parsed}: command not found']
             # go one level deeper
             current_lvl = current_lvl[cmd_args[0]]
             cmd_args.pop(0)
@@ -293,12 +293,28 @@ class TerminalWindow(CursesWindow):
         pred_candidates = []
         current_lvl = self.command_dict
         pred_offset = 0
+        # add account names as extra candidates for prediction
+        acn_candidates = []
+        if len(cmd_args) <= 3 and (current_cmd.startswith('set account') or
+                                   current_cmd.startswith('delete account')):
+            acn_candidates = self.database.list_tables()
+            acn_candidates.remove('currencies')
         # parsing the command
         while len(cmd_args) != 0:
             # go one level deeper, if the segment is complete and correct
             if cmd_args[0] in current_lvl:
                 # too deep, no predictions
                 if 'task-id' in current_lvl[cmd_args[0]]:
+                    if len(acn_candidates) != 0:
+                        # check if an account name can be predicted
+                        if len(cmd_args) == 1:
+                            pred_candidates = acn_candidates
+                        else:
+                            for candidate in acn_candidates:
+                                # [:-1] prevents using fully entered names
+                                if candidate[:-1].startswith(cmd_args[-1]):
+                                    pred_candidates.append(candidate)
+                                pred_offset = len(cmd_args[-1])
                     break
                 current_lvl = current_lvl[cmd_args[0]]
                 if len(cmd_args) == 1:
