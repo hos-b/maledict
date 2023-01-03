@@ -1,5 +1,5 @@
 # Maledict
-ncurses-based expense tracker
+curses-based expense tracker
 
 ## requirements
 - python
