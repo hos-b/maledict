@@ -40,8 +40,7 @@ def expense(terminal, stdscr, index: str):
         f"editing record 0x{hex(transaction_id)[2:].zfill(6)}:"
         f"{pre_amount_str} on {tr_date.isoformat(' ')} to {org_record.business}"
     )
-    terminal.command = ''
-    terminal.cursor_x = 0
+    terminal.reset_input_field()
     sub_element_start = {ExpState.DATE: [0, 5, 8], ExpState.TIME: [0, 3]}
     sub_element_length = {ExpState.DATE: [4, 2, 2], ExpState.TIME: [2, 2]}
     element_hint = ['amount', 'payee', 'category', 'date', 'time', 'note']

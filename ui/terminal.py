@@ -153,7 +153,7 @@ class TerminalWindow(CursesWindow):
         elif task_id == 402:
             return defined_tasks.parse.maledict(self, stdscr, *cmd_args)
         elif task_id == 501:
-            return defined_tasks.delete.account(self, *cmd_args)
+            return defined_tasks.delete.account(self, stdscr, *cmd_args)
         elif task_id == 502:
             return defined_tasks.delete.expense(self.windows[WinID.Main], *cmd_args)
         elif 600 <= task_id < 700:
