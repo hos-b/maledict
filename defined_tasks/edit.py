@@ -115,6 +115,7 @@ def expense(terminal, stdscr, index: str):
             terminal.reset_input_field()
             terminal.print_history[-1] = 'press ctrl + c again to exit edit mode'
             terminal.append_to_history(get_hint())
+            update_predictions(org_record, True)
             terminal.redraw()
             continue
         except:
@@ -131,6 +132,7 @@ def expense(terminal, stdscr, index: str):
             terminal.shadow_index = 0
             terminal.print_history[-1] = 'press escape again to exit expense mode'
             terminal.append_to_history(get_hint())
+            update_predictions(org_record, True)
             terminal.redraw()
             continue
         # backspace, del --------------------------------------------------------------
