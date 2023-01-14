@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta
-
 import data.config as cfg
+
+from datetime import datetime, timedelta
 
 from data.currency import Currency, supported_currencies
 from data.sqlite_proxy import SQLiteProxy
@@ -42,7 +42,8 @@ class Account:
         changes. if update is set to true, the dicts of the object are
         also updated.
         """
-        # if all transactions are being loaded, update balance [i can't regex enough]
+        
+        # if all transactions are being loaded, update balance [regex is overkill]
         update_balance = query.lower().startswith(f'select * from {self.name}') and \
                          query.lower().count(' where ') == 0
         if update_balance:

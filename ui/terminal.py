@@ -207,8 +207,13 @@ class TerminalWindow(CursesWindow):
                 return input_char
             # escape = interrupt ----------------------------------------------------------
             if input_char == '\x1b':
-                if ec_interrupt or self.command == '':
+                custom_query = self.windows[WinID.Main].table_label != 'all transactions'
+                if ec_interrupt or (self.command == '' and not custom_query):
                     return curses.KEY_F50
+                if custom_query:
+                    self.windows[WinID.Main].account.query_transactions(
+                        self.windows[WinID.Main].account.full_query, False)
+                    self.windows[WinID.Main].refresh_table_records('all transactions')
                 ec_interrupt = True
                 self.vscroll = 0
                 self.history_surf_index = 0

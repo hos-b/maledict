@@ -1,4 +1,5 @@
 import curses
+import curses.ascii
 
 from datetime import datetime
 from typing import List
@@ -164,7 +165,6 @@ class MainWindow(CursesWindow):
                 input_char = stdscr.getch()
             except KeyboardInterrupt:
                 return curses.KEY_F50
-
             if CursesWindow.is_exit_sequence(input_char):
                 return input_char
             if input_char == curses.KEY_UP:
@@ -179,6 +179,13 @@ class MainWindow(CursesWindow):
             elif input_char == curses.KEY_NPAGE:
                 self.clist.scroll_page_down()
                 self.redraw()
+            elif input_char == curses.ascii.ESC:
+                if self.table_label != 'all transactions':
+                    self.account.query_transactions(self.account.full_query, False)
+                    self.refresh_table_records('all transactions')
+                    self.redraw()
+                else:
+                    return curses.KEY_F50
             elif input_char == ord('\n') or input_char == curses.KEY_ENTER:
                 # actions are disabled in query mode
                 if not self.disable_actions:
