@@ -37,9 +37,7 @@ def expense(terminal, stdscr, index: str):
     tr_date = org_record.t_datetime
     # basic intialization
     terminal.append_to_history(
-        f"editing record 0x{hex(transaction_id)[2:].zfill(6)}:"
-        f"{pre_amount_str} on {tr_date.isoformat(' ')} to {org_record.business}"
-    )
+        f'editing record 0x{hex(transaction_id)[2:].zfill(6)}')
     terminal.reset_input_field()
     sub_element_start = {ExpState.DATE: [0, 5, 8], ExpState.TIME: [0, 3]}
     sub_element_length = {ExpState.DATE: [4, 2, 2], ExpState.TIME: [2, 2]}
@@ -158,7 +156,8 @@ def expense(terminal, stdscr, index: str):
                 terminal.windows[WinID.Main].update_table_statistics(
                     org_record.amount, parsed_record.amount)
                 terminal.windows[WinID.Main].redraw()
-                terminal.command = ''
+                terminal.print_history[-1] = str(parsed_record)
+                terminal.reset_input_field()
                 terminal.shadow_string = ''
                 terminal.shadow_index = 0
                 terminal.redraw()
