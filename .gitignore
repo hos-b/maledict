@@ -6,3 +6,4 @@ database/.command_history
 database/maledict.db
 database/maledict.db.bak
 database/.maledictrc
+database/backups

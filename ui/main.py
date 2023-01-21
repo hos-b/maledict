@@ -87,8 +87,8 @@ class MainWindow(CursesWindow):
         if self.account is None:
             self.clist.change_items([])
             self.table_label = 'nothing'
-            self.table_income = account.currency_type(0, 0)
-            self.table_expense = account.currency_type(0, 0)
+            self.table_income = None
+            self.table_expense = None
         else:
             self.refresh_table_records('all transactions')
 

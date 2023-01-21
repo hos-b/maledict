@@ -13,9 +13,11 @@ from data.sqlite_proxy import SQLiteProxy
 from misc.statics import WinID, KeyCombo
 from ui.base import CursesWindow
 
+
 class TerminalWindow(CursesWindow):
-    def __init__(self, stdscr, w_x, w_y, w_width, w_height,
-                 windows: list, database: SQLiteProxy):
+
+    def __init__(self, stdscr, w_x, w_y, w_width, w_height, windows: list,
+                 database: SQLiteProxy):
         super().__init__(stdscr, w_x, w_y, w_width, w_height)
 
         # good stuff
@@ -73,30 +75,31 @@ class TerminalWindow(CursesWindow):
         visible_history = min(len(self.print_history), self.w_height - 3)
         visible_history += self.vscroll
         # disable cursor if scrolling
-        curses.curs_set(int(self.vscroll == 0 and self.focused and 
-            not self.reverse_text_enable))
+        curses.curs_set(
+            int(self.vscroll == 0 and self.focused
+                and not self.reverse_text_enable))
         curses_attr = curses.A_NORMAL if self.focused else curses.A_DIM
-        for i in range (self.w_height - 2):
+        for i in range(self.w_height - 2):
             if visible_history == 0:
                 self.cwindow.addstr(i + 1, 2, '>>> ', curses_attr)
                 if self.shadow_string != '':
-                    self.cwindow.addstr(i + 1, 6 + self.shadow_index, 
-                        self.shadow_string, curses.A_DIM)
+                    self.cwindow.addstr(i + 1, 6 + self.shadow_index,
+                                        self.shadow_string, curses.A_DIM)
                 if self.reverse_text_enable:
                     pre = self.command[:self.rtext_start]
                     mid = self.command[self.rtext_start:self.rtext_end]
                     pos = self.command[self.rtext_end:]
                     self.cwindow.addstr(i + 1, 6, pre, curses_attr)
                     self.cwindow.addstr(i + 1, 6 + len(pre), mid,
-                        curses_attr | curses.A_STANDOUT)
-                    self.cwindow.addstr(i + 1, 6 + len(pre) + len(mid),
-                        pos, curses_attr)
+                                        curses_attr | curses.A_STANDOUT)
+                    self.cwindow.addstr(i + 1, 6 + len(pre) + len(mid), pos,
+                                        curses_attr)
                 else:
                     self.cwindow.addstr(i + 1, 6, self.command, curses_attr)
                 self.cwindow.move(i + 1, self.cursor_x + 6)
                 break
             self.cwindow.addstr(i + 1, 2, self.print_history[-visible_history],
-                curses_attr)
+                                curses_attr)
             visible_history -= 1
         self.cwindow.box()
         self.cwindow.refresh()
@@ -115,7 +118,9 @@ class TerminalWindow(CursesWindow):
         task_id = -1
         # looking for all commands?
         if len(cmd_args) == 1 and re.match(r'(help|\?)', cmd_args[0]):
-            return ['available commands: ' + ', '.join(self.command_dict.keys())]
+            return [
+                'available commands: ' + ', '.join(self.command_dict.keys())
+            ]
         # parsing the command
         while len(cmd_args) != 0:
             parsed += cmd_args[0] + ' '
@@ -133,12 +138,18 @@ class TerminalWindow(CursesWindow):
                 return ['available commands: ' + ', '.join(current_lvl.keys())]
 
         # looking for help at last level?
-        if len(cmd_args) == 1 and re.match(r'^(help|\?|--help|-h)$', cmd_args[0]):
+        if len(cmd_args) == 1 and re.match(r'^(help|\?|--help|-h)$',
+                                           cmd_args[0]):
             return [current_lvl['desc'] + f", args: {current_lvl['args']}"]
         # wrong number of args
         elif len(cmd_args) != len(current_lvl['args']):
-            args = [f'[{key}: {value}]' for key, value in current_lvl['args'].items()]
-            return [f"invalid number of args ({len(cmd_args)}): {', '.join(args)}"]
+            args = [
+                f'[{key}: {value}]'
+                for key, value in current_lvl['args'].items()
+            ]
+            return [
+                f"invalid number of args ({len(cmd_args)}): {', '.join(args)}"
+            ]
         # actually doing the task
         if task_id == 101:
             return defined_tasks.add.account(self.database, *cmd_args)
@@ -146,6 +157,8 @@ class TerminalWindow(CursesWindow):
             return defined_tasks.add.expense(self, stdscr)
         elif task_id == 201:
             return defined_tasks.list.accounts(self.database)
+        elif task_id == 202:
+            return defined_tasks.list.backups(self.database, False)
         elif task_id == 301:
             return defined_tasks.set.account(self, *cmd_args)
         elif task_id == 401:
@@ -155,19 +168,37 @@ class TerminalWindow(CursesWindow):
         elif task_id == 501:
             return defined_tasks.delete.account(self, stdscr, *cmd_args)
         elif task_id == 502:
-            return defined_tasks.delete.expense(self.windows[WinID.Main], *cmd_args)
+            return defined_tasks.delete.expense(
+                self.windows[WinID.Main],
+                *cmd_args,
+            )
+        elif task_id == 503:
+            return defined_tasks.delete.backup(self, stdscr, *cmd_args)
         elif 600 <= task_id < 700:
-            return defined_tasks.show.records(task_id, current_lvl['sql-query'], cmd_args, self.windows[WinID.Main])
+            return defined_tasks.show.records(
+                task_id,
+                current_lvl['sql-query'],
+                cmd_args,
+                self.windows[WinID.Main],
+            )
         elif task_id == 701:
-            return defined_tasks.export.csv(self.windows[WinID.Main].account, *cmd_args)
+            return defined_tasks.export.csv(
+                self.windows[WinID.Main].account,
+                *cmd_args,
+            )
         elif task_id == 801:
             return defined_tasks.edit.expense(self, stdscr, *cmd_args)
         elif task_id == 901:
             return defined_tasks.query.sqlite(self, stdscr)
+        elif task_id == 1001:
+            return defined_tasks.save.backup(self.database)
+        elif task_id == 1101:
+            return defined_tasks.load.backup(self, self.database, *cmd_args)
         elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()
-            self.write_command_history(cfg.application.command_history_file_length)
+            self.write_command_history(
+                cfg.application.command_history_file_length)
             exit()
         elif task_id == 100002:
             self.print_history.clear()
@@ -207,13 +238,15 @@ class TerminalWindow(CursesWindow):
                 return input_char
             # escape = interrupt ----------------------------------------------------------
             if input_char == '\x1b':
-                custom_query = self.windows[WinID.Main].table_label != 'all transactions'
+                custom_query = self.windows[
+                    WinID.Main].table_label != 'all transactions'
                 if ec_interrupt or (self.command == '' and not custom_query):
                     return curses.KEY_F50
                 if custom_query:
                     self.windows[WinID.Main].account.query_transactions(
                         self.windows[WinID.Main].account.full_query, False)
-                    self.windows[WinID.Main].refresh_table_records('all transactions')
+                    self.windows[WinID.Main].refresh_table_records(
+                        'all transactions')
                 ec_interrupt = True
                 self.vscroll = 0
                 self.history_surf_index = 0
@@ -339,7 +372,7 @@ class TerminalWindow(CursesWindow):
         pred_candidates.sort(key=len)
         return pred_candidates, pred_offset
 
-    def write_command_history(self, count = 20):
+    def write_command_history(self, count=20):
         """
         write last x commands to ./database/.command_history
         """
@@ -376,7 +409,8 @@ class TerminalWindow(CursesWindow):
                 self.append_to_history(self.parse_and_execute(None))
                 self.command = ''
             except Exception as e:
-                self.append_to_history(f'could not run warmup commands `{cmd}`: {e}')
+                self.append_to_history(
+                    f'could not run warmup commands `{cmd}`: {e}')
                 self.command = ''
                 break
 
@@ -411,7 +445,8 @@ class TerminalWindow(CursesWindow):
                                  ' AND g2.subcategory = g1.subcategory '
                 sql_query = query_pre + query_cond + query_post
                 self.append_to_history(
-                    defined_tasks.show.records(666, sql_query, [self.pending_tr_id],
+                    defined_tasks.show.records(666, sql_query,
+                                               [self.pending_tr_id],
                                                self.windows[WinID.Main]))
             # reset
             self.history_surf_index = 0
@@ -440,7 +475,7 @@ class TerminalWindow(CursesWindow):
         elif isinstance(strings, list):
             self.print_history += strings
 
-    def scroll(self, up_down: int, reserved_lines = 3):
+    def scroll(self, up_down: int, reserved_lines=3):
         """
         scrolls print history up or down by a number.
         """
@@ -455,8 +490,8 @@ class TerminalWindow(CursesWindow):
         else:
             raise NotImplementedError('nah')
         self.redraw()
-            
-    def scroll_page_up(self, reserved_lines = 3):
+
+    def scroll_page_up(self, reserved_lines=3):
         """
         goes one page up in the print history
         """
@@ -543,7 +578,7 @@ class TerminalWindow(CursesWindow):
         if self.history_surf_index == 0:
             self.cmd_history_buffer = self.command
         self.history_surf_index = min(self.history_surf_index + 1,
-                                        len(self.command_history))
+                                      len(self.command_history))
         self.command = self.command_history[-self.history_surf_index]
         self.cursor_x = len(self.command)
         self.redraw()
@@ -589,7 +624,7 @@ class TerminalWindow(CursesWindow):
                         self.command[self.cursor_x + 1:]
         if redraw:
             self.redraw()
-    
+
     def insert_char(self, input_char, redraw: bool = True):
         """
         appends a character at the current cursor location
@@ -611,3 +646,57 @@ class TerminalWindow(CursesWindow):
         self.vscroll = 0
         if redraw:
             self.redraw()
+
+    def get_prompt(self, stdscr, prompt_message: str, interrupt_message: str,
+                   prompt_dict: dict, casefold_compare: bool):
+        self.reset_input_field()
+        self.append_to_history(prompt_message)
+        self.redraw()
+        while True:
+            try:
+                input_char = stdscr.get_wch()
+            except KeyboardInterrupt:
+                self.append_to_history()
+                self.redraw()
+                self.append_to_history(interrupt_message)
+                return None
+            except:
+                self.append_to_history('unexpected error encountered')
+                return None
+            # escape = interrupt ----------------------------------------------------------
+            if input_char == '\x1b':
+                self.append_to_history(interrupt_message)
+                return None
+            # backspace, del --------------------------------------------------------------
+            elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
+                self.delete_previous_char()
+            elif input_char == curses.KEY_DC:
+                self.delete_next_char()
+            # submit ----------------------------------------------------------------------
+            elif input_char == curses.KEY_ENTER or input_char == '\n':
+                cmd = self.command.casefold(
+                ) if casefold_compare else self.command
+                for key, key_list in prompt_dict.items():
+                    if cmd in key_list:
+                        self.append_to_history(f'>>> {self.command}')
+                        self.reset_input_field()
+                        self.redraw()
+                        return key
+                self.append_to_history(f'unexpected input {self.command}')
+                self.reset_input_field()
+                self.redraw()
+            # cursor shift ----------------------------------------------------------------
+            elif input_char == curses.KEY_LEFT:
+                self.cursor_move_left()
+            elif input_char == curses.KEY_RIGHT:
+                self.cursor_move_right()
+            elif input_char == KeyCombo.CTRL_LEFT:
+                self.cursor_jump_left()
+            elif input_char == KeyCombo.CTRL_RIGHT:
+                self.cursor_jump_right()
+            elif input_char == curses.KEY_HOME:
+                self.cursor_jump_start()
+            elif input_char == curses.KEY_END:
+                self.cursor_jump_end()
+            else:
+                self.insert_char(input_char)

@@ -1,66 +1,25 @@
-import curses
+import os
 
 from sqlite3 import OperationalError as SQLiteOperationalError
 
+from data.sqlite_proxy import SQLiteProxy
 from misc.statics import WinID, KeyCombo
+from .list import backups as list_backup_files
 
 
 def account(terminal, stdscr, name: str) -> str:
-    terminal.reset_input_field()
-    terminal.append_to_history(
-        f'delete {name} and all its transactions? '
-          'this operation can >>NOT<< be reverted')
-    terminal.redraw()
-    delete_flag = False
-    while True:
-        try:
-            input_char = stdscr.get_wch()
-        except KeyboardInterrupt:
-            terminal.append_to_history()
-            terminal.redraw()
-            return ['account deletion canceled']
-        except:
-            return ['unexpected error encountered']
-        # escape = interrupt ----------------------------------------------------------
-        if input_char == '\x1b':
-            return ['account deletion canceled']
-        # backspace, del --------------------------------------------------------------
-        elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
-            terminal.delete_previous_char()
-        elif input_char == curses.KEY_DC:
-            terminal.delete_next_char()
-        # submit ----------------------------------------------------------------------
-        elif input_char == curses.KEY_ENTER or input_char == '\n':
-            if terminal.command.lower() in ['y', 'yes', '1', 'true']:
-                terminal.append_to_history(f'>>> {terminal.command}')
-                terminal.reset_input_field()
-                delete_flag = True
-                break
-            elif terminal.command.lower() in ['n', 'no', '0', 'false']:
-                terminal.append_to_history(f'>>> {terminal.command}')
-                terminal.reset_input_field()
-                delete_flag = False
-                break
-            else:
-                terminal.append_to_history(f'unexpected input {terminal.command}')
-                terminal.reset_input_field()
-            terminal.redraw()
-        # cursor shift ----------------------------------------------------------------
-        elif input_char == curses.KEY_LEFT:
-            terminal.cursor_move_left()
-        elif input_char == curses.KEY_RIGHT:
-            terminal.cursor_move_right()
-        elif input_char == KeyCombo.CTRL_LEFT:
-            terminal.cursor_jump_left()
-        elif input_char == KeyCombo.CTRL_RIGHT:
-            terminal.cursor_jump_right()
-        elif input_char == curses.KEY_HOME:
-            terminal.cursor_jump_start()
-        elif input_char == curses.KEY_END:
-            terminal.cursor_jump_end()
-        else:
-            terminal.insert_char(input_char)
-
+    prompt_message = f'delete {name} and all its transactions? ' \
+                      'this operation can >>NOT<< be reverted'
+    delete_flag = terminal.get_prompt(
+        stdscr,
+        prompt_message,
+        'account deletion canceled',
+        {
+            True: ['y', 'yes', '1', 'true'],
+            False: ['n', 'no', '0', 'false'],
+        },
+        True,
+    )
     if delete_flag:
         try:
             terminal.database.delete_account(name)
@@ -75,6 +34,7 @@ def account(terminal, stdscr, name: str) -> str:
         return [f'successfully deleted {name}']
     else:
         return ['account deletion canceled']
+
 
 def expense(main_window, index: str) -> str:
     try:
@@ -95,3 +55,33 @@ def expense(main_window, index: str) -> str:
     main_window.account.delete_transaction(transaction_id)
     main_window.delete_table_row(list_index)
     return ['expense deleted successfully']
+
+
+def backup(terminal, stdscr, backup_id: str):
+    try:
+        bak_id = int(backup_id)
+    except:
+        return [f'{backup_id} is not a valid integer']
+    bak_str_list, bak_files = list_backup_files(terminal.database, True)
+    if bak_id > len(bak_files):
+        return [f'cannot find backup file #{bak_id}']
+    prompt_message = f'delete backup {bak_str_list[bak_id - 1]}? ' \
+                      'this operation can >>NOT<< be reverted'
+    delete_flag = terminal.get_prompt(
+        stdscr,
+        prompt_message,
+        'backup deletion canceled',
+        {
+            True: ['y', 'yes', '1', 'true'],
+            False: ['n', 'no', '0', 'false'],
+        },
+        True,
+    )
+    if delete_flag:
+        try:
+            os.remove(bak_files[bak_id - 1])
+        except Exception as e:
+            return [f'faield to remove backup: {e}']
+        return [f'removed backup file {bak_files[bak_id - 1]}']
+    return [f'backup deletion canceled']
+

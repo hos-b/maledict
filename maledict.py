@@ -12,7 +12,7 @@ from data.sqlite_proxy import SQLiteProxy
 
 def main(stdscr):
     # getting screen data
-    stdscr.addstr(0, 1, 'Maledict [version: 1.1.1]')
+    stdscr.addstr(0, 1, 'Maledict [version: 1.2.0]')
     stdscr.keypad(True)
 
     screen_width = curses.COLS - 1

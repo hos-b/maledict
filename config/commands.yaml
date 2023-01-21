@@ -15,6 +15,10 @@ list:
     args: {}
     desc: 'list all the accounts'
     task-id: 201
+  backups:
+    args: {}
+    desc: 'list all backups'
+    task-id: 202
 
 # set commands
 set:
@@ -44,6 +48,10 @@ delete:
     args: {'transaction-id': 'int'}
     desc: 'delete a transaction given its hex transaction id'
     task-id: 502
+  backup:
+    args: {'backup-id': 'int'}
+    desc: 'delete a backup file given its id'
+    task-id: 503
 
 # show commands
 show:
@@ -116,3 +124,17 @@ clear:
   args: {}
   desc: 'clear the terminal'
   task-id: 100002
+
+# save commands
+save:
+  backup:
+    args: {}
+    desc: 'create backup of the database'
+    task-id: 1001
+
+# load commands
+load:
+  backup:
+    args: {'backup-id': 'int'}
+    desc: 'load a backup of the database, given its id'
+    task-id: 1101

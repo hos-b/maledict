@@ -126,6 +126,7 @@ class SQLiteProxy:
         self.connection = None
 
     def db_open(self, db_file: str):
+        self.file_path = db_file
         try:
             self.connection = sqlite3.connect(db_file)
             print(f'sqlite3.version: {sqlite3.version}')
