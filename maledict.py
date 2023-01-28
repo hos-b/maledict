@@ -46,8 +46,7 @@ def main(stdscr):
 
     # initially disable cursor
     curses.curs_set(False)
-    # 0 = overview, 1 = actions, 2 = cmd
-    active_window = 2
+    active_window = WinID.Terminal
 
     while True:
         windows[active_window].focus(True)
@@ -56,14 +55,14 @@ def main(stdscr):
 
         # changing window focus
         if break_char == curses.KEY_F1:
-            # focus window 0 (main)
-            active_window = 0
+            # focus main window
+            active_window = WinID.Main
         elif break_char == curses.KEY_F2:
-            # focus window 2 (terminal)
-            active_window = 2
+            # focus terminal window
+            active_window = WinID.Terminal
         elif break_char == curses.KEY_F60:
-            # focus window 1 (actions)
-            active_window = 1
+            # focus actions window
+            active_window = WinID.Action
         elif break_char == curses.KEY_F50:
             database.connection.commit()
             database.db_close()
