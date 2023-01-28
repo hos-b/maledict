@@ -3,6 +3,7 @@ import os
 import yaml
 import time
 import curses
+import traceback
 
 from typing import Union, List
 
@@ -410,7 +411,9 @@ class TerminalWindow(CursesWindow):
                 self.command = ''
             except Exception as e:
                 self.append_to_history(
-                    f'could not run warmup commands `{cmd}`: {e}')
+                    'could not run warmup commands `{}`: {}', cmd, e)
+                if cfg.application.stack_trace_on_warmup_error:
+                    self.append_to_history(traceback.format_exc().split('\n')[:-1])
                 self.command = ''
                 break
 

@@ -47,6 +47,7 @@ class application:
     use_jdate: bool = None # not the website
     enable_utf8_support: bool = None
     command_history_file_length: int = None
+    stack_trace_on_warmup_error: bool = None
 
 def update_config(config_path: str):
     global __config_path
@@ -77,6 +78,7 @@ def update_config(config_path: str):
     application.use_jdate = conf['application']['use-jdate']
     application.enable_utf8_support = conf['application']['enable-utf8-support']
     application.command_history_file_length = conf['application']['command-history-file-length']
+    application.stack_trace_on_warmup_error = conf['application']['stack-trace-on-warmup-error']
 
 def update_table_sizes(list_width: int):
     conf_file = open(__config_path)

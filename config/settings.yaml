@@ -42,3 +42,4 @@ application:
   use-jdate: false
   enable-utf8-support: false
   command-history-file-length: 20
+  stack-trace-on-warmup-error: true
