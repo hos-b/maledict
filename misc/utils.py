@@ -73,7 +73,8 @@ def change_datetime(dt: datetime, state: int, substate: int,
         if substate == 0:
             if cfg.application.use_jdate:
                 jdt = jdatetime.datetime.fromgregorian(datetime=dt)
-                return jdt.replace(year=max(0, jdt.year + change)).togregorian()
+                return jdt.replace(year=max(0, jdt.year +
+                                            change)).togregorian()
             return dt.replace(year=max(0, dt.year + change))
         # month
         elif substate == 1:
@@ -82,8 +83,8 @@ def change_datetime(dt: datetime, state: int, substate: int,
                 new_jmonth = max(1, min(jdt.month + change, 12))
                 max_jday = 31 - int(new_jmonth > 6) - \
                     int(new_jmonth == 12 and not jdt.isleap())
-                return jdt.replace(month=new_jmonth, 
-                    day=min(jdt.day, max_jday)).togregorian()
+                return jdt.replace(month=new_jmonth,
+                                   day=min(jdt.day, max_jday)).togregorian()
             new_month = max(1, min(dt.month + change, 12))
             max_day = monthrange(dt.year, new_month)[1]
             return dt.replace(month=new_month, day=min(dt.day, max_day))
@@ -117,7 +118,7 @@ def predict_business(amount: str, biz_temp: str, account: Account):
         amount += '.' + '0' * account.currency_type.max_secondary_width
     else:
         amount += '0' * (account.currency_type.max_secondary_width -
-            len(amount.split('.')[1]))
+                         len(amount.split('.')[1]))
     if not (amount.startswith('+') or amount.startswith('-')):
         amount = '-' + amount
     if amount in account.recurring_amounts and \
@@ -139,10 +140,12 @@ def predict_business(amount: str, biz_temp: str, account: Account):
 
 
 def predict_category(business: str, cat_temp: str, account: Account):
-    if business in account.recurring_biz and \
-       cat_temp.casefold() == account.recurring_biz[business].subcategory.casefold():
-        return account.recurring_biz[business].subcategory, \
-               account.recurring_biz[business]
+    if business in account.recurring_biz:
+        recurring_str = account.recurring_biz[business].subcategory
+        if recurring_str == '':
+            recurring_str = account.recurring_biz[business].category
+        if recurring_str.casefold().startswith(cat_temp.casefold()):
+            return recurring_str, account.recurring_biz[business]
     elif cat_temp != '':
         predictions = []
         for key in account.categories:
@@ -200,9 +203,8 @@ def parse_expense(elements: list, dt: datetime, account: Account) -> Record:
         cat = account.subcategories[elements[ExpState.CATEGORY]]
         subcat = elements[ExpState.CATEGORY]
     amount = account.currency_type.from_str(elements[ExpState.AMOUNT])
-    return Record(dt.replace(microsecond=0), amount,
-        cat, subcat, elements[ExpState.BUSINESS],
-        elements[ExpState.NOTE])
+    return Record(dt.replace(microsecond=0), amount, cat, subcat,
+                  elements[ExpState.BUSINESS], elements[ExpState.NOTE])
 
 
 def sign(num):

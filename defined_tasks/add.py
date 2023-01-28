@@ -91,7 +91,8 @@ def expense(terminal, stdscr):
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f' {element_hint[state]}:'
 
-    def update_predictions(predicted_record: Record, force_update: bool):
+    def update_predictions(force_new_prediction: bool):
+        global predicted_record
         if state == ExpState.BUSINESS:
             terminal.shadow_string, predicted_record = predict_business(
                 elements[ExpState.AMOUNT],
@@ -99,8 +100,10 @@ def expense(terminal, stdscr):
                 account)
             terminal.shadow_index = element_start[ExpState.BUSINESS]
         elif state == ExpState.CATEGORY:
-            if not force_update and predicted_record is not None:
-                terminal.shadow_string = predicted_record.subcategory
+            if not force_new_prediction and predicted_record is not None:
+                terminal.shadow_string = predicted_record.subcategory \
+                    if predicted_record.subcategory != '' \
+                    else predicted_record.category
                 terminal.shadow_index = element_start[ExpState.CATEGORY]
                 return
             terminal.shadow_string, predicted_record = predict_category(
@@ -155,12 +158,12 @@ def expense(terminal, stdscr):
         elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if input_allowed():
                 terminal.delete_previous_char(element_start[state], False)
-                update_predictions(predicted_record, True)
+                update_predictions(True)
                 terminal.redraw()
         elif input_char == curses.KEY_DC:
             if input_allowed():
                 terminal.delete_next_char(False)
-                update_predictions(predicted_record, True)
+                update_predictions(True)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == '\n':
@@ -218,7 +221,7 @@ def expense(terminal, stdscr):
                     terminal.reverse_text_enable = False
                     terminal.cursor_x = len(terminal.command)
                 terminal.print_history[-1] = get_hint()
-                update_predictions(predicted_record, False)
+                update_predictions(False)
             # reject & reset input
             else:
                 elements[state] = ''
@@ -328,7 +331,7 @@ def expense(terminal, stdscr):
         # normal input ----------------------------------------------------------------
         elif input_allowed():
             terminal.insert_char(input_char, False)
-            update_predictions(predicted_record, True)
+            update_predictions(True)
             terminal.redraw()
 
     account.flush_transactions()
