@@ -36,7 +36,7 @@ def account(terminal, stdscr, name: str) -> str:
         return ['account deletion canceled']
 
 
-def expense(main_window, index: str) -> str:
+def transaction(main_window, index: str) -> str:
     try:
         transaction_id = int(index, 16)
     except ValueError:
@@ -54,7 +54,7 @@ def expense(main_window, index: str) -> str:
         main_window.account.currency_type(0, 0))
     main_window.account.delete_transaction(transaction_id)
     main_window.delete_table_row(list_index)
-    return ['expense deleted successfully']
+    return ['transaction deleted successfully']
 
 
 def backup(terminal, stdscr, backup_id: str):

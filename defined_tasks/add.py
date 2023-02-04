@@ -11,7 +11,7 @@ from misc.utils import check_input
 from misc.utils import predict_business, predict_category
 from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element 
-from misc.utils import parse_expense, ExpState
+from misc.utils import parse_transaction, ExpState
 from data.account import Account
 from data.record import Record
 from data.currency import supported_currencies
@@ -59,14 +59,14 @@ def account(database: SQLiteProxy, name: str, initial_balance: str, currency_nam
 
     return [f'successfully added {name} with {initial_balance} initial balance']
 
-def expense(terminal, stdscr):
+def transaction(terminal, stdscr):
     account: Account = terminal.windows[WinID.Main].account
     # exception handling
     if account == None:
         return ['current account not set']
     if stdscr is None:
-        return ['cannot add expenses in warmup mode']
-    terminal.append_to_history('expense mode activated')
+        return ['cannot add transactions in warmup mode']
+    terminal.append_to_history('transaction mode activated')
     terminal.reset_input_field()
     curses.curs_set(1)
     tr_date = datetime.now()
@@ -134,7 +134,8 @@ def expense(terminal, stdscr):
             terminal.reset_input_field()
             terminal.shadow_string = ''
             terminal.shadow_index = 0
-            terminal.print_history[-1] = 'press ctrl + c again to exit expense mode'
+            terminal.print_history[-1] = \
+                'press ctrl + c again to exit transaction mode'
             terminal.append_to_history(get_hint())
             terminal.redraw()
             continue
@@ -150,7 +151,7 @@ def expense(terminal, stdscr):
             terminal.reset_input_field()
             terminal.shadow_string = ''
             terminal.shadow_index = 0
-            terminal.print_history[-1] = 'press escape again to exit expense mode'
+            terminal.print_history[-1] = 'press escape again to exit transaction mode'
             terminal.append_to_history(get_hint())
             terminal.redraw()
             continue
@@ -171,9 +172,9 @@ def expense(terminal, stdscr):
             elements[state] = terminal.command[element_start[state]:
                                                element_end[state] + 1].strip()
             terminal.redraw()
-            # adding the expense
+            # adding the transaction
             if state == ExpState.NOTE:
-                parsed_record = parse_expense(elements, tr_date, account)
+                parsed_record = parse_transaction(elements, tr_date, account)
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
                 account.add_transaction(parsed_record)
                 account.query_transactions(account.full_query, False)
@@ -337,4 +338,4 @@ def expense(terminal, stdscr):
     account.flush_transactions()
     terminal.shadow_string = ''
     terminal.shadow_index = 0
-    return ['expense mode deactivated']
+    return ['transaction mode deactivated']

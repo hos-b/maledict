@@ -35,7 +35,7 @@ def records(task_id: int, sql_query: str, args: list,  main_window: MainWindow):
             return [f'invalid year {args[0]}']
         sql_query = sql_query.format(table_name, dt_start.isoformat(), dt_end.isoformat())
         label = f'transactions from {dt_start.year}'
-    # show expenses between two dates
+    # show transactions between two dates
     elif task_id == 604:
         errors = []
         dt_start = parse_date(args[0])
@@ -54,19 +54,20 @@ def records(task_id: int, sql_query: str, args: list,  main_window: MainWindow):
         sql_query = sql_query.format(table_name, dt_start.isoformat(), dt_end.isoformat())
         label = f'transactions from {dt_start.day}.{dt_start.month}.{dt_start.year} to ' \
                 f'{dt_end.day}.{dt_end.month}.{dt_end.year}'
-    # show expenses from last week
+    # show transactions from last week
     elif task_id == 605:
         sql_query = sql_query.format(table_name)
         label = f'transactions from last week'
-    # show expenses from last month
+    # show transactions from last month
     elif task_id == 606:
         sql_query = sql_query.format(table_name)
         label = f'transactions from last month'
-    # show expenses from last year
+    # show transactions from last year
     elif task_id == 607:
         sql_query = sql_query.format(table_name)
         label = f'transactions from last year'
-    # show expenses related to another expense, only possible through action window
+    # show transactions related to another transaction
+    # only possible through action window
     elif task_id == 666:
         sql_query = sql_query.format(table_name, table_name, args[0])
         label = f'transactions similar to {hex(args[0])}'

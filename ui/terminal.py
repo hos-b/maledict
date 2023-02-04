@@ -155,7 +155,7 @@ class TerminalWindow(CursesWindow):
         if task_id == 101:
             return defined_tasks.add.account(self.database, *cmd_args)
         elif task_id == 102:
-            return defined_tasks.add.expense(self, stdscr)
+            return defined_tasks.add.transaction(self, stdscr)
         elif task_id == 201:
             return defined_tasks.list.accounts(self.database)
         elif task_id == 202:
@@ -169,7 +169,7 @@ class TerminalWindow(CursesWindow):
         elif task_id == 501:
             return defined_tasks.delete.account(self, stdscr, *cmd_args)
         elif task_id == 502:
-            return defined_tasks.delete.expense(
+            return defined_tasks.delete.transaction(
                 self.windows[WinID.Main],
                 *cmd_args,
             )
@@ -188,7 +188,7 @@ class TerminalWindow(CursesWindow):
                 *cmd_args,
             )
         elif task_id == 801:
-            return defined_tasks.edit.expense(self, stdscr, *cmd_args)
+            return defined_tasks.edit.transaction(self, stdscr, *cmd_args)
         elif task_id == 901:
             return defined_tasks.query.sqlite(self, stdscr)
         elif task_id == 1001:
@@ -325,7 +325,6 @@ class TerminalWindow(CursesWindow):
         """
         provides a list of predictions based on the current command
         and the index at which the prediction should be inserted.
-        the state indicates the stage in expense mode.
         """
         current_cmd = self.command[:self.cursor_x]
         cmd_args = self.cmd_regex.findall(current_cmd)
@@ -427,13 +426,13 @@ class TerminalWindow(CursesWindow):
             # edit action
             if self.pending_action == 'EDIT':
                 self.append_to_history(
-                    defined_tasks.edit.expense(self, stdscr,
-                                               hex(self.pending_tr_id)))
+                    defined_tasks.edit.transaction(self, stdscr,
+                                                   hex(self.pending_tr_id)))
             # delete action
             elif self.pending_action == 'DELETE':
                 self.append_to_history(
-                    defined_tasks.delete.expense(self.windows[WinID.Main],
-                                                 hex(self.pending_tr_id)))
+                    defined_tasks.delete.transaction(self.windows[WinID.Main],
+                                                     hex(self.pending_tr_id)))
             elif self.pending_action.startswith('FIND SIMILAR'):
                 query_pre = 'SELECT g2.* FROM {} g1, {} g2 WHERE g1.transaction_id = {}'
                 query_cond = ''

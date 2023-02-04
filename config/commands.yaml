@@ -4,9 +4,9 @@ add:
     args: {'name': 'str', 'initial_balance': 'float', 'currency': 'str'}
     desc: 'add an account with a supported currency and an initial balance'
     task-id: 101
-  expense:
+  transaction:
     args: {}
-    desc: 'enter expense mode'
+    desc: 'enter transaction mode'
     task-id: 102
 
 # list commands
@@ -44,7 +44,7 @@ delete:
     args: {'name': 'str'}
     desc: 'delete the account'
     task-id: 501
-  expense:
+  transaction:
     args: {'transaction-id': 'int'}
     desc: 'delete a transaction given its hex transaction id'
     task-id: 502
@@ -57,38 +57,38 @@ delete:
 show:
   all:
     args: {}
-    desc: 'show all expenses'
+    desc: 'show all transactions'
     task-id: 601
     sql-query: "SELECT * FROM {} ORDER BY datetime(datetime) DESC;"
   monthly:
     args: {'month.year': 'str'}
-    desc: 'show monthly expenses'
+    desc: 'show monthly transactions'
     task-id: 602
     sql-query: "SELECT * FROM {} WHERE date(substr(datetime, 1, 10)) >= '{}' AND date(substr(datetime, 1, 10)) <= '{}' ORDER BY datetime(datetime) DESC;"
   yearly:
     args: {'year': 'int'}
-    desc: 'show yearly expenses'
+    desc: 'show yearly transactions'
     task-id: 603
     sql-query: "SELECT * FROM {} WHERE date(substr(datetime, 1, 10)) >= '{}' AND date(substr(datetime, 1, 10)) <= '{}' ORDER BY datetime(datetime) DESC;"
   between:
     args: {'start_date': 'str', 'end_date': 'str'}
-    desc: "show expenses between two dates. 'now' is a valid date"
+    desc: "show transactions between two dates. 'now' is a valid date"
     task-id: 604
     sql-query: "SELECT * FROM {} WHERE date(substr(datetime, 1, 10)) >= '{}' AND date(substr(datetime, 1, 10)) <= '{}' ORDER BY datetime(datetime) DESC;"
   last:
     week:
       args: {}
-      desc: 'show expenses from last week'
+      desc: 'show transactions from last week'
       task-id: 605
       sql-query: "SELECT * FROM {} WHERE datetime BETWEEN datetime('now', '-6 days') AND datetime('now', 'localtime') ORDER BY datetime(datetime) DESC;"
     month:
       args: {}
-      desc: 'show expenses from last month'
+      desc: 'show transactions from last month'
       task-id: 606
       sql-query: "SELECT * FROM {} WHERE datetime BETWEEN datetime('now', 'start of month') AND datetime('now', 'localtime') ORDER BY datetime(datetime) DESC;"
     year:
       args: {}
-      desc: 'show expenses from last year'
+      desc: 'show transactions from last year'
       task-id: 607
       sql-query: "SELECT * FROM {} WHERE datetime BETWEEN datetime('now', 'start of year') AND datetime('now', 'localtime') ORDER BY datetime(datetime) DESC;"
 
@@ -96,12 +96,12 @@ show:
 export:
   csv:
     args: {'file_path': 'str'}
-    desc: 'export expenses from the current account'
+    desc: 'export transactions from the current account'
     task-id: 701
 
 # edit commands
 edit:
-  expense:
+  transaction:
     args: {'transaction-id': 'int'}
     desc: 'edit a transaction given its hex transaction id'
     task-id: 801

@@ -4,7 +4,7 @@ import data.config as cfg
 
 from data.account import Account
 from data.record import Record
-from misc.utils import change_datetime, rectify_element, parse_expense
+from misc.utils import change_datetime, rectify_element, parse_transaction
 from misc.utils import check_input, predict_business, predict_category
 from misc.utils import ExpState
 from misc.string_manip import format_date, format_time
@@ -12,13 +12,13 @@ from misc.statics import WinID, KeyCombo
 
 
 
-def expense(terminal, stdscr, index: str):
+def transaction(terminal, stdscr, index: str):
     account: Account = terminal.windows[WinID.Main].account
     # exception handling
     if account is None:
         return ['current account not set']
     if stdscr is None:
-        return ['cannot edit expenses in warmup mode']
+        return ['cannot edit transactions in warmup mode']
     try:
         transaction_id = int(index, 16)
     except ValueError:
@@ -127,7 +127,7 @@ def expense(terminal, stdscr, index: str):
             terminal.reset_input_field()
             terminal.shadow_string = ''
             terminal.shadow_index = 0
-            terminal.print_history[-1] = 'press escape again to exit expense mode'
+            terminal.print_history[-1] = 'press escape again to exit edit mode'
             terminal.append_to_history(get_hint())
             update_predictions(org_record, True)
             terminal.redraw()
@@ -150,7 +150,7 @@ def expense(terminal, stdscr, index: str):
                 element_start[state]:element_end[state] + 1].strip()
             # done with editing
             if state == ExpState.NOTE:
-                parsed_record = parse_expense(elements, tr_date, account)
+                parsed_record = parse_transaction(elements, tr_date, account)
                 account.update_transaction(transaction_id, parsed_record)
                 terminal.windows[WinID.Main].update_table_row(list_index)
                 terminal.windows[WinID.Main].update_table_statistics(

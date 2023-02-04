@@ -22,7 +22,7 @@ class ExpState(IntEnum):
 
 def check_input(input_str: str, state: int, currency_type) -> str:
     """
-    checks whether the input at state x in expense mode is correct,
+    checks whether the input at state x in transaction mode is correct,
     returns None if there were no errors
     """
     if state == ExpState.AMOUNT:
@@ -64,7 +64,7 @@ def check_input(input_str: str, state: int, currency_type) -> str:
         return None
 
 
-# add expense utils ------------------------------------------------------------------------
+# add transaction utils
 def change_datetime(dt: datetime, state: int, substate: int,
                     change: int) -> datetime:
     # changing date
@@ -185,7 +185,7 @@ def rectify_element(element: str, state: ExpState, account: Account) -> str:
         return element
 
 
-def parse_expense(elements: list, dt: datetime, account: Account) -> Record:
+def parse_transaction(elements: list, dt: datetime, account: Account) -> Record:
     """
     converts the list of strings to a database record. element indices:
     AMOUNT = 0
