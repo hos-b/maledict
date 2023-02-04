@@ -195,6 +195,8 @@ class TerminalWindow(CursesWindow):
             return defined_tasks.save.backup(self.database)
         elif task_id == 1101:
             return defined_tasks.load.backup(self, self.database, *cmd_args)
+        elif task_id == 1201:
+            return self.windows[WinID.Main].account.dump_recurring()
         elif task_id == 100001:
             self.database.connection.commit()
             self.database.db_close()
