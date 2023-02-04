@@ -8,7 +8,6 @@ from sqlite3 import Error as SQLiteError
 import data.config as cfg
 
 from misc.utils import check_input
-from misc.utils import predict_business, predict_category
 from misc.string_manip import format_date, format_time
 from misc.utils import change_datetime, rectify_element 
 from misc.utils import parse_transaction, ExpState
@@ -79,8 +78,6 @@ def transaction(terminal, stdscr):
     elements = ['', '', '', '', '', '']
     state = ExpState.AMOUNT
     sub_state = 0
-    # predictions
-    predicted_record = None
     # some functions ------------------------------------------------------------------
     def input_allowed():
         if state == ExpState.AMOUNT or state == ExpState.BUSINESS or \
@@ -90,30 +87,6 @@ def transaction(terminal, stdscr):
 
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f' {element_hint[state]}:'
-
-    def update_predictions(force_new_prediction: bool):
-        global predicted_record
-        if state == ExpState.BUSINESS:
-            terminal.shadow_string, predicted_record = predict_business(
-                elements[ExpState.AMOUNT],
-                terminal.command[element_start[ExpState.BUSINESS]:],
-                account)
-            terminal.shadow_index = element_start[ExpState.BUSINESS]
-        elif state == ExpState.CATEGORY:
-            if not force_new_prediction and predicted_record is not None:
-                terminal.shadow_string = predicted_record.subcategory \
-                    if predicted_record.subcategory != '' \
-                    else predicted_record.category
-                terminal.shadow_index = element_start[ExpState.CATEGORY]
-                return
-            terminal.shadow_string, predicted_record = predict_category(
-                elements[ExpState.BUSINESS],
-                terminal.command[element_start[ExpState.CATEGORY]:],
-                account)
-            terminal.shadow_index = element_start[ExpState.CATEGORY]
-        else:
-            terminal.shadow_string = ''
-            terminal.shadow_index = 0
 
     # start accepting input -----------------------------------------------------------
     terminal.append_to_history(get_hint())
@@ -129,20 +102,10 @@ def transaction(terminal, stdscr):
             if kb_interrupt or terminal.command == '':
                 break
             kb_interrupt = True
-            state = sub_state = 0
-            elements = ['', '', '', '', '', '']
-            terminal.reset_input_field()
-            terminal.shadow_string = ''
-            terminal.shadow_index = 0
-            terminal.print_history[-1] = \
-                'press ctrl + c again to exit transaction mode'
-            terminal.append_to_history(get_hint())
-            terminal.redraw()
-            continue
         except:
             continue
         # escape = interrupt ----------------------------------------------------------
-        if input_char == '\x1b':
+        if input_char == '\x1b' or kb_interrupt == True:
             if ec_interrupt or terminal.command == '':
                 break
             ec_interrupt = True
@@ -151,7 +114,8 @@ def transaction(terminal, stdscr):
             terminal.reset_input_field()
             terminal.shadow_string = ''
             terminal.shadow_index = 0
-            terminal.print_history[-1] = 'press escape again to exit transaction mode'
+            key = 'ctrl + c' if kb_interrupt else 'escape'
+            terminal.print_history[-1] = f'press {key} again to exit transaction mode'
             terminal.append_to_history(get_hint())
             terminal.redraw()
             continue
@@ -159,12 +123,14 @@ def transaction(terminal, stdscr):
         elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if input_allowed():
                 terminal.delete_previous_char(element_start[state], False)
-                update_predictions(True)
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements)
                 terminal.redraw()
         elif input_char == curses.KEY_DC:
             if input_allowed():
                 terminal.delete_next_char(False)
-                update_predictions(True)
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements)                
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == '\n':
@@ -221,8 +187,11 @@ def transaction(terminal, stdscr):
                 else:
                     terminal.reverse_text_enable = False
                     terminal.cursor_x = len(terminal.command)
+
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements)
+                terminal.shadow_index = element_start[state]
                 terminal.print_history[-1] = get_hint()
-                update_predictions(False)
             # reject & reset input
             else:
                 elements[state] = ''
@@ -327,12 +296,12 @@ def transaction(terminal, stdscr):
                 terminal.cursor_x = len(terminal.command)
                 terminal.vscroll = 0
                 terminal.shadow_string = ''
-                terminal.shadow_index = 0
                 terminal.redraw()
         # normal input ----------------------------------------------------------------
         elif input_allowed():
             terminal.insert_char(input_char, False)
-            update_predictions(True)
+            terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements)
             terminal.redraw()
 
     account.flush_transactions()

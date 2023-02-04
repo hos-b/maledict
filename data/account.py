@@ -1,10 +1,12 @@
 import data.config as cfg
 
 from datetime import datetime, timedelta
+from typing import List, Dict, Set, Tuple
 
 from data.currency import Currency, supported_currencies
 from data.sqlite_proxy import SQLiteProxy
 from data.record import Record
+from misc.utils import ExpState, max_element
 from parser.base import ParserBase
 
 
@@ -19,21 +21,25 @@ class Account:
         self.currency_type = supported_currencies[
             database.get_account_currency(name)]
         self.balance: Currency = self.currency_type(0, 0)
-        self.records = []
+        self.records: List[Record] = []
         # category -> list of subcategories
-        self.categories = dict()
+        self.categories: Dict[List[str]] = dict()
         # subcategory -> parent category
-        self.subcategories = dict()
-        self.businesses = set()
+        self.subcategories: Dict[str] = dict()
+        self.businesses: Set[str] = set()
         # extracted patterns
-        self.recurring_amounts = {}
-        self.recurring_biz = {}
-        self.full_query = f'SELECT * FROM {self.name} ORDER BY datetime(datetime) DESC;'
+        self.recurring_amounts: Dict[str, Record] = dict()
+        self.recurring_biz: Dict[str, Record] = dict()
+        self.prediction_rating: Dict[str, int] = dict()
         self.query_transactions(self.full_query, True)
 
         # if not empty, find recurring transactions
         if len(self.records) > 0:
             self.find_recurring()
+
+    @property
+    def full_query(self):
+        return f'SELECT * FROM {self.name} ORDER BY datetime(datetime) DESC;'
 
     def query_transactions(self, query: str, update_dicts: bool):
         """
@@ -41,7 +47,6 @@ class Account:
         changes. if update is set to true, the dicts of the object are
         also updated.
         """
-
         # if all transactions are being loaded, update balance [regex is overkill]
         update_balance = query.lower().startswith(f'select * from {self.name}') and \
                          query.lower().count(' where ') == 0
@@ -121,15 +126,26 @@ class Account:
 
     def update_dicts(self, category: str, subcategory: str, business: str):
         """
-        updates the account dictionaries
+        updates the account dictionaries for categories, subcategories,
+        businesses and ratings.
         """
         if category not in self.categories:
-            self.categories[category] = []
-        if subcategory not in self.subcategories:
-            self.subcategories[subcategory] = category
-            self.categories[category].append(subcategory)
+            self.categories[category] = list()
+            self.prediction_rating[category] = 1
+        else:
+            self.prediction_rating[category] += 1
+        if subcategory:
+            if subcategory not in self.subcategories:
+                self.prediction_rating[subcategory] = 1
+                self.subcategories[subcategory] = category
+                self.categories[category].append(subcategory)
+            else:
+                self.prediction_rating[subcategory] += 1
         if business not in self.businesses:
             self.businesses.add(business)
+            self.prediction_rating[business] = 1
+        else:
+            self.prediction_rating[business] += 1
 
     def find_recurring(self):
         """
@@ -147,62 +163,193 @@ class Account:
         except OverflowError:
             last_date = self.records[-1].t_datetime
 
-        # amount -> list of (record, occurance count)
-        amount_dict = {}
-        # business name -> list of (record, occurance count)
-        biznes_dict = {}
+        # amount -> list of (record, occurance)
+        amount_dict: Dict[str, List[Tuple[Record, int]]] = dict()
+        # business name -> list of (record, occurance)
+        biznes_dict: Dict[str, List[Tuple[Record, int]]] = dict()
 
         idx = 0
         while self.records[idx].t_datetime > last_date:
-            amount_key = str(self.records[idx].amount)
-            biznes_key = str(self.records[idx].business.strip())
+            db_record = self.records[idx].copy()
+            amount_str = str(db_record.amount)
+            # strip irrelevant info
+            db_record.t_datetime = None
+            db_record.transaction_id = None
+            db_record.note = None
+            db_record.amount = None
             # looking for recurring amounts
-            if amount_key in amount_dict:
-                if len(amount_dict[amount_key]) <= cfg.recurring.discard_limit:
-                    for i in range(len(amount_dict[amount_key])):
-                        record, count = amount_dict[amount_key][i]
-                        if self.records[idx].business == record.business and \
-                           self.records[idx].category == record.category and \
-                           self.records[idx].subcategory == record.subcategory:
-                            amount_dict[amount_key][i] = (record, count + 1)
-                        else:
-                            amount_dict[amount_key].append(
-                                (self.records[idx].copy(), 1))
+            if amount_str in amount_dict:
+                found = False
+                for i in range(len(amount_dict[amount_str])):
+                    recurring, count = amount_dict[amount_str][i]
+                    if db_record.business == recurring.business and \
+                        db_record.category == recurring.category and \
+                        db_record.subcategory == recurring.subcategory:
+                        amount_dict[amount_str][i] = (recurring, count + 1)
+                        found = True
+                        break
+                if not found:
+                    amount_dict[amount_str].append((db_record, 1))
             else:
-                amount_dict[amount_key] = [(self.records[idx].copy(), 1)]
-            # looking for recurring businesses
+                amount_dict[amount_str] = [(db_record, 1)]
+            # looking for recurring businesses, keeping a list because
+            # some businesses can have more than one category => ML
+            biznes_key = db_record.business
             if biznes_key in biznes_dict:
-                if len(biznes_dict[biznes_key]) <= cfg.recurring.discard_limit:
-                    for i in range(len(biznes_dict[biznes_key])):
-                        record, count = biznes_dict[biznes_key][i]
-                        if self.records[idx].category == record.category and \
-                           self.records[idx].subcategory == record.subcategory:
-                            biznes_dict[biznes_key][i] = (record, count + 1)
-                        else:
-                            biznes_dict[biznes_key].append(
-                                (self.records[idx].copy(), 1))
+                found = False
+                for i in range(len(biznes_dict[biznes_key])):
+                    recurring, count = biznes_dict[biznes_key][i]
+                    if db_record.category == recurring.category and \
+                        db_record.subcategory == recurring.subcategory:
+                        biznes_dict[biznes_key][i] = (recurring, count + 1)
+                        found = True
+                if not found:
+                    biznes_dict[biznes_key].append((db_record, 1))
             else:
-                biznes_dict[biznes_key] = [(self.records[idx].copy(), 1)]
+                biznes_dict[biznes_key] = [(db_record, 1)]
 
             idx += 1
-            # if all out of records
             if idx == len(self.records):
                 break
-
+        # process recurring amounts
         for amount_key, lst in amount_dict.items():
             key_sum = sum([pair[1] for pair in lst])
-            for record, count in lst:
-                if count > cfg.recurring.min_occurance and \
-                    (count / key_sum) > cfg.recurring.significance_ratio:
-                    record.note = ''
-                    self.recurring_amounts[amount_key] = record
-                    break
+            record, count = max_element(lst, lambda x: x[1])
+            occ_ratio = count / key_sum
+            if count > cfg.recurring.min_occurance and \
+                occ_ratio > cfg.recurring.significance_ratio:
+                self.recurring_amounts[amount_key] = record
 
+        # process recurring businesses, increase their pred. ratings
         for biznes_key, lst in biznes_dict.items():
             key_sum = sum([pair[1] for pair in lst])
-            for record, count in lst:
-                if count > cfg.recurring.min_occurance and \
-                    (count / key_sum) > cfg.recurring.significance_ratio:
-                    record.note = ''
-                    self.recurring_biz[biznes_key] = record
-                    break
+            record, count = max_element(lst, lambda x: x[1])
+            occ_ratio = count / key_sum
+            self.prediction_rating[record.business] += \
+                int(self.prediction_rating[record.business] * occ_ratio)
+            self.prediction_rating[record.category] += \
+                int(self.prediction_rating[record.business] * occ_ratio)
+            if record.subcategory:
+                self.prediction_rating[record.subcategory] += \
+                    int(self.prediction_rating[record.subcategory] * occ_ratio)
+            if count > cfg.recurring.min_occurance and \
+                occ_ratio > cfg.recurring.significance_ratio:
+                self.recurring_biz[biznes_key] = record
+
+    def predict_string(self, partial: str, state: ExpState,
+                       prev_strs: List[str]):
+        """
+        returns a predicted string given the state, current & previous elements
+        """
+        if state == ExpState.BUSINESS:
+            amount = self.currency_type.from_str(
+                prev_strs[ExpState.AMOUNT]).as_str(True, True)
+            if amount in self.recurring_amounts and \
+                self.recurring_amounts[amount].business.\
+                casefold().startswith(partial.casefold()):
+                return self.recurring_amounts[amount].business
+            elif partial != '':
+                predictions = []
+                for key in self.businesses:
+                    if key.casefold().startswith(partial.casefold()):
+                        predictions.append(key)
+                if len(predictions) != 0:
+                    return max_element(predictions,
+                                       lambda x: self.prediction_rating[x])
+        elif state == ExpState.CATEGORY:
+            business = prev_strs[ExpState.BUSINESS]
+            if business in self.recurring_biz:
+                recurring_str = self.recurring_biz[business].subcategory
+                if recurring_str == '':
+                    recurring_str = self.recurring_biz[business].category
+                if recurring_str.casefold().startswith(partial.casefold()):
+                    return recurring_str
+            elif partial != '':
+                predictions = []
+                for key in self.categories:
+                    if key.casefold().startswith(partial.casefold()):
+                        predictions.append(key)
+                for key in self.subcategories:
+                    if key.casefold().startswith(partial.casefold()):
+                        predictions.append(key)
+                if len(predictions) != 0:
+                    return max_element(predictions,
+                                       lambda x: self.prediction_rating[x])
+        return ''
+
+    def predict_string(self, partial: str, state: ExpState,
+                       prev_strs: List[str], exp_record: Record = None):
+        """
+        returns a predicted string given the state, current & previous elements
+        """
+        # handle easy prediction if an expected state of the record is provided
+        if exp_record is not None:
+            if state == ExpState.AMOUNT:
+                exp_amount = exp_record.amount.as_str(use_plus_sign=True)
+                if exp_amount.startswith(partial):
+                    return exp_amount
+            if state == ExpState.BUSINESS and \
+                exp_record.business.casefold().\
+                    startswith(partial.casefold()):
+                return exp_record.business
+            elif state == ExpState.CATEGORY:
+                prev_cat = exp_record.category
+                if not prev_cat:
+                    prev_cat = exp_record.subcategory
+                if prev_cat.casefold().startswith(partial.casefold()):
+                    return prev_cat
+            elif state == ExpState.NOTE and\
+                exp_record.note.casefold().startswith(partial.casefold()):
+                    return exp_record.note
+
+        if state == ExpState.BUSINESS:
+            amount = self.currency_type.from_str(
+                prev_strs[ExpState.AMOUNT]).as_str(True, True)
+            if amount in self.recurring_amounts and \
+                self.recurring_amounts[amount].business.\
+                casefold().startswith(partial.casefold()):
+                return self.recurring_amounts[amount].business
+            elif partial != '':
+                predictions = []
+                for key in self.businesses:
+                    if key.casefold().startswith(partial.casefold()):
+                        predictions.append(key)
+                if len(predictions) != 0:
+                    return max_element(predictions,
+                                       lambda x: self.prediction_rating[x])
+        elif state == ExpState.CATEGORY:
+            business = prev_strs[ExpState.BUSINESS]
+            if business in self.recurring_biz:
+                recurring_str = self.recurring_biz[business].subcategory
+                if recurring_str == '':
+                    recurring_str = self.recurring_biz[business].category
+                if recurring_str.casefold().startswith(partial.casefold()):
+                    return recurring_str
+            elif partial != '':
+                predictions = []
+                for key in self.categories:
+                    if key.casefold().startswith(partial.casefold()):
+                        predictions.append(key)
+                for key in self.subcategories:
+                    if key.casefold().startswith(partial.casefold()):
+                        predictions.append(key)
+                if len(predictions) != 0:
+                    return max_element(predictions,
+                                       lambda x: self.prediction_rating[x])
+        return ''
+
+    def dump_recurring(self) -> List[str]:
+        """
+        return a the detected recurring amounts and businesses for debugging
+        """
+        str_list = ['recurring amounts:']
+        for amount, record in self.recurring_amounts.items():
+            cat = record.subcategory if record.subcategory else record.category
+            str_list.append(' o {} from {}, {}'.format(
+                amount, record.business, cat))
+        str_list.append('recurring businesses:')
+        for biz, record in self.recurring_biz.items():
+            cat = record.subcategory if record.subcategory else record.category
+            str_list.append(' o {} under {}'.format(biz, cat))
+
+        return str_list

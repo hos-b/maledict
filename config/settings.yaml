@@ -12,7 +12,6 @@ table:
 recurring:
   months: 6
   significance-ratio: 0.7
-  discard-limit: 3
   min-occurance: 5
 
 # window sizes

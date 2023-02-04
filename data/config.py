@@ -18,7 +18,6 @@ class table:
 class recurring:
     months: int = None
     significance_ratio: float = None
-    discard_limit: int = None
     min_occurance: int = None
 
 class main:
@@ -57,7 +56,7 @@ def update_config(config_path: str):
     table.scrollbar_enable = conf['table']['scrollbar-enable']
     recurring.months = conf['recurring']['months']
     recurring.significance_ratio = conf['recurring']['significance-ratio']
-    recurring.discard_limit = conf['recurring']['discard-limit']
+    
     recurring.min_occurance = conf['recurring']['min-occurance']
     main.x = conf['main']['x']
     main.y = conf['main']['y']

@@ -5,11 +5,10 @@ import data.config as cfg
 from data.account import Account
 from data.record import Record
 from misc.utils import change_datetime, rectify_element, parse_transaction
-from misc.utils import check_input, predict_business, predict_category
+from misc.utils import check_input
 from misc.utils import ExpState
 from misc.string_manip import format_date, format_time
 from misc.statics import WinID, KeyCombo
-
 
 
 def transaction(terminal, stdscr, index: str):
@@ -33,7 +32,6 @@ def transaction(terminal, stdscr, index: str):
         return [f'given transaction id does not exist']
     # predictions
     org_record: Record = account.records[list_index].copy()
-    pre_amount_str = org_record.amount.as_str(use_plus_sign=True)
     tr_date = org_record.t_datetime
     # basic intialization
     terminal.append_to_history(
@@ -58,40 +56,9 @@ def transaction(terminal, stdscr, index: str):
     def get_hint() -> str:
         return '=' * (element_start[state] + 3) + f' {element_hint[state]}:'
 
-    def update_predictions(predicted_record: Record, force_update: bool):
-        if state == ExpState.AMOUNT and pre_amount_str.startswith(terminal.command):
-            terminal.shadow_string = pre_amount_str
-            terminal.shadow_index = 0
-        elif state == ExpState.BUSINESS:
-            if not force_update and predicted_record is not None:
-                terminal.shadow_string = predicted_record.business
-                terminal.shadow_index = element_start[ExpState.BUSINESS]
-                return
-            terminal.shadow_string, predicted_record = predict_business(elements[0],
-                    terminal.command[element_start[ExpState.BUSINESS]:], account)
-            terminal.shadow_index = element_start[ExpState.BUSINESS]
-        elif state == ExpState.CATEGORY:
-            if not force_update and predicted_record is not None:
-                terminal.shadow_string = predicted_record.subcategory \
-                    if predicted_record.subcategory != '' \
-                    else predicted_record.category
-                terminal.shadow_index = element_start[ExpState.CATEGORY]
-                return
-            terminal.shadow_string, predicted_record = predict_category(
-                elements[ExpState.BUSINESS], 
-                terminal.command[element_start[ExpState.CATEGORY]:],
-                account)
-            terminal.shadow_index = element_start[ExpState.CATEGORY]
-        elif state == ExpState.NOTE and org_record.note.casefold().\
-            startswith(terminal.command[element_start[5]:].casefold()):
-            terminal.shadow_string = org_record.note
-            terminal.shadow_index = element_start[ExpState.NOTE]
-        else:
-            terminal.shadow_string = ''
-            terminal.shadow_index = 0
-
     # start accepting input -----------------------------------------------------------
-    update_predictions(org_record, False)
+    terminal.shadow_string = account.predict_string(
+        terminal.command[element_start[state]:], state, elements, org_record)
     terminal.append_to_history(get_hint())
     terminal.redraw()
     kb_interrupt = False
@@ -105,20 +72,10 @@ def transaction(terminal, stdscr, index: str):
             if kb_interrupt or terminal.command == '':
                 break
             kb_interrupt = True
-            state = sub_state = 0
-            elements = ['', '', '', '', '', '']
-            terminal.shadow_string = ''
-            terminal.shadow_index = 0
-            terminal.reset_input_field()
-            terminal.print_history[-1] = 'press ctrl + c again to exit edit mode'
-            terminal.append_to_history(get_hint())
-            update_predictions(org_record, True)
-            terminal.redraw()
-            continue
         except:
             continue
         # escape = interrupt ----------------------------------------------------------
-        if input_char == '\x1b':
+        if input_char == '\x1b' or kb_interrupt:
             if ec_interrupt or terminal.command == '':
                 break
             ec_interrupt = True
@@ -127,21 +84,28 @@ def transaction(terminal, stdscr, index: str):
             terminal.reset_input_field()
             terminal.shadow_string = ''
             terminal.shadow_index = 0
-            terminal.print_history[-1] = 'press escape again to exit edit mode'
+            key = 'ctrl + c' if kb_interrupt else 'escape'
+            terminal.print_history[-1] = f'press {key} again to exit edit mode'
             terminal.append_to_history(get_hint())
-            update_predictions(org_record, True)
+            terminal.shadow_string = account.predict_string(
+                terminal.command[element_start[state]:], state, elements,
+                org_record)
             terminal.redraw()
             continue
         # backspace, del --------------------------------------------------------------
         elif input_char == curses.KEY_BACKSPACE or input_char == '\x7f':
             if input_allowed():
                 terminal.delete_previous_char(element_start[state], False)
-                update_predictions(org_record, True)
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements,
+                    org_record)
                 terminal.redraw()
         elif input_char == curses.KEY_DC:
             if input_allowed():
                 terminal.delete_next_char(False)
-                update_predictions(org_record, True)
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements,
+                    org_record)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == '\n':
@@ -168,8 +132,10 @@ def transaction(terminal, stdscr, index: str):
             error = check_input(elements[state], state, account.currency_type)
             # accept & rectify the element, prepare next element
             if error is None:
-                terminal.command += ' ǁ ' if cfg.application.enable_utf8_support else ' | '
-                elements[state] = rectify_element(elements[state], state, account)
+                terminal.command += \
+                    ' ǁ ' if cfg.application.enable_utf8_support else ' | '
+                elements[state] = rectify_element(elements[state], state,
+                                                  account)
                 # skip payee for income
                 if state == ExpState.AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4
@@ -179,9 +145,10 @@ def transaction(terminal, stdscr, index: str):
                     state += 1
                 # handle date & time input
                 if state == ExpState.DATE or state == ExpState.TIME:
-                    terminal.command += format_date(tr_date, cfg.application.use_jdate) \
-                                        if state == ExpState.DATE else \
-                                        format_time(tr_date)
+                    terminal.command += \
+                        format_date(tr_date, cfg.application.use_jdate) \
+                        if state == ExpState.DATE else \
+                        format_time(tr_date)
                     sub_state = 2 if state == ExpState.DATE else 1
                     # enable reverse text
                     terminal.rtext_start = element_start[state] + \
@@ -193,7 +160,10 @@ def transaction(terminal, stdscr, index: str):
                     terminal.reverse_text_enable = False
                     terminal.cursor_x = len(terminal.command)
                 terminal.print_history[-1] = get_hint()
-                update_predictions(org_record, False)
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements,
+                    org_record)
+                terminal.shadow_index = element_start[state]
             # reject & reset input
             else:
                 elements[state] = ''
@@ -234,7 +204,7 @@ def transaction(terminal, stdscr, index: str):
         # cursor shift ----------------------------------------------------------------
         elif input_char == curses.KEY_LEFT:
             if input_allowed():
-               terminal.cursor_move_left(element_start[state])
+                terminal.cursor_move_left(element_start[state])
             else:
                 sub_state = max(0, sub_state - 1)
                 terminal.rtext_start = element_start[state] + \
@@ -261,7 +231,7 @@ def transaction(terminal, stdscr, index: str):
                 terminal.cursor_jump_right()
         elif input_char == curses.KEY_HOME:
             if input_allowed():
-               terminal.cursor_jump_start(element_start[state])
+                terminal.cursor_jump_start(element_start[state])
             else:
                 sub_state = 0
                 terminal.cursor_x = element_start[state] + \
@@ -281,12 +251,13 @@ def transaction(terminal, stdscr, index: str):
                 terminal.cursor_x = len(terminal.command)
                 terminal.vscroll = 0
                 terminal.shadow_string = ''
-                terminal.shadow_index = 0
                 terminal.redraw()
         # normal input ----------------------------------------------------------------
         elif input_allowed():
             terminal.insert_char(input_char, False)
-            update_predictions(org_record, True)
+            terminal.shadow_string = account.predict_string(
+                terminal.command[element_start[state]:], state, elements,
+                org_record)
             terminal.redraw()
 
     # in case the edit was cancelled half way

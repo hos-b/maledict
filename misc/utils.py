@@ -4,11 +4,11 @@ import jdatetime
 from datetime import date, time, datetime, timedelta
 from calendar import monthrange
 from enum import IntEnum
+from typing import Iterable
 
 import data.config as cfg
 
 from data.record import Record
-from data.account import Account
 
 
 class ExpState(IntEnum):
@@ -19,7 +19,7 @@ class ExpState(IntEnum):
     TIME = 4
     NOTE = 5
 
-
+# add transaction utils
 def check_input(input_str: str, state: int, currency_type) -> str:
     """
     checks whether the input at state x in transaction mode is correct,
@@ -63,8 +63,6 @@ def check_input(input_str: str, state: int, currency_type) -> str:
         # no rules for notes
         return None
 
-
-# add transaction utils
 def change_datetime(dt: datetime, state: int, substate: int,
                     change: int) -> datetime:
     # changing date
@@ -112,57 +110,7 @@ def change_datetime(dt: datetime, state: int, substate: int,
     return dt
 
 
-def predict_business(amount: str, biz_temp: str, account: Account):
-    # making sure the key is correct
-    if '.' not in amount:
-        amount += '.' + '0' * account.currency_type.max_secondary_width
-    else:
-        amount += '0' * (account.currency_type.max_secondary_width -
-                         len(amount.split('.')[1]))
-    if not (amount.startswith('+') or amount.startswith('-')):
-        amount = '-' + amount
-    if amount in account.recurring_amounts and \
-       account.recurring_amounts[amount].business.\
-       casefold().startswith(biz_temp.casefold()):
-        return account.recurring_amounts[amount].business, \
-               account.recurring_amounts[amount]
-    elif biz_temp != '':
-        predictions = []
-        for key in account.businesses:
-            if key.casefold().startswith(biz_temp.casefold()):
-                predictions.append(key)
-        if len(predictions) != 0:
-            predictions.sort(key=len)
-            return predictions[0], None
-        return '', None
-    else:
-        return '', None
-
-
-def predict_category(business: str, cat_temp: str, account: Account):
-    if business in account.recurring_biz:
-        recurring_str = account.recurring_biz[business].subcategory
-        if recurring_str == '':
-            recurring_str = account.recurring_biz[business].category
-        if recurring_str.casefold().startswith(cat_temp.casefold()):
-            return recurring_str, account.recurring_biz[business]
-    elif cat_temp != '':
-        predictions = []
-        for key in account.categories:
-            if key.casefold().startswith(cat_temp.casefold()):
-                predictions.append(key)
-        for key in account.subcategories:
-            if key.casefold().startswith(cat_temp.casefold()):
-                predictions.append(key)
-        if len(predictions) != 0:
-            predictions.sort(key=len)
-            return predictions[0], None
-        return '', None
-    else:
-        return '', None
-
-
-def rectify_element(element: str, state: ExpState, account: Account) -> str:
+def rectify_element(element: str, state: ExpState, account) -> str:
     if state == ExpState.AMOUNT:
         # if there's no sign, it's an expense
         return '-' + element if element[0].isnumeric() else element
@@ -185,7 +133,7 @@ def rectify_element(element: str, state: ExpState, account: Account) -> str:
         return element
 
 
-def parse_transaction(elements: list, dt: datetime, account: Account) -> Record:
+def parse_transaction(elements: list, dt: datetime, account) -> Record:
     """
     converts the list of strings to a database record. element indices:
     AMOUNT = 0
@@ -213,3 +161,11 @@ def sign(num):
     elif num < 0:
         return -1
     return 0
+
+def max_element(container: Iterable, predicate):
+    max_elem = None
+    for item in container:
+        if not max_elem or \
+            predicate(max_elem) < predicate(item):
+            max_elem = item
+    return max_elem
