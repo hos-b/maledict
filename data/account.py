@@ -16,13 +16,15 @@ class Account:
     def __init__(self, name: str, database: SQLiteProxy):
         self.name = name
         self.database = database
-        self.currency_type = supported_currencies[database.get_account_currency(name)]
+        self.currency_type = supported_currencies[
+            database.get_account_currency(name)]
         self.balance: Currency = self.currency_type(0, 0)
         self.records = []
-        self.categories = {}
-        self.subcategories = {}
-        self.businesses = {}
-
+        # category -> list of subcategories
+        self.categories = dict()
+        # subcategory -> parent category
+        self.subcategories = dict()
+        self.businesses = set()
         # extracted patterns
         self.recurring_amounts = {}
         self.recurring_biz = {}
@@ -31,10 +33,7 @@ class Account:
 
         # if not empty, find recurring transactions
         if len(self.records) > 0:
-            self.find_recurring(cfg.recurring.months,
-                                cfg.recurring.significance_ratio,
-                                cfg.recurring.discard_limit,
-                                cfg.recurring.min_occurance)
+            self.find_recurring()
 
     def query_transactions(self, query: str, update_dicts: bool):
         """
@@ -42,7 +41,7 @@ class Account:
         changes. if update is set to true, the dicts of the object are
         also updated.
         """
-        
+
         # if all transactions are being loaded, update balance [regex is overkill]
         update_balance = query.lower().startswith(f'select * from {self.name}') and \
                          query.lower().count(' where ') == 0
@@ -51,7 +50,7 @@ class Account:
 
         db_records = self.database.query(query)
         self.records = []
-        for (t_id, dt_str, amount_primary, amount_secondary, category, \
+        for (t_id, dt_str, amount_primary, amount_secondary, category,
              subcategory, business, note) in db_records:
             if update_dicts:
                 self.update_dicts(category, subcategory, business)
@@ -130,10 +129,9 @@ class Account:
             self.subcategories[subcategory] = category
             self.categories[category].append(subcategory)
         if business not in self.businesses:
-            self.businesses[business] = len(self.businesses.keys())
+            self.businesses.add(business)
 
-    def find_recurring(self, months: int, significance_ratio: float, \
-                       discard_limit: int, min_occurance: int):
+    def find_recurring(self):
         """
         looks in the database for recurring expenses during the last
         x months. the given significance ratio defines the hit, miss
@@ -145,59 +143,57 @@ class Account:
         last_date = None
         try:
             last_date = self.records[0].t_datetime - \
-                timedelta(days=31 * months)
+                timedelta(days=31 * cfg.recurring.months)
         except OverflowError:
             last_date = self.records[-1].t_datetime
 
-        # amount -> list of records and their occurance count
+        # amount -> list of (record, occurance count)
         amount_dict = {}
-        # business name -> list of records and their occurance count
+        # business name -> list of (record, occurance count)
         biznes_dict = {}
 
-        current_index = 0
-        while self.records[current_index].t_datetime > last_date:
-            amount_key = str(self.records[current_index].amount)
-            biznes_key = str(self.records[current_index].business.strip())
+        idx = 0
+        while self.records[idx].t_datetime > last_date:
+            amount_key = str(self.records[idx].amount)
+            biznes_key = str(self.records[idx].business.strip())
             # looking for recurring amounts
             if amount_key in amount_dict:
-                if len(amount_dict[amount_key]) <= discard_limit:
+                if len(amount_dict[amount_key]) <= cfg.recurring.discard_limit:
                     for i in range(len(amount_dict[amount_key])):
                         record, count = amount_dict[amount_key][i]
-                        if self.records[current_index].business == record.business and \
-                           self.records[current_index].category == record.category and \
-                           self.records[current_index].subcategory == record.subcategory:
+                        if self.records[idx].business == record.business and \
+                           self.records[idx].category == record.category and \
+                           self.records[idx].subcategory == record.subcategory:
                             amount_dict[amount_key][i] = (record, count + 1)
                         else:
                             amount_dict[amount_key].append(
-                                (self.records[current_index].copy(), 1))
+                                (self.records[idx].copy(), 1))
             else:
-                amount_dict[amount_key] = [(self.records[current_index].copy(),
-                                            1)]
+                amount_dict[amount_key] = [(self.records[idx].copy(), 1)]
             # looking for recurring businesses
             if biznes_key in biznes_dict:
-                if len(biznes_dict[biznes_key]) <= discard_limit:
+                if len(biznes_dict[biznes_key]) <= cfg.recurring.discard_limit:
                     for i in range(len(biznes_dict[biznes_key])):
                         record, count = biznes_dict[biznes_key][i]
-                        if self.records[current_index].category == record.category and \
-                           self.records[current_index].subcategory == record.subcategory:
+                        if self.records[idx].category == record.category and \
+                           self.records[idx].subcategory == record.subcategory:
                             biznes_dict[biznes_key][i] = (record, count + 1)
                         else:
                             biznes_dict[biznes_key].append(
-                                (self.records[current_index].copy(), 1))
+                                (self.records[idx].copy(), 1))
             else:
-                biznes_dict[biznes_key] = [(self.records[current_index].copy(),
-                                            1)]
+                biznes_dict[biznes_key] = [(self.records[idx].copy(), 1)]
 
-            current_index += 1
+            idx += 1
             # if all out of records
-            if current_index == len(self.records):
+            if idx == len(self.records):
                 break
 
         for amount_key, lst in amount_dict.items():
             key_sum = sum([pair[1] for pair in lst])
             for record, count in lst:
-                if count > min_occurance and (count /
-                                              key_sum) > significance_ratio:
+                if count > cfg.recurring.min_occurance and \
+                    (count / key_sum) > cfg.recurring.significance_ratio:
                     record.note = ''
                     self.recurring_amounts[amount_key] = record
                     break
@@ -205,8 +201,8 @@ class Account:
         for biznes_key, lst in biznes_dict.items():
             key_sum = sum([pair[1] for pair in lst])
             for record, count in lst:
-                if count > min_occurance and (count /
-                                              key_sum) > significance_ratio:
+                if count > cfg.recurring.min_occurance and \
+                    (count / key_sum) > cfg.recurring.significance_ratio:
                     record.note = ''
                     self.recurring_biz[biznes_key] = record
                     break
