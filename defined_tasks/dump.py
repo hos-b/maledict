@@ -4,7 +4,7 @@ from data.account import Account
 
 def recurring(account: Account) -> List[str]:
     """
-    return a the detected recurring amounts and businesses for debugging
+    return the detected recurring amounts and businesses for debugging
     """
     if account is None:
         return ['no account set']
