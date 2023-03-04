@@ -180,9 +180,12 @@ def transaction(terminal, stdscr, index: str):
             terminal.scroll_page_down()
         # suggestion surfing, changing date & time ------------------------------------
         elif input_char == curses.KEY_UP:
-            if input_allowed():
-                continue
-            else:
+            if state == ExpState.BUSINESS or state == ExpState.CATEGORY:
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements,
+                    org_record, terminal.shadow_string, -1, terminal)
+                terminal.redraw()
+            elif state == ExpState.DATE or state == ExpState.TIME:
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
                 terminal.command = terminal.command[:element_start[state]] + \
                                    format_date(tr_date, cfg.application.use_jdate) \
@@ -191,9 +194,12 @@ def transaction(terminal, stdscr, index: str):
                                    format_time(tr_date)
                 terminal.redraw()
         elif input_char == curses.KEY_DOWN:
-            if input_allowed():
-                continue
-            else:
+            if state == ExpState.BUSINESS or state == ExpState.CATEGORY:
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements,
+                    org_record, terminal.shadow_string, +1, terminal)
+                terminal.redraw()
+            elif state == ExpState.DATE or state == ExpState.TIME:
                 tr_date = change_datetime(tr_date, state, sub_state, -1)
                 terminal.command = terminal.command[:element_start[state]] + \
                                    format_date(tr_date, cfg.application.use_jdate) \

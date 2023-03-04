@@ -9,7 +9,7 @@ import data.config as cfg
 
 from misc.utils import check_input
 from misc.string_manip import format_date, format_time
-from misc.utils import change_datetime, rectify_element 
+from misc.utils import change_datetime, rectify_element
 from misc.utils import parse_transaction, ExpState
 from data.account import Account
 from data.record import Record
@@ -17,14 +17,23 @@ from data.currency import supported_currencies
 from data.sqlite_proxy import SQLiteProxy
 from misc.statics import WinID, KeyCombo
 
-def account(database: SQLiteProxy, name: str, initial_balance: str, currency_name: str) -> str:
+
+def account(
+    database: SQLiteProxy,
+    name: str,
+    initial_balance: str,
+    currency_name: str,
+) -> str:
     if name == 'currencies':
         return [f'`currencies` is reserved. choose another name.']
     # check whether the currency is implemented
     try:
         currency_type = supported_currencies[currency_name]
     except KeyError:
-        return [f"maledict currently only supports {', '.join(supported_currencies.keys())}"]
+        return [
+            'maledict currently only supports {}'.format(', '.join(
+                supported_currencies.keys()))
+        ]
     try:
         initial_balance = currency_type.from_str(initial_balance)
     except:
@@ -50,13 +59,21 @@ def account(database: SQLiteProxy, name: str, initial_balance: str, currency_nam
     # we cannot use the much more convenient call: account.add_transaction(...)
     if initial_balance > 0:
         intial_record = Record(
-            datetime(1970, 1, 1, 0, 0, 0, 0), 
-            initial_balance, '',
-            '', '', 'initial balance')
+            datetime(1970, 1, 1, 0, 0, 0, 0),
+            initial_balance,
+            '',
+            '',
+            '',
+            'initial balance',
+        )
         database.add_record(name, intial_record)
         database.connection.commit()
 
-    return [f'successfully added {name} with {initial_balance} initial balance']
+    return [
+        'successfully added {} with {} initial balance'.format(
+            name, initial_balance)
+    ]
+
 
 def transaction(terminal, stdscr):
     account: Account = terminal.windows[WinID.Main].account
@@ -78,6 +95,7 @@ def transaction(terminal, stdscr):
     elements = ['', '', '', '', '', '']
     state = ExpState.AMOUNT
     sub_state = 0
+
     # some functions ------------------------------------------------------------------
     def input_allowed():
         if state == ExpState.AMOUNT or state == ExpState.BUSINESS or \
@@ -115,7 +133,8 @@ def transaction(terminal, stdscr):
             terminal.shadow_string = ''
             terminal.shadow_index = 0
             key = 'ctrl + c' if kb_interrupt else 'escape'
-            terminal.print_history[-1] = f'press {key} again to exit transaction mode'
+            terminal.print_history[-1] = \
+                f'press {key} again to exit transaction mode'
             terminal.append_to_history(get_hint())
             terminal.redraw()
             continue
@@ -130,13 +149,13 @@ def transaction(terminal, stdscr):
             if input_allowed():
                 terminal.delete_next_char(False)
                 terminal.shadow_string = account.predict_string(
-                    terminal.command[element_start[state]:], state, elements)                
+                    terminal.command[element_start[state]:], state, elements)
                 terminal.redraw()
         # submit ----------------------------------------------------------------------
         elif input_char == curses.KEY_ENTER or input_char == '\n':
             element_end[state] = len(terminal.command) - 1
-            elements[state] = terminal.command[element_start[state]:
-                                               element_end[state] + 1].strip()
+            elements[state] = \
+                terminal.command[element_start[state]:element_end[state] + 1].strip()
             terminal.redraw()
             # adding the transaction
             if state == ExpState.NOTE:
@@ -163,7 +182,8 @@ def transaction(terminal, stdscr):
             if error is None:
                 # greek letter to enforce RTL/LTR consistency
                 terminal.command += ' ǁ ' if cfg.application.enable_utf8_support else ' | '
-                elements[state] = rectify_element(elements[state], state, account)
+                elements[state] = rectify_element(elements[state], state,
+                                                  account)
                 # skip payee for income
                 if state == ExpState.AMOUNT and elements[state][0] == '+':
                     element_start[state + 2] = element_end[state] + 4
@@ -225,9 +245,12 @@ def transaction(terminal, stdscr):
             terminal.redraw()
         # suggestion surfing, changing date & time ------------------------------------
         elif input_char == curses.KEY_UP:
-            if input_allowed():
-                continue
-            else:
+            if state == ExpState.BUSINESS or state == ExpState.CATEGORY:
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements,
+                    None, terminal.shadow_string, -1)
+                terminal.redraw()
+            elif state == ExpState.DATE or state == ExpState.TIME:
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
                 terminal.command = terminal.command[:element_start[state]] + \
                                    format_date(tr_date, cfg.application.use_jdate) \
@@ -236,9 +259,12 @@ def transaction(terminal, stdscr):
                                    format_time(tr_date)
                 terminal.redraw()
         elif input_char == curses.KEY_DOWN:
-            if input_allowed():
-                continue
-            else:
+            if state == ExpState.BUSINESS or state == ExpState.CATEGORY:
+                terminal.shadow_string = account.predict_string(
+                    terminal.command[element_start[state]:], state, elements,
+                    None, terminal.shadow_string, +1)
+                terminal.redraw()
+            elif state == ExpState.DATE or state == ExpState.TIME:
                 tr_date = change_datetime(tr_date, state, sub_state, -1)
                 terminal.command = terminal.command[:element_start[state]] + \
                                    format_date(tr_date, cfg.application.use_jdate) \
@@ -301,7 +327,7 @@ def transaction(terminal, stdscr):
         elif input_allowed():
             terminal.insert_char(input_char, False)
             terminal.shadow_string = account.predict_string(
-                    terminal.command[element_start[state]:], state, elements)
+                terminal.command[element_start[state]:], state, elements)
             terminal.redraw()
 
     account.flush_transactions()

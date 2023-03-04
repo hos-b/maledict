@@ -236,52 +236,13 @@ class Account:
                 occ_ratio > cfg.recurring.significance_ratio:
                 self.recurring_biz[biznes_key] = record
 
-    def predict_string(self, partial: str, state: ExpState,
-                       prev_strs: List[str]):
-        """
-        returns a predicted string given the state, current & previous elements
-        """
-        if state == ExpState.BUSINESS:
-            amount = self.currency_type.from_str(
-                prev_strs[ExpState.AMOUNT]).as_str(True, True)
-            if amount in self.recurring_amounts and \
-                self.recurring_amounts[amount].business.\
-                casefold().startswith(partial.casefold()):
-                return self.recurring_amounts[amount].business
-            elif partial != '':
-                predictions = []
-                for key in self.businesses:
-                    if key.casefold().startswith(partial.casefold()):
-                        predictions.append(key)
-                if len(predictions) != 0:
-                    return max_element(predictions,
-                                       lambda x: self.prediction_rating[x])
-        elif state == ExpState.CATEGORY:
-            business = prev_strs[ExpState.BUSINESS]
-            if business in self.recurring_biz:
-                recurring_str = self.recurring_biz[business].subcategory
-                if recurring_str == '':
-                    recurring_str = self.recurring_biz[business].category
-                if recurring_str.casefold().startswith(partial.casefold()):
-                    return recurring_str
-            elif partial != '':
-                predictions = []
-                for key in self.categories:
-                    if key.casefold().startswith(partial.casefold()):
-                        predictions.append(key)
-                for key in self.subcategories:
-                    if key.casefold().startswith(partial.casefold()):
-                        predictions.append(key)
-                if len(predictions) != 0:
-                    return max_element(predictions,
-                                       lambda x: self.prediction_rating[x])
-        return ''
-
     def predict_string(self,
                        partial: str,
                        state: ExpState,
                        prev_strs: List[str],
-                       exp_record: Record = None):
+                       exp_record: Record = None,
+                       prev_prediction: str = '',
+                       surf_index_shift: int = 0):
         """
         returns a predicted string given the state, current & previous elements
         """
@@ -305,6 +266,7 @@ class Account:
                 exp_record.note.casefold().startswith(partial.casefold()):
                 return exp_record.note
 
+        predictions = []
         if state == ExpState.BUSINESS:
             amount = self.currency_type.from_str(
                 prev_strs[ExpState.AMOUNT]).as_str(True, True)
@@ -313,13 +275,9 @@ class Account:
                 casefold().startswith(partial.casefold()):
                 return self.recurring_amounts[amount].business
             elif partial != '':
-                predictions = []
                 for key in self.businesses:
                     if key.casefold().startswith(partial.casefold()):
                         predictions.append(key)
-                if len(predictions) != 0:
-                    return max_element(predictions,
-                                       lambda x: self.prediction_rating[x])
         elif state == ExpState.CATEGORY:
             business = prev_strs[ExpState.BUSINESS]
             if business in self.recurring_biz:
@@ -329,14 +287,23 @@ class Account:
                 if recurring_str.casefold().startswith(partial.casefold()):
                     return recurring_str
             elif partial != '':
-                predictions = []
                 for key in self.categories:
                     if key.casefold().startswith(partial.casefold()):
                         predictions.append(key)
                 for key in self.subcategories:
                     if key.casefold().startswith(partial.casefold()):
                         predictions.append(key)
-                if len(predictions) != 0:
-                    return max_element(predictions,
-                                       lambda x: self.prediction_rating[x])
-        return ''
+
+        if len(predictions) == 0:
+            return ''
+        # sort in descending order
+        predictions.sort(key=lambda x: self.prediction_rating[x], reverse=True)
+        highest_rank_pred = predictions[0]
+        if surf_index_shift == 0 or not prev_prediction:
+            return highest_rank_pred
+        try:
+            prev_index = predictions.index(prev_prediction)
+        except ValueError:
+            return highest_rank_pred
+        return predictions[min(max(0, prev_index + surf_index_shift),
+                               len(predictions) - 1)]
