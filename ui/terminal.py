@@ -414,7 +414,8 @@ class TerminalWindow(CursesWindow):
                 self.append_to_history(
                     'could not run warmup commands `{}`: {}', cmd, e)
                 if cfg.application.stack_trace_on_warmup_error:
-                    self.append_to_history(traceback.format_exc().split('\n')[:-1])
+                    self.append_to_history(
+                        traceback.format_exc().split('\n')[:-1])
                 self.command = ''
                 break
 
@@ -639,6 +640,9 @@ class TerminalWindow(CursesWindow):
             return
         # ignore leading spaces
         if input_char == ' ' and len(self.command) == 0:
+            return
+        # ctrl space: the null character
+        if input_char == '\0':
             return
         if self.cursor_x == len(self.command):
             self.command = self.command[:self.cursor_x] + input_char
