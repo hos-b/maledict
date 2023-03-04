@@ -9,3 +9,4 @@ import defined_tasks.export
 import defined_tasks.query
 import defined_tasks.save
 import defined_tasks.load
+import defined_tasks.dump

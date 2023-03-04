@@ -277,8 +277,11 @@ class Account:
                                        lambda x: self.prediction_rating[x])
         return ''
 
-    def predict_string(self, partial: str, state: ExpState,
-                       prev_strs: List[str], exp_record: Record = None):
+    def predict_string(self,
+                       partial: str,
+                       state: ExpState,
+                       prev_strs: List[str],
+                       exp_record: Record = None):
         """
         returns a predicted string given the state, current & previous elements
         """
@@ -298,9 +301,9 @@ class Account:
                     prev_cat = exp_record.subcategory
                 if prev_cat.casefold().startswith(partial.casefold()):
                     return prev_cat
-            elif state == ExpState.NOTE and\
+            elif state == ExpState.NOTE and \
                 exp_record.note.casefold().startswith(partial.casefold()):
-                    return exp_record.note
+                return exp_record.note
 
         if state == ExpState.BUSINESS:
             amount = self.currency_type.from_str(
@@ -337,19 +340,3 @@ class Account:
                     return max_element(predictions,
                                        lambda x: self.prediction_rating[x])
         return ''
-
-    def dump_recurring(self) -> List[str]:
-        """
-        return a the detected recurring amounts and businesses for debugging
-        """
-        str_list = ['recurring amounts:']
-        for amount, record in self.recurring_amounts.items():
-            cat = record.subcategory if record.subcategory else record.category
-            str_list.append(' o {} from {}, {}'.format(
-                amount, record.business, cat))
-        str_list.append('recurring businesses:')
-        for biz, record in self.recurring_biz.items():
-            cat = record.subcategory if record.subcategory else record.category
-            str_list.append(' o {} under {}'.format(biz, cat))
-
-        return str_list
