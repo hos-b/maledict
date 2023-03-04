@@ -10,7 +10,7 @@ table:
 
 # recurring transaction settings
 recurring:
-  months: 6
+  months: 12
   significance-ratio: 0.7
   min-occurance: 5
 
