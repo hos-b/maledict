@@ -20,7 +20,7 @@ def sqlite(terminal, stdscr):
 
     db_connection = account.database.connection
     table_map: Dict[str, int] = account.database.table_map
-    table_cols = [i[0] for i in sorted(table_map.items(), key = lambda x: x[1])]
+    table_cols = [i[0] for i in sorted(table_map.items(), key=lambda x: x[1])]
     terminal.windows[WinID.Main].disable_actions = True
     potential_table_update = False
     # back up previous state of the main window and terminal
@@ -34,8 +34,8 @@ def sqlite(terminal, stdscr):
 
     terminal.append_to_history('query mode activated')
     terminal.append_to_history('> column names: {}', ', '.join(table_cols))
-    terminal.append_to_history(
-        '> tables: {}', ', '.join(account.database.list_tables()))
+    terminal.append_to_history('> tables: {}',
+                               ', '.join(account.database.list_tables()))
     terminal.append_to_history(
         '>> action menu is disabled: deleting & updating has to be done via terminal'
     )
@@ -45,8 +45,8 @@ def sqlite(terminal, stdscr):
         '>> ctrl + (up|down|pgup|pgdown) can be used to scroll up & down the table'
     )
     terminal.append_to_history(
-        '>> sample query: SELECT * FROM <table> ORDER BY datetime(datetime) DESC;'
-    )
+        '>> sample query: SELECT * FROM <table> WHERE date(substr(datetime, 1, 10)) '
+        '>= \'2023-02-01\' ORDER BY datetime(datetime) DESC;')
     terminal.reset_input_field()
     terminal.redraw()
     # start accepting input -----------------------------------------------------------
@@ -61,7 +61,8 @@ def sqlite(terminal, stdscr):
                 break
             kb_interrupt = True
             terminal.reset_input_field()
-            terminal.append_to_history('press ctrl + c again to exit query mode')
+            terminal.append_to_history(
+                'press ctrl + c again to exit query mode')
             terminal.redraw()
             continue
         except:
@@ -108,32 +109,34 @@ def sqlite(terminal, stdscr):
                 else:
                     if len(db_items[0]) == 8:
                         custom_records = []
-                        for (t_id, dt_str, amount_primary, amount_secondary,
-                            category, subcategory, business, note) in db_items:
+                        for (t_id, dt_str, amount_prm, amount_sec, category,
+                             subcategory, business, note) in db_items:
                             custom_records.append(
                                 Record(
                                     datetime.strptime(
                                         dt_str,
-                                        '%Y-%m-%d %H:%M:%S'
+                                        '%Y-%m-%d %H:%M:%S',
                                     ),
                                     account.currency_type(
-                                        amount_primary,
-                                        amount_secondary
-                                    ),
-                                    category, subcategory,
-                                    business, note, t_id
-                                )
-                            )
+                                        amount_prm, amount_sec),
+                                    category,
+                                    subcategory,
+                                    business,
+                                    note,
+                                    t_id,
+                                ))
                         terminal.windows[WinID.Main].refresh_table_records(
                             'custom sql query results', custom_records)
                     elif len(db_items[0]) < 8:
                         # try to parse the query
                         parse_success = False
-                        match = re.match(r'SELECT ((?:(?:\w+\.)?\w+,?\s?)+) FROM',
-                            query, re.IGNORECASE)
+                        match = re.match(
+                            r'SELECT ((?:(?:\w+\.)?\w+,?\s?)+) FROM', query,
+                            re.IGNORECASE)
                         if match:
-                            parsed_cols = [c.strip() 
-                                for c in match.group(1).split(',')]
+                            parsed_cols = [
+                                c.strip() for c in match.group(1).split(',')
+                            ]
                             available_col_idx = []
                             parse_success = True
                             for col in parsed_cols:
@@ -146,7 +149,8 @@ def sqlite(terminal, stdscr):
                             for item in db_items:
                                 # t_id, dt_str, amount_primary, amount_secondary,
                                 # category, subcategory, business, note
-                                record = [0, '1970-01-01 00:00:00', 0, 0] + [''] * 4
+                                record = [0, '1970-01-01 00:00:00', 0, 0
+                                          ] + [''] * 4
                                 for i, c in enumerate(available_col_idx):
                                     record[c] = item[i]
 
@@ -154,11 +158,14 @@ def sqlite(terminal, stdscr):
                                     Record(
                                         datetime.strptime(
                                             record[1], '%Y-%m-%d %H:%M:%S'),
-                                        account.currency_type(record[2], record[3]),
-                                        record[4], record[5], record[6],
-                                        record[7], record[0]
-                                    )
-                                )
+                                        account.currency_type(
+                                            record[2], record[3]),
+                                        record[4],
+                                        record[5],
+                                        record[6],
+                                        record[7],
+                                        record[0],
+                                    ))
                             terminal.windows[WinID.Main].refresh_table_records(
                                 'custom sql query results', custom_records)
                         else:
