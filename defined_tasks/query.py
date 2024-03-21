@@ -97,6 +97,12 @@ def sqlite(terminal, stdscr):
                 terminal.scroll = 0
                 terminal.redraw()
                 continue
+            except sqlite3.Warning as w:
+                terminal.append_to_history(f'[sqlite warning] {w}')
+                terminal.reset_input_field()
+                terminal.scroll = 0
+                terminal.redraw()
+                continue
             if f' {account.name}' not in query.lower():
                 terminal.append_to_history( \
                 '[warning] query does not target current account ({})'. \
