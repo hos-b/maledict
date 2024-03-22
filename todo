@@ -1,3 +1,9 @@
 # not doing
 * supporting all screen sizes
 * supporting resizing
+
+# useful
+[✓] add pip/debian packages
+[ ] allow basic arithmetic for `amount`
+[ ] create versioning, debian
+[ ] custom export (allow column selection)

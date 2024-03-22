@@ -9,4 +9,5 @@ maledict/database/.maledictrc
 maledict/database/backups
 maledict/version.py
 dist/
+build/
 maledict.egg-info/
