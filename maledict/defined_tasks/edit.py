@@ -1,14 +1,13 @@
 import curses
 
-import data.config as cfg
-
-from data.account import Account
-from data.record import Record
-from misc.utils import change_datetime, rectify_element, parse_transaction
-from misc.utils import check_input
-from misc.utils import ExpState
-from misc.string_manip import format_date, format_time
-from misc.statics import WinID, KeyCombo
+from ..data import config as cfg
+from ..data.account import Account
+from ..data.record import Record
+from ..misc.utils import change_datetime, rectify_element, parse_transaction
+from ..misc.utils import check_input
+from ..misc.utils import ExpState
+from ..misc.string_manip import format_date, format_time
+from ..misc.statics import WinID, KeyCombo
 
 
 def transaction(terminal, stdscr, index: str):

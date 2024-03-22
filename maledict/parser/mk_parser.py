@@ -1,9 +1,9 @@
 """
 Parser for MISA MoneyKeeper exported CSV (from xlsx)
 """
-from data.record import Record
+from ..data.record import Record
 from datetime import datetime
-from parser.base import ParserBase
+from .base import ParserBase
 
 class MKParser(ParserBase):
     """

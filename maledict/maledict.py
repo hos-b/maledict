@@ -3,14 +3,14 @@
 import os
 import curses
 
-import data.config as cfg
+import maledict.data.config as cfg
 
-from ui.main import MainWindow
-from ui.actions import ActionWindow
-from ui.terminal import TerminalWindow
-from misc.statics import WinID
-from data.sqlite_proxy import SQLiteProxy
-from version import version as app_version
+from maledict.ui.main import MainWindow
+from maledict.ui.actions import ActionWindow
+from maledict.ui.terminal import TerminalWindow
+from maledict.misc.statics import WinID
+from maledict.data.sqlite_proxy import SQLiteProxy
+from maledict.version import version as app_version
 
 
 def main(stdscr):

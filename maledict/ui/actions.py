@@ -1,7 +1,8 @@
 import curses
-from misc.statics import WinID
-from ui.base import CursesWindow
-from ui.elements.list import CursesList
+
+from ..misc.statics import WinID
+from .base import CursesWindow
+from .elements.list import CursesList
 #pylint: disable=E1101
 
 class ActionWindow(CursesWindow):

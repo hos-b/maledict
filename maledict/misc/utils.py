@@ -6,9 +6,8 @@ from calendar import monthrange
 from enum import IntEnum
 from typing import Iterable
 
-import data.config as cfg
-
-from data.record import Record
+from ..data import config as cfg
+from ..data.record import Record
 
 
 class ExpState(IntEnum):
@@ -18,6 +17,7 @@ class ExpState(IntEnum):
     DATE = 3
     TIME = 4
     NOTE = 5
+
 
 # add transaction utils
 def check_input(input_str: str, state: int, currency_type) -> str:
@@ -62,6 +62,7 @@ def check_input(input_str: str, state: int, currency_type) -> str:
     elif state == ExpState.NOTE:
         # no rules for notes
         return None
+
 
 def change_datetime(dt: datetime, state: int, substate: int,
                     change: int) -> datetime:
@@ -161,6 +162,7 @@ def sign(num):
     elif num < 0:
         return -1
     return 0
+
 
 def max_element(container: Iterable, predicate):
     max_elem = None

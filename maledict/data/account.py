@@ -1,13 +1,13 @@
-import data.config as cfg
 
 from datetime import datetime, timedelta
 from typing import List, Dict, Set, Tuple
 
-from data.currency import Currency, supported_currencies
-from data.sqlite_proxy import SQLiteProxy
-from data.record import Record
-from misc.utils import ExpState, max_element
-from parser.base import ParserBase
+from . import config as cfg
+from .currency import Currency, supported_currencies
+from .sqlite_proxy import SQLiteProxy
+from .record import Record
+from ..misc.utils import ExpState, max_element
+from ..parser.base import ParserBase
 
 
 class Account:

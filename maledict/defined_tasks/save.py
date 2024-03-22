@@ -3,7 +3,7 @@ import shutil
 
 from datetime import datetime
 
-from data.sqlite_proxy import SQLiteProxy
+from ..data.sqlite_proxy import SQLiteProxy
 
 
 def backup(database: SQLiteProxy):

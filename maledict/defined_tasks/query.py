@@ -4,9 +4,9 @@ import sqlite3
 
 from typing import Dict
 
-from data.account import Account
-from data.record import Record
-from misc.statics import WinID, KeyCombo
+from ..data.account import Account
+from ..data.record import Record
+from ..misc.statics import WinID, KeyCombo
 from datetime import datetime
 
 

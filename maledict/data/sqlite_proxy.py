@@ -1,7 +1,7 @@
 import sqlite3
 
 from typing import List, Tuple
-from data.record import Record
+from .record import Record
 
 class SQLiteProxy:
     table_map = {

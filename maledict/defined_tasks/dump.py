@@ -1,5 +1,5 @@
 from typing import List
-from data.account import Account
+from ..data.account import Account
 
 
 def recurring(account: Account) -> List[str]:

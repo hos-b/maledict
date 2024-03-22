@@ -1,12 +1,12 @@
-import defined_tasks.add
-import defined_tasks.parse
-import defined_tasks.list
-import defined_tasks.delete
-import defined_tasks.set
-import defined_tasks.show
-import defined_tasks.edit
-import defined_tasks.export
-import defined_tasks.query
-import defined_tasks.save
-import defined_tasks.load
-import defined_tasks.dump
+from . import add
+from . import parse
+from . import list
+from . import delete
+from . import set
+from . import show
+from . import edit
+from . import export
+from . import query
+from . import save
+from . import load
+from . import dump

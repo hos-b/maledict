@@ -7,10 +7,10 @@ from datetime import datetime
 from copy import deepcopy
 from typing import List
 
-import data.config as cfg
 
-from data.currency import Currency
-from misc.string_manip import fit_string
+from . import config as cfg
+from .currency import Currency
+from ..misc.string_manip import fit_string
 
 class Record:
 

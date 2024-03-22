@@ -1,10 +1,10 @@
 import csv
 import curses
 
-from data.currency import supported_currencies
-from parser.mk_parser import MKParser
-from parser.maledict_parser import MaledictParser
-from misc.statics import WinID
+from ..data.currency import supported_currencies
+from ..parser.mk_parser import MKParser
+from ..parser.maledict_parser import MaledictParser
+from ..misc.statics import WinID
 
 def mkcsv(terminal, stdscr, file_path: str, translate_categories: str, currency_name: str) -> list:
     """

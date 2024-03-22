@@ -2,9 +2,10 @@
 Parser for MISA MoneyKeeper exported CSV (from xlsx)
 """
 from typing import Tuple
-from data.record import Record
 from datetime import datetime
-from parser.base import ParserBase
+
+from .base import ParserBase
+from ..data.record import Record
 
 
 class MaledictParser(ParserBase):

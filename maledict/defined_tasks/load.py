@@ -1,9 +1,9 @@
 import shutil
 
-from data.sqlite_proxy import SQLiteProxy
-from data.account import Account
-from misc.statics import WinID
-from ui.main import MainWindow
+from ..data.sqlite_proxy import SQLiteProxy
+from ..data.account import Account
+from ..misc.statics import WinID
+from ..ui.main import MainWindow
 from .save import backup as save_backup
 from .list import backups as list_backup_files
 

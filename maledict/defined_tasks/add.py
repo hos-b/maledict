@@ -5,17 +5,16 @@ from datetime import datetime
 from sqlite3 import OperationalError as SQLiteOperationalError
 from sqlite3 import Error as SQLiteError
 
-import data.config as cfg
-
-from misc.utils import check_input
-from misc.string_manip import format_date, format_time
-from misc.utils import change_datetime, rectify_element
-from misc.utils import parse_transaction, ExpState
-from data.account import Account
-from data.record import Record
-from data.currency import supported_currencies
-from data.sqlite_proxy import SQLiteProxy
-from misc.statics import WinID, KeyCombo
+from ..misc.utils import check_input
+from ..misc.string_manip import format_date, format_time
+from ..misc.utils import change_datetime, rectify_element
+from ..misc.utils import parse_transaction, ExpState
+from ..data import config as cfg
+from ..data.account import Account
+from ..data.record import Record
+from ..data.currency import supported_currencies
+from ..data.sqlite_proxy import SQLiteProxy
+from ..misc.statics import WinID, KeyCombo
 
 
 def account(

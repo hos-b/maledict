@@ -1,5 +1,5 @@
-from data.account import Account
-from misc.statics import WinID
+from ..data.account import Account
+from ..misc.statics import WinID
 
 def account(terminal, name: str) -> list:
     accounts = terminal.database.list_tables()

@@ -4,14 +4,13 @@ import curses.ascii
 from datetime import datetime
 from typing import List
 
-import data.config as cfg
-
-from misc.statics import WinID
-from ui.base import CursesWindow
-from ui.elements.list import CursesList
-from data.account import Account
-from data.record import Record
-from data.currency import Currency
+from ..misc.statics import WinID
+from ..data import config as cfg
+from ..data.account import Account
+from ..data.record import Record
+from ..data.currency import Currency
+from .base import CursesWindow
+from .elements.list import CursesList
 
 
 class MainWindow(CursesWindow):

@@ -1,5 +1,5 @@
-from data.sqlite_proxy import SQLiteProxy
-from misc.utils import sign
+from ..data.sqlite_proxy import SQLiteProxy
+from .utils import sign
 
 def main():
     sqlp = SQLiteProxy('./database/maledict.db')

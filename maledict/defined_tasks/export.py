@@ -1,6 +1,6 @@
 import csv as pcsv
 
-from data.account import Account
+from ..data.account import Account
 
 def csv(account: Account, path: str):
     if account is None:

@@ -7,12 +7,11 @@ import traceback
 
 from typing import Union, List
 
-import defined_tasks
-import data.config as cfg
-
-from data.sqlite_proxy import SQLiteProxy
-from misc.statics import WinID, KeyCombo
-from ui.base import CursesWindow
+from .. import defined_tasks
+from ..data import config as cfg
+from ..data.sqlite_proxy import SQLiteProxy
+from ..misc.statics import WinID, KeyCombo
+from .base import CursesWindow
 
 
 class TerminalWindow(CursesWindow):

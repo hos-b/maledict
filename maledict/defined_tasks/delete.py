@@ -2,8 +2,7 @@ import os
 
 from sqlite3 import OperationalError as SQLiteOperationalError
 
-from data.sqlite_proxy import SQLiteProxy
-from misc.statics import WinID, KeyCombo
+from ..misc.statics import WinID
 from .list import backups as list_backup_files
 
 
