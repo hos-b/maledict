@@ -2,9 +2,11 @@
 
 import os
 import curses
+from typing import List
 
 import maledict.data.config as cfg
 
+from maledict.ui.base import CursesWindow
 from maledict.ui.main import MainWindow
 from maledict.ui.actions import ActionWindow
 from maledict.ui.terminal import TerminalWindow
@@ -29,8 +31,7 @@ def main(stdscr):
     cfg.update_config(
         os.path.join(os.path.dirname(__file__), 'config/settings.yaml'))
 
-    windows = []
-    # get overview window
+    windows: List[CursesWindow] = []
     windows.append(
         MainWindow(stdscr, cfg.main.x, cfg.main.y,
                    cfg.main.width_percentage * screen_width,
@@ -72,7 +73,11 @@ def main(stdscr):
                 cfg.application.command_history_file_length)
             break
 
+def app():
+    # disable ESC delay. must be called before curses takes over
+    os.environ.setdefault('ESCDELAY', '0')
+    curses.wrapper(main)
 
-# disable ESC delay. must be called before curses takes over
-os.environ.setdefault('ESCDELAY', '0')
-curses.wrapper(main)
+if __name__ == "__main__":
+    app()
+
