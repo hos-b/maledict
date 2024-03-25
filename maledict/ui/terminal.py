@@ -7,11 +7,12 @@ import traceback
 
 from typing import Union, List
 
+from .base import CursesWindow
 from .. import defined_tasks
 from ..data import config as cfg
 from ..data.sqlite_proxy import SQLiteProxy
 from ..misc.statics import WinID, KeyCombo
-from .base import CursesWindow
+from ..misc.utils import get_package_path, get_data_dir
 
 
 class TerminalWindow(CursesWindow):
@@ -50,13 +51,11 @@ class TerminalWindow(CursesWindow):
         self.rtext_end = 0
 
         # loading command yaml file
-        cmd_yaml_path = os.path.join(os.path.dirname(__file__),
-                                     '../config/commands.yaml')
+        cmd_yaml_path = get_package_path('config', 'commands.yaml')
         with open(cmd_yaml_path) as file:
             self.command_dict = yaml.load(file, Loader=yaml.FullLoader)
         try:
-            cmd_history_path = os.path.join(os.path.dirname(__file__),
-                                            '../database/.command_history')
+            cmd_history_path = get_data_dir().joinpath('.command_history')
             f = open(cmd_history_path, 'r')
             for line in f:
                 self.command_history.append(line.strip())
@@ -158,7 +157,7 @@ class TerminalWindow(CursesWindow):
         elif task_id == 201:
             return defined_tasks.list.accounts(self.database)
         elif task_id == 202:
-            return defined_tasks.list.backups(self.database, False)
+            return defined_tasks.list.backups(False)
         elif task_id == 301:
             return defined_tasks.set.account(self, *cmd_args)
         elif task_id == 401:
@@ -379,8 +378,7 @@ class TerminalWindow(CursesWindow):
         """
         end = len(self.command_history)
         begin = max(0, end - count)
-        cmd_history_path = os.path.join(os.path.dirname(__file__),
-                                        '../database/.command_history')
+        cmd_history_path = get_data_dir().joinpath('.command_history')
         with open(cmd_history_path, 'w') as f:
             for i in range(begin, end):
                 f.write(f'{self.command_history[i]}\n')
@@ -392,8 +390,7 @@ class TerminalWindow(CursesWindow):
         """
         commands_to_run = []
         try:
-            warmup_path = os.path.join(os.path.dirname(__file__),
-                                       '../database/.maledictrc')
+            warmup_path = get_data_dir().joinpath('.maledictrc')
             f = open(warmup_path, 'r')
             for line in f:
                 line = line.strip()

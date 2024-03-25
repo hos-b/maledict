@@ -1,10 +1,12 @@
 import re
+import os
 import jdatetime
 
+from pathlib import Path
 from datetime import date, time, datetime, timedelta
 from calendar import monthrange
 from enum import IntEnum
-from typing import Iterable
+from typing import Iterable, Union
 
 from ..data import config as cfg
 from ..data.record import Record
@@ -171,3 +173,31 @@ def max_element(container: Iterable, predicate):
             predicate(max_elem) < predicate(item):
             max_elem = item
     return max_elem
+
+
+def get_data_dir(*subdirs, do_not_create: bool = False) -> Union[Path, None]:
+    """
+    i want to differentiate between a debian and a pip install because
+    things under $HOME have a slight chance of being removd by mistake.
+    if the package directory is not writable, which is most likely the
+    case in a .deb install, i resort to putting data in the user home.
+    local pip pacakages are usually installed under ~/.local/... which
+    is "safer"
+    """
+    data_path = Path(__file__).absolute().parent.parent.joinpath("database")
+    if not os.access(data_path.parent, os.W_OK):
+        data_path = Path.home().joinpath(".maledict")
+        if not os.access(data_path.parent, os.W_OK):
+            raise PermissionError(f"missing write permission to {data_path}")
+    data_path = data_path.joinpath(*subdirs)
+    if data_path.exists():
+        return data_path
+    if do_not_create:
+        raise FileNotFoundError(f"missing directory {data_path}")
+    else:
+        data_path.mkdir(parents=True)
+    return data_path
+
+
+def get_package_path(*subpaths):
+    return Path(__file__).absolute().parent.parent.joinpath(*subpaths)

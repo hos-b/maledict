@@ -13,7 +13,7 @@ def backup(terminal, database: SQLiteProxy, backup_id: str):
         bak_id = int(backup_id)
     except:
         return [f'{backup_id} is not a valid integer']
-    bak_str_list, bak_files = list_backup_files(database, True)
+    bak_str_list, bak_files = list_backup_files(True)
     if bak_id > len(bak_files):
         return [f'cannot find backup file #{bak_id}']
     main_window: MainWindow = terminal.windows[WinID.Main]

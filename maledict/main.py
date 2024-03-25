@@ -3,6 +3,7 @@
 import os
 import curses
 from typing import List
+from pathlib import Path
 
 import maledict.data.config as cfg
 
@@ -11,9 +12,13 @@ from maledict.ui.main import MainWindow
 from maledict.ui.actions import ActionWindow
 from maledict.ui.terminal import TerminalWindow
 from maledict.misc.statics import WinID
+from maledict.misc.utils import get_data_dir
 from maledict.data.sqlite_proxy import SQLiteProxy
 from maledict.version import version as app_version
 
+BASE_CONFIG_PATH = \
+    Path(__file__).absolute().parent.joinpath("config", "settings.yaml")
+USER_CONFIG_PATH = get_data_dir().joinpath('custom-settings.yaml')
 
 def main(stdscr):
     # getting screen data
@@ -24,12 +29,12 @@ def main(stdscr):
     screen_height = curses.LINES - 1
 
     # connecting to sqlite db
-    db_path = os.path.join(os.path.dirname(__file__), 'database/maledict.db')
-    database = SQLiteProxy(db_path)
+    database = SQLiteProxy(get_data_dir().joinpath('maledict.db'))
 
-    # reading config yaml
-    cfg.update_config(
-        os.path.join(os.path.dirname(__file__), 'config/settings.yaml'))
+    # reading base config yaml
+    cfg.update_config(BASE_CONFIG_PATH, True)
+    if USER_CONFIG_PATH.exists():
+        cfg.update_config(USER_CONFIG_PATH, False)
 
     windows: List[CursesWindow] = []
     windows.append(
@@ -73,11 +78,12 @@ def main(stdscr):
                 cfg.application.command_history_file_length)
             break
 
+
 def app():
     # disable ESC delay. must be called before curses takes over
     os.environ.setdefault('ESCDELAY', '0')
     curses.wrapper(main)
 
+
 if __name__ == "__main__":
     app()
-

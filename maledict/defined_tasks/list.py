@@ -1,9 +1,8 @@
-import os
 import re
-
 from math import log10
 
 from ..data.sqlite_proxy import SQLiteProxy
+from ..misc.utils import get_data_dir
 
 
 def accounts(database: SQLiteProxy) -> str:
@@ -15,7 +14,7 @@ def accounts(database: SQLiteProxy) -> str:
     return [', '.join(accounts)]
 
 
-def backups(database: SQLiteProxy, return_file_list: bool) -> str:
+def backups(return_file_list: bool) -> str:
     file_list = []
 
     def amended_output(ret_list: list):
@@ -24,11 +23,12 @@ def backups(database: SQLiteProxy, return_file_list: bool) -> str:
         else:
             return ret_list
 
-    bak_dir = os.path.join(os.path.dirname(database.file_path), 'backups')
-    if not os.path.exists(bak_dir):
+    bak_dir = get_data_dir("backups", do_not_create=True)
+    if not bak_dir.exists():
         return amended_output(['no backups found'])
-    bak_str_list = os.listdir(bak_dir)
-    file_list = [os.path.join(bak_dir, f) for f in bak_str_list]
+
+    file_list = list(bak_dir.iterdir())
+    bak_str_list = [f.name for f in file_list]
     if len(bak_str_list) == 0:
         return amended_output(['no backups found'])
 

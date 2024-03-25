@@ -1,5 +1,5 @@
 import sqlite3
-
+from pathlib import Path
 from typing import List, Tuple
 from .record import Record
 
@@ -15,7 +15,7 @@ class SQLiteProxy:
         'note': 7,
     }
 
-    def __init__(self, db_file):
+    def __init__(self, db_file: Path):
         """
         creates the db file (if it doesn't already exist) and
         establishes a connection.
@@ -125,7 +125,7 @@ class SQLiteProxy:
         self.connection.close()
         self.connection = None
 
-    def db_open(self, db_file: str):
+    def db_open(self, db_file: Path):
         self.file_path = db_file
         try:
             self.connection = sqlite3.connect(db_file)
