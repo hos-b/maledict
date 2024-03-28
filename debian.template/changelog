@@ -1,0 +1,6 @@
+maledict (1.4.0) stable; urgency=low
+
+  * Add debian release using dh-virtualenv
+  * Change how data dir is determined (breaks compatibility, not bumping to 2.0 though)
+
+ -- Hosein

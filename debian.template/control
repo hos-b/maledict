@@ -1,0 +1,12 @@
+Source: maledict
+Section: python
+Priority: extra
+Maintainer: hos-b@github
+Build-Depends: debhelper (>= 9), python3 (>= 3.8), dh-virtualenv (>= 1.2)
+Standards-Version: 3.9.5
+
+Package: maledict
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}
+Description: n-curses expense tracker

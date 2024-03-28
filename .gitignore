@@ -10,4 +10,5 @@ maledict/database/backups
 maledict/version.py
 dist/
 build/
+debian/
 maledict.egg-info/

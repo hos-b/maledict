@@ -3,7 +3,8 @@
 * supporting resizing
 
 # useful
-[✓] add pip/debian packages
+[✓] add pip package
+[✓] add tag-based versioning
+[✓] create debian package using dh_virtualenv
 [ ] allow basic arithmetic for `amount`
-[ ] create versioning, debian
 [ ] custom export (allow column selection)
