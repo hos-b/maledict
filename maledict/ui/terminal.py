@@ -391,11 +391,13 @@ class TerminalWindow(CursesWindow):
         commands_to_run = []
         try:
             warmup_path = get_data_dir().joinpath('.maledictrc')
+            warmup_path.touch(exist_ok=True)
             f = open(warmup_path, 'r')
             for line in f:
                 line = line.strip()
                 if line != '':
                     commands_to_run.append(line)
+                
         except FileNotFoundError:
             self.append_to_history('could not find warmup file')
         except Exception:
