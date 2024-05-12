@@ -1,7 +1,7 @@
 import re
 import curses
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlite3 import OperationalError as SQLiteOperationalError
 from sqlite3 import Error as SQLiteError
 
@@ -84,7 +84,10 @@ def transaction(terminal, stdscr):
     terminal.append_to_history('transaction mode activated')
     terminal.reset_input_field()
     curses.curs_set(1)
-    tr_date = datetime.now()
+    if account.records and account.records[0].t_datetime:
+        tr_date = account.records[0].t_datetime + timedelta(days=1)
+    else:
+        tr_date = datetime.now()
     tr_date = tr_date.replace(second=0, microsecond=0)
     sub_element_start = {ExpState.DATE: [0, 5, 8], ExpState.TIME: [0, 3]}
     sub_element_length = {ExpState.DATE: [4, 2, 2], ExpState.TIME: [2, 2]}
