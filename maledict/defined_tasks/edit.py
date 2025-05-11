@@ -182,7 +182,7 @@ def transaction(terminal, stdscr, index: str):
             if state == ExpState.BUSINESS or state == ExpState.CATEGORY:
                 terminal.shadow_string = account.predict_string(
                     terminal.command[element_start[state]:], state, elements,
-                    org_record, terminal.shadow_string, -1, terminal)
+                    org_record, terminal.shadow_string, -1)
                 terminal.redraw()
             elif state == ExpState.DATE or state == ExpState.TIME:
                 tr_date = change_datetime(tr_date, state, sub_state, +1)
@@ -196,7 +196,7 @@ def transaction(terminal, stdscr, index: str):
             if state == ExpState.BUSINESS or state == ExpState.CATEGORY:
                 terminal.shadow_string = account.predict_string(
                     terminal.command[element_start[state]:], state, elements,
-                    org_record, terminal.shadow_string, +1, terminal)
+                    org_record, terminal.shadow_string, +1)
                 terminal.redraw()
             elif state == ExpState.DATE or state == ExpState.TIME:
                 tr_date = change_datetime(tr_date, state, sub_state, -1)
