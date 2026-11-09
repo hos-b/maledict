@@ -129,7 +129,11 @@ class SQLiteProxy:
         self.file_path = db_file
         try:
             self.connection = sqlite3.connect(db_file)
-            print(f'sqlite3.version: {sqlite3.version}')
+            version_str = getattr(
+                sqlite3, "version",
+                getattr(sqlite3, "sqlite_version", "unknown")
+            )
+            print(f'sqlite3.version: {version_str}')
         except sqlite3.Error as e:
             print(e)
 
